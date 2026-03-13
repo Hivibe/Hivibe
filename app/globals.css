@@ -123,3 +123,27 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ── HiVibe 폰트 시스템 ── */
+:root {
+  --brand: #63C1ED;
+  --font-syne:  'Syne', sans-serif;
+  --font-space: 'Space Mono', monospace;
+  --font-ko:    'Pretendard Variable', 'Pretendard', -apple-system, sans-serif;
+}
+
+body {
+  font-family: var(--font-ko);
+}
+
+.font-syne  { font-family: var(--font-syne);  }
+.font-space { font-family: var(--font-space); }
+.font-ko    { font-family: var(--font-ko);    }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar       { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+
+::selection { background: #63C1ED33; }
