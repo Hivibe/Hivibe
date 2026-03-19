@@ -139,6 +139,7 @@ body {
 .font-syne  { font-family: var(--font-syne);  }
 .font-space { font-family: var(--font-space); }
 .font-ko    { font-family: var(--font-ko);    }
+.font-code  { font-family: 'D2Coding', monospace; }
 
 /* ── Scrollbar ── */
 ::-webkit-scrollbar       { width: 4px; height: 4px; }
@@ -147,3 +148,9 @@ body {
 ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
 
 ::selection { background: #63C1ED33; }
+
+@font-face {
+  font-family: 'D2Coding';
+  src: url('/fonts/D2Coding.woff2') format('woff2');
+  font-weight: normal;
+}
