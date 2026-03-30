@@ -2,14 +2,14 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/frontend/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { TrendingUp } from "lucide-react"
 import {
   ResponsiveContainer, AreaChart, Area,
   LineChart, Line, CartesianGrid,
   XAxis, YAxis, Tooltip as RechartsTooltip, Legend,
 } from "recharts"
-import type { LearningSession } from "@/frontend/types"
+import type { LearningSession } from "@/types"
 
 // 🚨 모나코 에디터 import 삭제함!
 

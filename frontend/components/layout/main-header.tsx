@@ -1,10 +1,10 @@
 // components/layout/main-header.tsx
 "use client"
 
-import { Button } from "@/frontend/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/frontend/components/ui/select"
-import { Switch } from "@/frontend/components/ui/switch"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/frontend/components/ui/tooltip"
+import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   Play, Copy, FileCode, Bookmark, Save,
   Share2, Upload, Monitor, HardDrive,

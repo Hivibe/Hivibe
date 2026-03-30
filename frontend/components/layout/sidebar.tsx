@@ -2,8 +2,8 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/frontend/components/ui/tooltip"
-import { Avatar, AvatarFallback } from "@/frontend/components/ui/avatar"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   PanelLeft, Home, Activity as ActivityIcon,
   GraduationCap, Book, Settings,

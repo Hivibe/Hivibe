@@ -1,5 +1,5 @@
 // app/ide/page.tsx
-import { LeetCodeIDE } from "@/frontend/components/leetcode-ide"
+import { LeetCodeIDE } from "@/components/leetcode-ide"
 
 export default function IDEPage() {
   return <LeetCodeIDE />

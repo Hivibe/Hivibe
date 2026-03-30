@@ -2,8 +2,8 @@
 
 import { useState } from "react"
 import { Star, Flame, FolderOpen, Search } from "lucide-react"
-import { SessionCard } from "@/frontend/components/learning/session-card"
-import type { LearningSession } from "@/frontend/types"
+import { SessionCard } from "@/components/learning/session-card"
+import type { LearningSession } from "@/types"
 
 interface ArchiveViewProps {
   sessions: LearningSession[]

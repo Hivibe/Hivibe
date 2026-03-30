@@ -1,9 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/frontend/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/frontend/components/ui/dialog"
-import { Input } from "@/frontend/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
 import {
   Zap, Brain, BookOpen, Github, Twitter, Eye,
   ArrowRight, TrendingUp, Shield,

@@ -1,7 +1,7 @@
 "use client"
 
 import { Star } from "lucide-react"
-import type { LearningSession } from "@/frontend/types"
+import type { LearningSession } from "@/types"
 
 // CSS 변수 컬러와 톤앤매너 맞춤
 const langColor: Record<string, string> = {

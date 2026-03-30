@@ -2,11 +2,11 @@
 "use client"
 
 import { useState } from "react"
-import { ScrollArea } from "@/frontend/components/ui/scroll-area"
-import { Input } from "@/frontend/components/ui/input"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Input } from "@/components/ui/input"
 import { Search, Star } from "lucide-react"
-import { NoteCard } from "@/frontend/components/notes/note-card"
-import type { Note } from "@/frontend/types"
+import { NoteCard } from "@/components/notes/note-card"
+import type { Note } from "@/types"
 
 const BRAND = "#63C1ED"
 

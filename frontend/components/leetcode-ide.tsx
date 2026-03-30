@@ -3,34 +3,34 @@
 
 import { useRouter } from "next/navigation"
 import { useState, useRef } from "react"
-import { ScrollArea } from "@/frontend/components/ui/scroll-area"
-import { TooltipProvider } from "@/frontend/components/ui/tooltip"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { TooltipProvider } from "@/components/ui/tooltip"
 
 // layout
-import { Sidebar }    from "@/frontend/components/layout/sidebar"
-import { MainHeader } from "@/frontend/components/layout/main-header"
+import { Sidebar }    from "@/components/layout/sidebar"
+import { MainHeader } from "@/components/layout/main-header"
 
 // diagnosis
-import { DiagnosisPanel } from "@/frontend/components/diagnosis/diagnosis-panel"
-import { CodeEditor }     from "@/frontend/components/diagnosis/code-editor"
+import { DiagnosisPanel } from "@/components/diagnosis/diagnosis-panel"
+import { CodeEditor }     from "@/components/diagnosis/code-editor"
 
 // learning
-import { ArchiveView } from "@/frontend/components/learning/archive-view"
-import { DiffView }    from "@/frontend/components/learning/diff-view"
+import { ArchiveView } from "@/components/learning/archive-view"
+import { DiffView }    from "@/components/learning/diff-view"
 
 // notes
-import { NotesList }  from "@/frontend/components/notes/notes-list"
-import { NoteDetail } from "@/frontend/components/notes/note-detail"
+import { NotesList }  from "@/components/notes/notes-list"
+import { NoteDetail } from "@/components/notes/note-detail"
 
 // mypage
-import { MyPage } from "@/frontend/components/mypage/my-page"
+import { MyPage } from "@/components/mypage/my-page"
 
 // dialogs
-import { SaveDiagnosisDialog } from "@/frontend/components/dialogs/save-diagnosis-dialog"
-import { SaveNoteDialog }      from "@/frontend/components/dialogs/save-note-dialog"
+import { SaveDiagnosisDialog } from "@/components/dialogs/save-diagnosis-dialog"
+import { SaveNoteDialog }      from "@/components/dialogs/save-note-dialog"
 
 // types
-import type { LearningSession, Note } from "@/frontend/types"
+import type { LearningSession, Note } from "@/types"
 
 /* ── 목 데이터 ── */
 const initSessions: LearningSession[] = [

@@ -1,11 +1,11 @@
 // components/notes/note-detail.tsx
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/frontend/components/ui/card"
-import { Button } from "@/frontend/components/ui/button"
-import { ScrollArea } from "@/frontend/components/ui/scroll-area"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { Edit2, Share2, Trash2, FileCode, Copy, Code2 } from "lucide-react"
-import type { Note } from "@/frontend/types"
+import type { Note } from "@/types"
 
 const BRAND = "#63C1ED"
 

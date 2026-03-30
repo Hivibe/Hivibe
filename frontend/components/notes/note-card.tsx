@@ -2,7 +2,7 @@
 "use client"
 
 import { Star } from "lucide-react"
-import type { Note } from "@/frontend/types"
+import type { Note } from "@/types"
 
 const BRAND = "#63C1ED"
 

@@ -1,7 +1,7 @@
 // components/diagnosis/diagnosis-panel.tsx
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/frontend/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Sparkles, TrendingUp, Timer, Activity as ActivityIcon } from "lucide-react"
 import {
   ResponsiveContainer, LineChart, Line,

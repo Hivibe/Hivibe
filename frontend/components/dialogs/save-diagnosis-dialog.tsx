@@ -1,9 +1,9 @@
 // components/dialogs/save-diagnosis-dialog.tsx
 "use client"
 
-import { Button } from "@/frontend/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/frontend/components/ui/dialog"
-import { Input } from "@/frontend/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
 import { Save, Check } from "lucide-react"
 
 const BRAND = "#63C1ED"
