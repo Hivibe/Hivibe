@@ -44,7 +44,7 @@ export function NoteDetail({ note: n }: NoteDetailProps) {
         <Card className="bg-zinc-900/50 border-zinc-800">
           <CardContent className="p-5">
             <p className="font-space text-[10px] tracking-widest mb-3" style={{ color: BRAND }}>// PERSONAL NOTES</p>
-            <p className="font-space text-xs text-zinc-300 leading-relaxed whitespace-pre-line">{n.memo}</p>
+            <p className="font-ko text-[13px] text-zinc-300 leading-relaxed whitespace-pre-line">{n.memo}</p>
           </CardContent>
         </Card>
 

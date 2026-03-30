@@ -34,7 +34,7 @@ export function DiagnosisPanel({ hasAnalyzed }: DiagnosisPanelProps) {
           </div>
           <div>
             <p className="font-syne text-sm font-semibold text-zinc-400">코드를 입력하고 분석을 시작하세요</p>
-            <p className="font-space text-[11px] text-zinc-600 mt-1.5 leading-relaxed">
+            <p className="font-ko text-[13px] text-zinc-400 mt-1.5 leading-relaxed">
               오른쪽 에디터에 코드를 붙여넣고<br />Run Analysis를 눌러주세요
             </p>
           </div>

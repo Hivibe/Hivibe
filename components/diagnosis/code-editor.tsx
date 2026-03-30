@@ -32,7 +32,7 @@ export function CodeEditor({
         <div className="flex items-center gap-2 px-4 py-2 border-r border-zinc-800 bg-[#141414]"
           style={{ borderBottom: `2px solid ${BRAND}` }}>
           <FileCode className="h-3 w-3 text-zinc-400" />
-          <span className="font-code text-[11px] text-zinc-300">{fileName || "untitled"}.{ext}</span>
+          <span className="font-code text-[13px] text-zinc-300">{fileName || "untitled"}.{ext}</span>
           {editorCode && <div className="h-1.5 w-1.5 rounded-full bg-amber-400 ml-1" />}
         </div>
       </div>
@@ -68,7 +68,7 @@ export function CodeEditor({
             <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-3 shadow-xl max-w-xs">
               <div className="flex items-start gap-2">
                 <Lightbulb className="h-3.5 w-3.5 text-amber-400 mt-0.5 shrink-0" />
-                <p className="font-space text-[11px] text-zinc-300 leading-relaxed">
+                <p className="font-ko text-[13px] text-zinc-300 leading-relaxed">
                   <span className="text-amber-300">Tip:</span> 코드 작성 완료 후 Run Analysis를 눌러보세요!
                 </p>
               </div>

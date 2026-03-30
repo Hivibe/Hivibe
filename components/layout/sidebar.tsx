@@ -82,7 +82,9 @@ export function Sidebar({ activeNav, sidebarExp, setSidebarExp, onNavClick }: Si
             </div>
           )}
           {sidebarExp && (
-            <button className="h-6 w-6 flex items-center justify-center rounded text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors">
+            <button
+              onClick={() => onNavClick("mypage")}
+              className="h-6 w-6 flex items-center justify-center rounded text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors">
               <Settings className="h-3.5 w-3.5" />
             </button>
           )}

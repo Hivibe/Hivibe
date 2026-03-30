@@ -61,7 +61,7 @@ export function SaveNoteDialog({
                 onChange={e => setTagInput(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && addTag()}
                 placeholder="태그 입력 후 Enter..."
-                className="bg-zinc-950 border-zinc-800 text-zinc-200 text-sm font-space" />
+                className="bg-zinc-950 border-zinc-800 text-zinc-200 text-sm font-ko" />
               <Button size="sm" variant="outline" className="border-zinc-800 text-zinc-400 text-xs" onClick={addTag}>
                 Add
               </Button>
@@ -73,14 +73,14 @@ export function SaveNoteDialog({
               value={noteMemo}
               onChange={e => setNoteMemo(e.target.value)}
               placeholder="나만의 메모..."
-              className="font-space min-h-[80px] w-full rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 text-[11px] p-3 resize-none outline-none" />
+              className="font-ko min-h-[80px] w-full rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-300 text-[13px] p-3 resize-none outline-none" />
           </div>
         </div>
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline" size="sm" className="border-zinc-800 text-zinc-400 font-space text-xs">취소</Button>
+            <Button variant="outline" size="sm" className="border-zinc-800 text-zinc-400 font-ko text-xs">취소</Button>
           </DialogClose>
-          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-space"
+          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-ko"
             onClick={() => onOpenChange(false)}>
             저장 & 3일 후 복습 알림
           </Button>

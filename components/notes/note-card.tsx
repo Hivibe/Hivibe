@@ -37,7 +37,7 @@ export function NoteCard({ n, selNote, setSelNote, toggleNoteFav }: NoteCardProp
           </button>
         </div>
       </div>
-      <p className="font-space text-[10px] text-zinc-600 mb-2">{n.date}</p>
+      <p className="font-space text-[10px] text-zinc-500 mb-2">{n.date}</p>
       <div className="flex flex-wrap gap-1">
         {n.tags.map(t => (
           <span key={t} className="font-space text-[10px] px-2 py-0.5 rounded-full border border-zinc-700 text-zinc-400">

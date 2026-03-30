@@ -68,7 +68,7 @@ export function NotesList({ notes, selNote, setSelNote, toggleNoteFav }: NotesLi
             <>
               <div className="flex items-center gap-2 mb-2 px-0.5">
                 <Star className="h-3 w-3 text-amber-400 fill-amber-400" />
-                <span className="font-space text-[9px] text-zinc-500 tracking-wider uppercase">즐겨찾기</span>
+                <span className="font-ko text-[11px] text-zinc-400 tracking-wider">즐겨찾기</span>
                 <span className="font-space text-[9px] px-1.5 py-0.5 rounded-full bg-amber-400/10 text-amber-400 border border-amber-400/20">
                   {filtered(favNotes).length}
                 </span>
@@ -85,7 +85,7 @@ export function NotesList({ notes, selNote, setSelNote, toggleNoteFav }: NotesLi
 
           {/* 전체 목록 */}
           <div className="flex items-center gap-2 mb-2 px-0.5">
-            <span className="font-space text-[9px] text-zinc-600 tracking-wider uppercase">전체</span>
+            <span className="font-ko text-[11px] text-zinc-500 tracking-wider">전체</span>
             <span className="font-space text-[9px] px-1.5 py-0.5 rounded-full border border-zinc-800 text-zinc-600">
               {filtered(recentNotes).length}
             </span>

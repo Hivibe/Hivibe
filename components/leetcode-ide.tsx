@@ -3,7 +3,6 @@
 
 import { useRouter } from "next/navigation"
 import { useState, useRef } from "react"
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { TooltipProvider } from "@/components/ui/tooltip"
 
@@ -22,6 +21,9 @@ import { DiffView }    from "@/components/learning/diff-view"
 // notes
 import { NotesList }  from "@/components/notes/notes-list"
 import { NoteDetail } from "@/components/notes/note-detail"
+
+// mypage
+import { MyPage } from "@/components/mypage/my-page"
 
 // dialogs
 import { SaveDiagnosisDialog } from "@/components/dialogs/save-diagnosis-dialog"
@@ -100,6 +102,10 @@ export function LeetCodeIDE() {
   // notes
   const [notes,   setNotes]   = useState<Note[]>(mockNotes)
   const [selNote, setSelNote] = useState(1)
+
+  // panel collapse
+  const [diagPanelOpen,  setDiagPanelOpen]  = useState(true)
+  const [notesPanelOpen, setNotesPanelOpen] = useState(true)
 
   // dialogs
   const [saveDiagOpen, setSaveDiagOpen] = useState(false)
@@ -210,14 +216,27 @@ export function LeetCodeIDE() {
 
           {/* ── DIAGNOSIS ── */}
           {activeNav === "diagnosis" && (
-            <ResizablePanelGroup orientation="horizontal" className="flex-1">
-              <ResizablePanel defaultSize={40} minSize={25} maxSize={55}>
-                <ScrollArea className="h-full bg-zinc-950">
-                  <DiagnosisPanel hasAnalyzed={hasAnalyzed} />
-                </ScrollArea>
-              </ResizablePanel>
-              <ResizableHandle withHandle className="bg-zinc-800/50" />
-              <ResizablePanel defaultSize={60} minSize={35}>
+            <div className="flex-1 flex overflow-hidden">
+              <div
+                className={`transition-all duration-300 ease-in-out overflow-hidden shrink-0 ${
+                  diagPanelOpen ? "w-[420px]" : "w-0"
+                }`}
+              >
+                <div className="w-[420px] h-full">
+                  <ScrollArea className="h-full bg-zinc-950">
+                    <DiagnosisPanel hasAnalyzed={hasAnalyzed} />
+                  </ScrollArea>
+                </div>
+              </div>
+              <div className="w-px bg-zinc-800/50 relative flex items-center justify-center shrink-0">
+                <button
+                  onClick={() => setDiagPanelOpen(p => !p)}
+                  className="absolute z-10 w-4 h-8 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-sm flex items-center justify-center text-zinc-400 hover:text-zinc-200 transition-colors"
+                >
+                  {diagPanelOpen ? "‹" : "›"}
+                </button>
+              </div>
+              <div className="flex-1 min-w-0">
                 <CodeEditor
                   language={language}
                   fileName={fileName}
@@ -226,8 +245,8 @@ export function LeetCodeIDE() {
                   hasAnalyzed={hasAnalyzed}
                   aiCoaching={aiCoaching}
                 />
-              </ResizablePanel>
-            </ResizablePanelGroup>
+              </div>
+            </div>
           )}
 
           {/* ── LEARNING ── */}
@@ -252,21 +271,42 @@ export function LeetCodeIDE() {
 
           {/* ── NOTES ── */}
           {activeNav === "notes" && (
-            <ResizablePanelGroup orientation="horizontal" className="flex-1">
-              <ResizablePanel defaultSize={35} minSize={25} maxSize={50} className="bg-[#0a0a0a]">
-                <NotesList
-                  notes={notes}
-                  selNote={selNote}
-                  setSelNote={setSelNote}
-                  toggleNoteFav={toggleNoteFav}
-                />
-              </ResizablePanel>
-              <ResizableHandle withHandle className="bg-zinc-800/50" />
-              <ResizablePanel defaultSize={65} className="bg-zinc-950">
+            <div className="flex-1 flex overflow-hidden">
+              <div
+                className={`transition-all duration-300 ease-in-out overflow-hidden shrink-0 bg-[#0a0a0a] ${
+                  notesPanelOpen ? "w-[420px]" : "w-0"
+                }`}
+              >
+                <div className="w-[420px] h-full">
+                  <NotesList
+                    notes={notes}
+                    selNote={selNote}
+                    setSelNote={setSelNote}
+                    toggleNoteFav={toggleNoteFav}
+                  />
+                </div>
+              </div>
+              <div className="w-px bg-zinc-800/50 relative flex items-center justify-center shrink-0">
+                <button
+                  onClick={() => setNotesPanelOpen(p => !p)}
+                  className="absolute z-10 w-4 h-8 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-sm flex items-center justify-center text-zinc-400 hover:text-zinc-200 transition-colors"
+                >
+                  {notesPanelOpen ? "‹" : "›"}
+                </button>
+              </div>
+              <div className="flex-1 min-w-0 bg-zinc-950">
                 <NoteDetail note={notes.find(n => n.id === selNote) ?? notes[0]} />
-              </ResizablePanel>
-            </ResizablePanelGroup>
+              </div>
+            </div>
           )}
+
+          {/* ── MYPAGE ── */}
+          {activeNav === "mypage" && (
+            <div className="flex-1 overflow-hidden">
+              <MyPage />
+            </div>
+          )}
+
         </div>
 
         {/* ── 다이얼로그 ── */}
