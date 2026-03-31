@@ -29,11 +29,6 @@ public class Anls {
     @JoinColumn(name = "ORN_CD_ID", nullable = false)
     private OrnCd ornCd;
 
-    /** 분석 대상 최적화 코드 (OPT_CD FK) */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "OPT_CD_ID", nullable = false)
-    private OptCd optCd;
-
     /** 코드 등급 (S / A / B / C) */
     @Column(name = "CD_GRD", length = 10)
     private String cdGrd;
@@ -65,6 +60,11 @@ public class Anls {
     @Lob
     @Column(name = "CD_EFCN_RSN")
     private String cdEfcnRsn;
+
+    /*정확성이유 */
+    @Lob
+    @Column(name = "CD_ACC_RSN")
+    private String cdAccRsn;
 
     /** 가독성이유 */
     @Lob
