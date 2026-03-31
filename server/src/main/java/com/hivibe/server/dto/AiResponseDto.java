@@ -11,6 +11,15 @@ public record AiResponseDto(
     String readabilityReason,
     int style,
     String styleReason,
-    String complexity
+    String complexity,
+    String optimizedCode
 ) {
+    // totalScore 기준으로 등급 자동 계산
+    public String getGrade() {
+        if (totalScore >= 90) return "S";
+        if (totalScore >= 80) return "A";
+        if (totalScore >= 70) return "B";
+        if (totalScore >= 60) return "C";
+        return "F";
+    }
 }

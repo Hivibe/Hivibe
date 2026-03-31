@@ -15,6 +15,11 @@ public class AiService {
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
 
+    // TODO: 엔티티 완성 후 주입
+    // AnlsRepository는 ANLS 테이블 담당, OptCdRepository는 OPT_CD 테이블 담당
+    // private final AnlsRepository anlsRepository;
+    // private final OptCdRepository optCdRepository;
+    
     @Value("${gemini.api.key}")
     private String apiKey;
 
@@ -53,6 +58,11 @@ public class AiService {
             [복잡도 분석]
             - complexity: Big-O 표기법만. 예: "O(n²)", "O(n log n)", "O(1)". 설명 없이 표기법만 작성.
 
+            [최적화 코드]
+            - optimizedCode: 위 분석을 바탕으로 개선한 전체 코드. 
+            마크다운, 코드블럭(```) 절대 금지. 순수 코드 텍스트만 작성.
+            개선할 점이 없으면 원본 코드 그대로 반환.
+
             [출력 형식]
             {
             "summary": "잘된 점 1가지(없을 경우 생략 가능)와 핵심 개선점 1가지를 포함한 2~3줄 평가.",
@@ -66,23 +76,21 @@ public class AiService {
             "style": 85,
             "styleReason": "네이밍 컨벤션을 잘 준수했으나 사용하지 않는 import가 존재함.",
             "complexity": "O(n²)"
+            "optimizedCode": "최적화된 전체 코드를 문자열로. 마크다운 금지, 순수 코드만."
             }
 
             [분석할 코드]
             """ + userCode;
-
-        Map<String, Object> requestBody = Map.of(
+ Map<String, Object> requestBody = Map.of(
             "contents", new Object[]{
                 Map.of("parts", new Object[]{
                     Map.of("text", systemPrompt)
                 })
             },
-            // 구글 API한테 "응답을 반드시 JSON 구조로 줘" 라고 시스템적으로 한 번 더 못 박기
             "generationConfig", Map.of("responseMimeType", "application/json")
         );
 
         try {
-            // 2. 구글에 요청 쏘기
             String rawResponse = restClient.post()
                     .uri(apiUrl + "?key=" + apiKey)
                     .header("Content-Type", "application/json")
@@ -90,22 +98,55 @@ public class AiService {
                     .retrieve()
                     .body(String.class);
 
-            // 3. 응답 껍데기 까서 JSON 텍스트만 추출
             JsonNode rootNode = objectMapper.readTree(rawResponse);
             String aiJsonText = rootNode.path("candidates").get(0)
                                         .path("content")
                                         .path("parts").get(0)
                                         .path("text").asText();
 
-            // 4. 텍스트로 된 JSON을 우리가 만든 AiResponseDto 객체로 변환
-            return objectMapper.readValue(aiJsonText, AiResponseDto.class);
+            AiResponseDto result = objectMapper.readValue(aiJsonText, AiResponseDto.class);
+
+           // ANLS 테이블에 분석 결과 저장
+            // Gemini가 돌려준 result(AiResponseDto)를 ANLS 엔티티 객체로 변환
+            // builder() 패턴 = 필드 하나씩 세팅해서 객체 만드는 방식
+            // Anls anls = Anls.builder()
+            //     .cdGrd(result.getGrade())       // 등급 (S/A/B/C/F) - AiResponseDto에 getGrade() 메서드 추가 필요
+            //     .cdScr(result.totalScore())     // 총점 (0~100)
+            //     .cdEfcn(String.valueOf(result.efficiency()))    // 효율성 점수
+            //     .cdRead(String.valueOf(result.readability()))   // 가독성 점수
+            //     .cdStyle(String.valueOf(result.style()))        // 스타일 점수
+            //     .timeComp(result.complexity())                 // 시간복잡도 예: "O(n²)"
+            //     .cdEfcnRsn(result.efficiencyReason())          // 효율성 감점 이유
+            //     .cdAccRsn(result.accuracyReason())             // 정확성 감점 이유
+            //     .cdReadRsn(result.readabilityReason())         // 가독성 감점 이유
+            //     .cdStyleRsn(result.styleReason())              // 스타일 감점 이유
+            //     .aiSummary(result.summary())                   // AI 전체 요약
+            //     .build();
+            //
+            // Anls savedAnls = anlsRepository.save(anls);
+            // → save() 하면 DB에 INSERT되고, AUTO_INCREMENT된 ANLS_ID가 savedAnls에 담김
+            // → 이 ANLS_ID를 아래 OPT_CD 저장할 때 FK로 사용함
+
+
+            // ── STEP 3: OPT_CD 테이블에 최적화 코드 저장 ──────────────────────────
+            // ANLS 저장이 먼저 돼야 ANLS_ID를 알 수 있음 → 반드시 STEP 2 이후에 실행
+            // OptCd optCd = OptCd.builder()
+            //     .anlsId(savedAnls.getAnlsId())  // STEP 2에서 저장된 ANLS_ID를 FK로 연결
+            //                                     // 이게 없으면 어떤 분석의 최적화코드인지 알 수 없음
+            //     .cdCn(result.optimizedCode())   // Gemini가 만들어준 최적화 코드 전체
+            //     .timeComp(result.complexity())  // 최적화 후 시간복잡도
+            //     .build();
+            //
+            // optCdRepository.save(optCd);
+            // → OPT_CD 테이블에 INSERT
+
+            return result;
 
         } catch (Exception e) {
             System.err.println("에러 발생: " + e.getMessage());
-            // 통신 실패나 AI가 헛소리했을 때 앱이 뻗지 않도록 기본값 반환
             return new AiResponseDto(
                 "AI 분석 중 서버 오류가 발생했습니다.",
-                0, 0, "-", 0, "-", 0, "-", 0, "-", "O(1)"
+                0, 0, "-", 0, "-", 0, "-", 0, "-", "O(1)", ""
             );
         }
     }

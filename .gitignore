@@ -137,3 +137,10 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# 설정 파일 제외
+src/main/resources/application.yaml
+src/main/resources/application.properties
+
+# 혹시 모르니 키 파일도 제외
+*.key
