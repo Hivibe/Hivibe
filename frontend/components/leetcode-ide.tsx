@@ -89,6 +89,10 @@ export function LeetCodeIDE() {
   const [hasAnalyzed,  setHasAnalyzed]  = useState(false)
   const [analyzedCode, setAnalyzedCode] = useState("")
 
+  // AI
+  const [isAnalyzing, setIsAnalyzing] = useState(false) // 분석 중 로딩 상태
+  const [aiResult, setAiResult] = useState<any>(null)
+
   // files
   const [fileName,   setFileName]   = useState("")
   const [uploadOpen, setUploadOpen] = useState(false)
@@ -116,11 +120,39 @@ export function LeetCodeIDE() {
   const [noteMemo,     setNoteMemo]     = useState("")
 
   /* ── 핸들러 ── */
-  const handleCopyCode = () => {
-    navigator.clipboard.writeText(editorCode)
-    setCodeCopied(true)
-    setTimeout(() => setCodeCopied(false), 2000)
-  }
+const handleRunAnalysis = async () => {
+    if (!editorCode.trim()) {
+      alert("코드를 입력해 주세요...")
+      return
+    }
+
+    setIsAnalyzing(true)
+    setAiResult(null)       // "" 대신 null로
+    setHasAnalyzed(false)   // 분석 시작할 땐 false로 초기화
+    setDiagPanelOpen(true)
+
+    try {
+      // 백엔드(8080)로 유저 코드 보내기
+      const response = await fetch("http://localhost:8080/api/ai/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          prompt: `다음 코드를 분석하고, 문제점과 개선 방안을 상세히 진단해 줘:\n\n${editorCode}` 
+        }),
+      })
+
+      const data = await response.json()
+      setAiResult(data)
+      setHasAnalyzed(true) // 분석 완료 상태로 변경
+
+    } catch (error) {
+      console.error("백엔드 통신 실패:", error)
+      setAiResult("서버와 연결할 수 없습니다. 8080 포트가 켜져 있는지 확인해 주세요.")
+      setHasAnalyzed(true)
+    } finally {
+      setIsAnalyzing(false)
+    }
+  }
 
   const handleShare = async () => {
     if (navigator.share) {
@@ -196,9 +228,12 @@ export function LeetCodeIDE() {
             codeCopied={codeCopied}
             uploadOpen={uploadOpen}
             setUploadOpen={setUploadOpen}
-            onRunAnalysis={() => { if (editorCode.trim()) setHasAnalyzed(true) }}
+
+            // 수정
+            onRunAnalysis={handleRunAnalysis} 
             onGoLearning={() => { setAnalyzedCode(editorCode); setActiveNav("learning") }}
-            onCopyCode={handleCopyCode}
+            
+            // onCopyCode={handleCopyCode}
             onShare={handleShare}
             onSaveDiag={() => setSaveDiagOpen(true)}
             onSaveNote={() => setSaveNoteOpen(true)}
@@ -224,7 +259,11 @@ export function LeetCodeIDE() {
               >
                 <div className="w-[420px] h-full">
                   <ScrollArea className="h-full bg-zinc-950">
-                    <DiagnosisPanel hasAnalyzed={hasAnalyzed} />
+                    <DiagnosisPanel
+                      hasAnalyzed={hasAnalyzed}
+                      isAnalyzing={isAnalyzing} 
+                      aiResult={aiResult}
+                      />
                   </ScrollArea>
                 </div>
               </div>
