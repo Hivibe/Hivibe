@@ -25,7 +25,7 @@ public class OrnCd {
 
     /** 코드를 입력한 사용자 (USER FK) */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "USER_ID", nullable = false)
+    @JoinColumn(name = "USER_ID", nullable = true)
     private User user;
 
     /** 코드 제목 (사용자가 직접 입력) */
@@ -41,8 +41,7 @@ public class OrnCd {
     private String stbltYn;
 
     /** 실제 코드 내용 */
-    @Lob
-    @Column(name = "CD_CN", nullable = false)
+    @Column(name = "CD_CN", columnDefinition = "TEXT")
     private String cdCn;
 
     /** 코드 등록 일시 (최초 생성 후 변경 불가) */

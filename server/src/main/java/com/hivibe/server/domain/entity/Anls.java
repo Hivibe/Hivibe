@@ -26,13 +26,8 @@ public class Anls {
 
     /** 분석 대상 원본 코드 (ORN_CD FK) */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ORN_CD_ID", nullable = false)
+    @JoinColumn(name = "ORN_CD_ID", nullable = true) // 임시로 true
     private OrnCd ornCd;
-
-    /** 분석 대상 최적화 코드 (OPT_CD FK) */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "OPT_CD_ID", nullable = false)
-    private OptCd optCd;
 
     /** 코드 등급 (S / A / B / C) */
     @Column(name = "CD_GRD", length = 10)
@@ -66,6 +61,11 @@ public class Anls {
     @Column(name = "CD_EFCN_RSN")
     private String cdEfcnRsn;
 
+    /*정확성이유 */
+    @Lob
+    @Column(name = "CD_ACC_RSN")
+    private String cdAccRsn;
+
     /** 가독성이유 */
     @Lob
     @Column(name = "CD_READ_RSN")
@@ -73,11 +73,11 @@ public class Anls {
 
     /** 스타일이유 */
     @Lob
-    @Column(name = "CD_SYTLE_RSN")
-    private String cdSytleRsn;
+    @Column(name = "CD_STYLE_RSN")
+    private String cdStyleRsn;
 
     /**AI 분석 요약 */
     @Lob
-    @Column(name = "AI_SUMMRY")
+    @Column(name = "AI_SUMMRY", columnDefinition = "TEXT")
     private String aiSummry;
 }
