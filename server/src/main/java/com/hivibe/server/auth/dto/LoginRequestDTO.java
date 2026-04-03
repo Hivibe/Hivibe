@@ -6,9 +6,9 @@ import jakarta.validation.constraints.NotBlank;
  * 로그인 요청 DTO
  */
 
-public class LoginRequest {
+public class LoginRequestDTO {
 
-     /** 로그인 ID */
+    /** 로그인 ID */
     @NotBlank(message = "아이디를 입력해주세요.")
     private String lgnId;
  
