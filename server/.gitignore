@@ -33,5 +33,12 @@ out/
 /nbdist/
 /.nb-gradle/
 
-### VS Code ###
+### VS Code ###s
 .vscode/
+
+# 설정 파일 제외
+server/src/main/resources/application.yaml
+server/src/main/resources/application.yaml
+
+# 혹시 모르니 키 파일도 제외
+*.key

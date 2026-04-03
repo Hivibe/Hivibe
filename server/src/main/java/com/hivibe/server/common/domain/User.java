@@ -1,4 +1,4 @@
-package com.hivibe.server.domain.entity;
+package com.hivibe.server.common.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

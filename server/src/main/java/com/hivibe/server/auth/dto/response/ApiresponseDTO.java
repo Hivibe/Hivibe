@@ -1,4 +1,4 @@
-package com.hivibe.server.auth.dto;
+package com.hivibe.server.auth.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -1,4 +1,4 @@
-package com.hivibe.server.auth.dto;
+package com.hivibe.server.auth.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 
-public class ReissuerRequest {
+public class ReissueRequestDTO {
 
      /** 재발급에 사용할 Refresh Token */
     @NotBlank(message = "Refresh Token을 입력해주세요.")

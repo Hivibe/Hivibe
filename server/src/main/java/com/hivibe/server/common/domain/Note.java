@@ -1,4 +1,4 @@
-package com.hivibe.server.domain.entity;
+package com.hivibe.server.common.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -33,7 +33,7 @@ public class Note {
     @JoinColumn(name = "OPT_CD_ID", nullable = false)
     private OptCd optCd;
 
-    /** 노트 제목 */
+    /** 노트 이름 */
     @Column(name = "NOTE_NAME", length = 100)
     private String noteName;
 

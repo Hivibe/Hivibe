@@ -1,6 +1,6 @@
-package com.hivibe.server.auth.dto;
+package com.hivibe.server.auth.dto.response;
 
-import com.hivibe.server.common.domain.entity.User;
+import com.hivibe.server.common.domain.User;
 
 import lombok.Builder;
 import lombok.Getter;

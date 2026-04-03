@@ -1,12 +1,13 @@
 package com.hivibe.server.dgns.service;
 
-import com.hivibe.server.common.domain.entity.Anls;
-import com.hivibe.server.common.domain.entity.OptCd;
-import com.hivibe.server.common.domain.entity.OrnCd;
+import com.hivibe.server.common.domain.Anls;
+import com.hivibe.server.common.domain.OptCd;
+import com.hivibe.server.common.domain.OrnCd;
 import com.hivibe.server.dgns.dto.DiagnosisSaveRequestDto;
 import com.hivibe.server.repository.AnlsRepository;
 import com.hivibe.server.repository.OptCdRepository;
 import com.hivibe.server.repository.OrnCdRepository;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,7 +33,7 @@ public class DiagnosisService {
 
         OrnCd savedOrnCd = ornCdRepository.save(ornCd);
 
-        // 2. 분석 결과 저장
+        // 2. 분석 결과 저장S
         Anls anls = Anls.builder()
             .ornCd(savedOrnCd)
             .cdGrd(request.grade())

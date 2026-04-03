@@ -1,4 +1,4 @@
-package com.hivibe.server.auth.dto;
+package com.hivibe.server.auth.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 

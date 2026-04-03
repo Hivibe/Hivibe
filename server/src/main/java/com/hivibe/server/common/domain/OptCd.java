@@ -1,4 +1,4 @@
-package com.hivibe.server.domain.entity;
+package com.hivibe.server.common.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -39,7 +39,7 @@ public class OptCd {
 
     /** 최적화된 전체 코드 내용 */
     @Lob
-    @Column(name = "CD_CN", columnDefinition = "TEXT")
+    @Column(name = "CD_CN", nullable = false)
     private String cdCn;
 
     /** 최적화 코드의 시간복잡도 (예: O(n log n)) */

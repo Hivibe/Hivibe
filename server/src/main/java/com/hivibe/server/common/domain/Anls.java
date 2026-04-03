@@ -1,4 +1,4 @@
-package com.hivibe.server.common.domain.entity;
+package com.hivibe.server.common.domain;
 
 
 import jakarta.persistence.*;
