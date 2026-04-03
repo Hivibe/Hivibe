@@ -1,10 +1,10 @@
-// components/dialogs/save-diagnosis-dialog.tsx
 "use client"
 
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Save, Check } from "lucide-react"
+import { useState } from "react"
 
 const BRAND = "#63C1ED"
 
@@ -14,9 +14,70 @@ interface SaveDiagnosisDialogProps {
   fileName: string
   setFileName: (name: string) => void
   language: string
+  editorCode: string
+  aiResult: any
 }
 
-export function SaveDiagnosisDialog({ open, onOpenChange, fileName, setFileName, language }: SaveDiagnosisDialogProps) {
+export function SaveDiagnosisDialog({
+  open, onOpenChange, fileName, setFileName, language, editorCode, aiResult
+}: SaveDiagnosisDialogProps) {
+
+  const [isSaving, setIsSaving] = useState(false)
+
+  const getGrade = (score: number) => {
+    if (score >= 90) return "S"
+    if (score >= 80) return "A"
+    if (score >= 70) return "B"
+    if (score >= 60) return "C"
+    return "F"
+  }
+
+  const handleSave = async () => {
+    if (!fileName.trim()) {
+      alert("저장 이름을 입력해 주세요.")
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      const response = await fetch("http://localhost:8080/api/v1/diagnoses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: fileName,
+          lang: language,
+          content: editorCode,
+          isStable: "Y",
+          grade: getGrade(aiResult?.totalScore ?? 0),
+          score: aiResult?.totalScore ?? 0,
+          summary: aiResult?.summary ?? "",
+          accuracy: aiResult?.accuracy ?? 0,
+          accuracyReason: aiResult?.accuracyReason ?? "",
+          efficiency: aiResult?.efficiency ?? 0,
+          efficiencyReason: aiResult?.efficiencyReason ?? "",
+          readability: aiResult?.readability ?? 0,
+          readabilityReason: aiResult?.readabilityReason ?? "",
+          style: aiResult?.style ?? 0,
+          styleReason: aiResult?.styleReason ?? "",
+          timeComplexity: aiResult?.complexity ?? "",
+          optimizedCode: aiResult?.optimizedCode ?? "",
+        }),
+      })
+
+      if (response.ok) {
+        alert("저장되었습니다!")
+        onOpenChange(false)
+      } else {
+        alert("저장 실패. 다시 시도해 주세요.")
+      }
+    } catch (error) {
+      console.error("저장 실패:", error)
+      alert("서버와 연결할 수 없습니다.")
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-zinc-900 border-zinc-800 text-zinc-100 sm:max-w-md">
@@ -48,9 +109,14 @@ export function SaveDiagnosisDialog({ open, onOpenChange, fileName, setFileName,
           <DialogClose asChild>
             <Button variant="outline" size="sm" className="border-zinc-800 text-zinc-400 font-ko text-xs">취소</Button>
           </DialogClose>
-          <Button size="sm" className="text-white text-xs font-ko" style={{ background: BRAND }}
-            onClick={() => onOpenChange(false)}>
-            저장
+          <Button
+            size="sm"
+            className="text-white text-xs font-ko"
+            style={{ background: BRAND }}
+            onClick={handleSave}
+            disabled={isSaving}
+          >
+            {isSaving ? "저장 중..." : "저장"}
           </Button>
         </DialogFooter>
       </DialogContent>
