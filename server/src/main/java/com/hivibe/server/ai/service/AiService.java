@@ -1,8 +1,8 @@
-package com.hivibe.server.service;
+package com.hivibe.server.ai.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivibe.server.dto.AiResponseDto;
+import com.hivibe.server.ai.dto.AiResponseDto;  // 추가
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -14,11 +14,6 @@ public class AiService {
 
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
-
-    // TODO: 엔티티 완성 후 주입
-    // AnlsRepository는 ANLS 테이블 담당, OptCdRepository는 OPT_CD 테이블 담당
-    // private final AnlsRepository anlsRepository;
-    // private final OptCdRepository optCdRepository;
     
     @Value("${gemini.api.key}")
     private String apiKey;
@@ -105,40 +100,6 @@ public class AiService {
                                         .path("text").asText();
 
             AiResponseDto result = objectMapper.readValue(aiJsonText, AiResponseDto.class);
-
-           // ANLS 테이블에 분석 결과 저장
-            // Gemini가 돌려준 result(AiResponseDto)를 ANLS 엔티티 객체로 변환
-            // builder() 패턴 = 필드 하나씩 세팅해서 객체 만드는 방식
-            // Anls anls = Anls.builder()
-            //     .cdGrd(result.getGrade())       // 등급 (S/A/B/C/F) - AiResponseDto에 getGrade() 메서드 추가 필요
-            //     .cdScr(result.totalScore())     // 총점 (0~100)
-            //     .cdEfcn(String.valueOf(result.efficiency()))    // 효율성 점수
-            //     .cdRead(String.valueOf(result.readability()))   // 가독성 점수
-            //     .cdStyle(String.valueOf(result.style()))        // 스타일 점수
-            //     .timeComp(result.complexity())                 // 시간복잡도 예: "O(n²)"
-            //     .cdEfcnRsn(result.efficiencyReason())          // 효율성 감점 이유
-            //     .cdAccRsn(result.accuracyReason())             // 정확성 감점 이유
-            //     .cdReadRsn(result.readabilityReason())         // 가독성 감점 이유
-            //     .cdStyleRsn(result.styleReason())              // 스타일 감점 이유
-            //     .aiSummary(result.summary())                   // AI 전체 요약
-            //     .build();
-            //
-            // Anls savedAnls = anlsRepository.save(anls);
-            // → save() 하면 DB에 INSERT되고, AUTO_INCREMENT된 ANLS_ID가 savedAnls에 담김
-            // → 이 ANLS_ID를 아래 OPT_CD 저장할 때 FK로 사용함
-
-
-            // ── STEP 3: OPT_CD 테이블에 최적화 코드 저장 ──────────────────────────
-            // ANLS 저장이 먼저 돼야 ANLS_ID를 알 수 있음 → 반드시 STEP 2 이후에 실행
-            // OptCd optCd = OptCd.builder()
-            //     .anlsId(savedAnls.getAnlsId())  // STEP 2에서 저장된 ANLS_ID를 FK로 연결
-            //                                     // 이게 없으면 어떤 분석의 최적화코드인지 알 수 없음
-            //     .cdCn(result.optimizedCode())   // Gemini가 만들어준 최적화 코드 전체
-            //     .timeComp(result.complexity())  // 최적화 후 시간복잡도
-            //     .build();
-            //
-            // optCdRepository.save(optCd);
-            // → OPT_CD 테이블에 INSERT
 
             return result;
 

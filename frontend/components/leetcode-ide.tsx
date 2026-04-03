@@ -355,6 +355,8 @@ const handleRunAnalysis = async () => {
           fileName={fileName}
           setFileName={setFileName}
           language={language}
+          editorCode={editorCode}   // 추가
+          aiResult={aiResult} 
         />
 
         <SaveNoteDialog

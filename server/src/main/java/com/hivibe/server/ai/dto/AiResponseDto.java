@@ -1,4 +1,4 @@
-package com.hivibe.server.dto;
+package com.hivibe.server.ai.dto;
 
 public record AiResponseDto(
     String summary,
