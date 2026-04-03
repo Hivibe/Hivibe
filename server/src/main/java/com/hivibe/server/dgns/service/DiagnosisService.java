@@ -1,8 +1,8 @@
 package com.hivibe.server.dgns.service;
 
-import com.hivibe.server.domain.entity.Anls;
-import com.hivibe.server.domain.entity.OptCd;
-import com.hivibe.server.domain.entity.OrnCd;
+import com.hivibe.server.common.domain.entity.Anls;
+import com.hivibe.server.common.domain.entity.OptCd;
+import com.hivibe.server.common.domain.entity.OrnCd;
 import com.hivibe.server.dgns.dto.DiagnosisSaveRequestDto;
 import com.hivibe.server.repository.AnlsRepository;
 import com.hivibe.server.repository.OptCdRepository;
@@ -39,12 +39,12 @@ public class DiagnosisService {
             .cdScr(request.score())
             .cdEfcn(String.valueOf(request.efficiency()))
             .cdRead(String.valueOf(request.readability()))
-            .cdSytle(String.valueOf(request.style()))
+            .cdStyle(String.valueOf(request.style()))
             .timeComp(request.timeComplexity())
             .cdEfcnRsn(request.efficiencyReason())
             .cdAccRsn(request.accuracyReason())
             .cdReadRsn(request.readabilityReason())
-            .cdStyleRsn(request.styleReason())
+            .cdSytleRsn(request.styleReason())
             .aiSummry(request.summary())
             .build();
 

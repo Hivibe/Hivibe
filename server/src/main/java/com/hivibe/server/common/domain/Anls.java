@@ -1,4 +1,4 @@
-package com.hivibe.server.domain.entity;
+package com.hivibe.server.common.domain.entity;
 
 
 import jakarta.persistence.*;
@@ -26,7 +26,7 @@ public class Anls {
 
     /** 분석 대상 원본 코드 (ORN_CD FK) */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ORN_CD_ID", nullable = true) // 임시로 true
+    @JoinColumn(name = "ORN_CD_ID", nullable = false)
     private OrnCd ornCd;
 
     /** 코드 등급 (S / A / B / C) */
@@ -49,8 +49,8 @@ public class Anls {
 
     /** 스타일 분석 결과 */
     @Lob
-    @Column(name = "CD_SYTLE")
-    private String cdSytle;
+    @Column(name = "CD_STYLE")
+    private String cdStyle;
 
     /** 시간복잡도 (오리지널 코드 기준, 예: O(n), O(log n)) */
     @Column(name = "TIME_COMP", length = 10)
@@ -73,11 +73,11 @@ public class Anls {
 
     /** 스타일이유 */
     @Lob
-    @Column(name = "CD_STYLE_RSN")
-    private String cdStyleRsn;
+    @Column(name = "CD_SYTLE_RSN")
+    private String cdSytleRsn;
 
     /**AI 분석 요약 */
     @Lob
-    @Column(name = "AI_SUMMRY", columnDefinition = "TEXT")
+    @Column(name = "AI_SUMMRY")
     private String aiSummry;
 }
