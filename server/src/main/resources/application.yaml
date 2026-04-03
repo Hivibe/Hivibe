@@ -1,21 +1,20 @@
 spring:
   application:
     name: server
-    
   datasource:
     url: jdbc:mysql://db-hivibe.c5cugcucm1fh.ap-northeast-2.rds.amazonaws.com:3306/hivibe?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
     username: seongha
-    password: 고양이가지구를구한다04!
+    password: rhdiddlrkwlrnfmfrngksek04!
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
     hibernate:
-      ddl-auto: validate          # 운영 시 validate, 개발 시 update
+      ddl-auto: update            # 운영 시 validate, 개발 시 update
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
         format_sql: true          # SQL 줄바꿈 포맷
-        show_sql: false           # SQL 콘솔 출력 (개발 시 true)
+        show_sql: true           # SQL 콘솔 출력 (개발 시 true)
     open-in-view: false           # OSIV 비활성화 (권장)
 
   security:
