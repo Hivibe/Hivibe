@@ -2,7 +2,7 @@ spring:
   application:
     name: server
   datasource:
-    url: jdbc:mysql://db-hivibe.c5cugcucm1fh.ap-northeast-2.rds.amazonaws.com:3306/hivibe?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    url: jdbc:mysql://hivibe.c34wcyy4e47l.us-east-2.rds.amazonaws.com:3306/hivibe?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
     username: seongha
     password: rhdiddlrkwlrnfmfrngksek04!
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -44,7 +44,7 @@ spring:
             user-name-attribute: id
 
 jwt:
-  secret: ${JWT_SECRET}           # 256bit 이상 랜덤 문자열
+  secret: hivibesecretkey1234567890abcdefgh        # 256bit 이상 랜덤 문자열
   access-expiration: 1800000      # 30분 (ms)
   refresh-expiration: 1209600000  # 14일 (ms)
 
