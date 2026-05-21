@@ -97,7 +97,14 @@ export function CodeEditor({
   const prevLang = useRef(language)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  // 최초 마운트 시 템플릿 세팅
+   // 최초 마운트 시 템플릿 세팅
+    useEffect(() => {
+      if (!editorCode.trim()) {
+        setEditorCode(templates[language] ?? "")
+      }
+    }, [language])
+
+    // 언어 변경 시
     useEffect(() => {
     if (prevLang.current !== language) {
       if (editorCode.trim()) {
@@ -108,17 +115,6 @@ export function CodeEditor({
           setEditorCode(templates[language] ?? "")
         }
       } else {
-        setEditorCode(templates[language] ?? "")
-      }
-      prevLang.current = language
-    }
-  }, [language])
-
-  // 언어 변경 시 템플릿 교체
-  useEffect(() => {
-    if (prevLang.current !== language) {
-      const prevTemplate = templates[prevLang.current] ?? ""
-      if (!editorCode.trim() || editorCode.trim() === prevTemplate.trim()) {
         setEditorCode(templates[language] ?? "")
       }
       prevLang.current = language
