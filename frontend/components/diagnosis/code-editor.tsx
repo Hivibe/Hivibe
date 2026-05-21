@@ -1,13 +1,82 @@
 // components/diagnosis/code-editor.tsx
 "use client"
 
+import { useEffect, useRef } from "react"
 import { FileCode, Lightbulb } from "lucide-react"
+import { Highlight, themes } from "prism-react-renderer"
+
+import Prism from "prismjs"
+import "prismjs/components/prism-java"
+import "prismjs/components/prism-c"
+import "prismjs/components/prism-cpp"
+import "prismjs/components/prism-python"
+import "prismjs/components/prism-typescript"
 
 const BRAND = "#63C1ED"
 
 const extMap: Record<string, string> = {
   java: "java", python: "py", javascript: "js",
   typescript: "ts", cpp: "cpp", c: "c",
+}
+
+const langMap: Record<string, any> = {
+  java: "java", python: "python", javascript: "javascript",
+  typescript: "typescript", cpp: "cpp", c: "c",
+}
+
+const templates: Record<string, string> = {
+  java:
+`import java.util.*;
+
+public class Solution {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // 여기에 코드를 작성하세요
+    }
+}`,
+  python:
+`import sys
+input = sys.stdin.readline
+
+def solution():
+    # 여기에 코드를 작성하세요
+    pass
+
+solution()`,
+  javascript:
+`const readline = require('readline');
+const rl = readline.createInterface({ input: process.stdin });
+
+rl.on('line', (line) => {
+    // 여기에 코드를 작성하세요
+});`,
+  typescript:
+`const readline = require('readline');
+const rl = readline.createInterface({ input: process.stdin });
+
+rl.on('line', (line: string) => {
+    // 여기에 코드를 작성하세요
+});`,
+  cpp:
+`#include <iostream>
+#include <vector>
+#include <algorithm>
+using namespace std;
+
+int main() {
+    ios_base::sync_with_stdio(false);
+    cin.tie(NULL);
+    // 여기에 코드를 작성하세요
+    return 0;
+}`,
+  c:
+`#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    // 여기에 코드를 작성하세요
+    return 0;
+}`,
 }
 
 interface CodeEditorProps {
@@ -24,9 +93,48 @@ export function CodeEditor({
   setEditorCode, hasAnalyzed, aiCoaching,
 }: CodeEditorProps) {
   const ext = extMap[language] ?? "txt"
+  const prismLang = langMap[language] ?? "javascript"
+  const prevLang = useRef(language)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // 최초 마운트 시 템플릿 세팅
+  useEffect(() => {
+    if (!editorCode.trim()) {
+      setEditorCode(templates[language] ?? "")
+    }
+  }, [])
+
+  // 언어 변경 시 템플릿 교체
+  useEffect(() => {
+    if (prevLang.current !== language) {
+      const prevTemplate = templates[prevLang.current] ?? ""
+      if (!editorCode.trim() || editorCode.trim() === prevTemplate.trim()) {
+        setEditorCode(templates[language] ?? "")
+      }
+      prevLang.current = language
+    }
+  }, [language])
+
+  // Tab 키 처리
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Tab") {
+      e.preventDefault()
+      const ta = e.currentTarget
+      const start = ta.selectionStart
+      const end = ta.selectionEnd
+      const newVal = editorCode.substring(0, start) + "  " + editorCode.substring(end)
+      setEditorCode(newVal)
+      requestAnimationFrame(() => {
+        ta.selectionStart = ta.selectionEnd = start + 2
+      })
+    }
+  }
+
+  const lineCount = Math.max(20, editorCode.split("\n").length)
 
   return (
     <div className="h-full flex flex-col bg-[#141414]">
+
       {/* 탭바 */}
       <div className="flex items-center border-b border-zinc-800/80 bg-[#1a1a1a] shrink-0">
         <div className="flex items-center gap-2 px-4 py-2 border-r border-zinc-800 bg-[#141414]"
@@ -40,25 +148,62 @@ export function CodeEditor({
       {/* 에디터 본체 */}
       <div className="flex-1 overflow-auto relative">
         <div className="flex font-code text-[13px] min-h-full">
+
           {/* 줄번호 */}
-          <div className="sticky left-0 bg-[#141414] select-none shrink-0 border-r border-zinc-800/60 pt-4 pb-4">
+          <div className="sticky left-0 bg-[#141414] select-none shrink-0 border-r border-zinc-800/60 pt-4 pb-4 z-10">
             <div className="px-4 text-right min-w-[48px]">
-              {Array.from({ length: Math.max(20, editorCode.split("\n").length) }, (_, i) => (
+              {Array.from({ length: lineCount }, (_, i) => (
                 <div key={i} className="leading-[1.625rem] text-zinc-700 text-[12px]">{i + 1}</div>
               ))}
             </div>
           </div>
-          {/* textarea */}
+
+          {/* 하이라이트 + textarea 레이어 */}
           <div className="flex-1 relative">
+
+            {/* 하이라이트 레이어 (뒤) */}
+            <div className="absolute inset-0 px-4 pt-4 pb-4 pointer-events-none overflow-hidden">
+              <Highlight
+                prism={Prism as any}
+                theme={themes.vsDark}
+                code={editorCode || " "}
+                language={prismLang}
+              >
+                {({ tokens, getLineProps, getTokenProps }) => (
+                  <pre
+                    className="font-code text-[13px] leading-[1.625rem] whitespace-pre"
+                    style={{ background: "transparent", margin: 0, padding: 0 }}
+                  >
+                    {tokens.map((line, i) => (
+                      <div key={i} {...getLineProps({ line })}>
+                        {line.map((token, key) => (
+                          <span key={key} {...getTokenProps({ token })} />
+                        ))}
+                      </div>
+                    ))}
+                  </pre>
+                )}
+              </Highlight>
+            </div>
+
+            {/* textarea 레이어 (앞, 투명) */}
             <textarea
+              ref={textareaRef}
               value={editorCode}
               onChange={e => setEditorCode(e.target.value)}
-              placeholder="// 여기에 코드를 붙여넣으세요..."
+              onKeyDown={handleKeyDown}
               spellCheck={false}
               autoCorrect="off"
               autoCapitalize="off"
-              className="absolute inset-0 w-full h-full px-4 pt-4 pb-4 bg-transparent text-zinc-200 font-code text-[13px] leading-[1.625rem] resize-none outline-none border-none placeholder:text-zinc-700 z-10"
-              style={{ caretColor: BRAND, tabSize: 2 }} />
+              className="absolute inset-0 w-full h-full px-4 pt-4 pb-4 font-code text-[13px] leading-[1.625rem] resize-none outline-none border-none z-10"
+              style={{
+                caretColor: BRAND,
+                tabSize: 2,
+                color: "transparent",
+                background: "transparent",
+                WebkitTextFillColor: "transparent",
+              }}
+            />
           </div>
         </div>
 

@@ -154,6 +154,12 @@ const handleRunAnalysis = async () => {
     }
   }
 
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(editorCode)
+    setCodeCopied(true)
+    setTimeout(() => setCodeCopied(false), 2000)
+  }
+
   const handleShare = async () => {
     if (navigator.share) {
       try { await navigator.share({ title: "HiVibe", url: window.location.href }) } catch {}
@@ -233,7 +239,8 @@ const handleRunAnalysis = async () => {
             onRunAnalysis={handleRunAnalysis} 
             onGoLearning={() => { setAnalyzedCode(editorCode); setActiveNav("learning") }}
             
-            // onCopyCode={handleCopyCode}
+            isAnalyzing={isAnalyzing}   // 추가
+            onCopyCode={handleCopyCode}
             onShare={handleShare}
             onSaveDiag={() => setSaveDiagOpen(true)}
             onSaveNote={() => setSaveNoteOpen(true)}
