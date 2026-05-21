@@ -98,11 +98,21 @@ export function CodeEditor({
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // 최초 마운트 시 템플릿 세팅
-  useEffect(() => {
-    if (!editorCode.trim()) {
-      setEditorCode(templates[language] ?? "")
+    useEffect(() => {
+    if (prevLang.current !== language) {
+      if (editorCode.trim()) {
+        const confirmed = window.confirm(
+          "언어를 변경하면 현재 코드가 초기화돼요. 변경할까요?"
+        )
+        if (confirmed) {
+          setEditorCode(templates[language] ?? "")
+        }
+      } else {
+        setEditorCode(templates[language] ?? "")
+      }
+      prevLang.current = language
     }
-  }, [])
+  }, [language])
 
   // 언어 변경 시 템플릿 교체
   useEffect(() => {
