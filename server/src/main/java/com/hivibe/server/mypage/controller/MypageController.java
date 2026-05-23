@@ -1,8 +1,7 @@
-// controller/UserController.java
 package com.hivibe.server.mypage.controller;
 
-import com.hivibe.server.dto.*;
-import com.hivibe.server.service.UserService;
+import com.hivibe.server.mypage.dto.*;
+import com.hivibe.server.mypage.service.MypageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,13 +10,13 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/api/mypage")
 @RequiredArgsConstructor
-public class UserController {
+public class MypageController {
 
-    private final UserService userService;
+    private final MypageService mypageService;
 
-    // 임시 lgnId — 팀원 JWT 머지 후 SecurityContext에서 꺼내도록 교체
+    // 임시 lgnId — 팀원 JWT 머지 후 SecurityContext로 교체
     private String getCurrentLgnId() {
         return "testuser";
     }
@@ -25,21 +24,21 @@ public class UserController {
     // 마이페이지 조회
     @GetMapping("/me")
     public ResponseEntity<UserProfileResponseDto> getProfile() {
-        return ResponseEntity.ok(userService.getProfile(getCurrentLgnId()));
+        return ResponseEntity.ok(mypageService.getProfile(getCurrentLgnId()));
     }
 
     // 프로필 수정
     @PatchMapping("/me")
     public ResponseEntity<UserProfileResponseDto> updateProfile(
             @RequestBody UserProfileUpdateDto dto) {
-        return ResponseEntity.ok(userService.updateProfile(getCurrentLgnId(), dto));
+        return ResponseEntity.ok(mypageService.updateProfile(getCurrentLgnId(), dto));
     }
 
     // 프로필 사진 업로드
     @PostMapping("/me/profile-image")
     public ResponseEntity<String> updateProfileImage(
             @RequestParam("image") MultipartFile file) throws IOException {
-        String url = userService.updateProfileImage(getCurrentLgnId(), file);
+        String url = mypageService.updateProfileImage(getCurrentLgnId(), file);
         return ResponseEntity.ok(url);
     }
 
@@ -47,7 +46,7 @@ public class UserController {
     @PatchMapping("/me/phone")
     public ResponseEntity<Void> updatePhone(
             @RequestBody UserPhoneUpdateDto dto) {
-        userService.updatePhone(getCurrentLgnId(), dto);
+        mypageService.updatePhone(getCurrentLgnId(), dto);
         return ResponseEntity.ok().build();
     }
 
@@ -55,7 +54,7 @@ public class UserController {
     @PatchMapping("/me/settings")
     public ResponseEntity<Void> updateSettings(
             @RequestBody UserSettingsUpdateDto dto) {
-        userService.updateSettings(getCurrentLgnId(), dto);
+        mypageService.updateSettings(getCurrentLgnId(), dto);
         return ResponseEntity.ok().build();
     }
 }

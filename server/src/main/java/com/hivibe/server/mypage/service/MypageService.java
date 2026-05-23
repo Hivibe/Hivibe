@@ -1,8 +1,7 @@
-// service/UserService.java
 package com.hivibe.server.mypage.service;
 
 import com.hivibe.server.domain.entity.User;
-import com.hivibe.server.dto.*;
+import com.hivibe.server.mypage.dto.*;
 import com.hivibe.server.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -15,7 +14,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class UserService {
+public class MypageService {
 
     private final UserRepository userRepository;
 
@@ -42,14 +41,12 @@ public class UserService {
         User user = userRepository.findByLgnId(lgnId)
             .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없어요."));
 
-        // 저장 경로 (프로젝트 루트 기준)
         String uploadDir = System.getProperty("user.dir") + "/uploads/profile/";
         File dir = new File(uploadDir);
         if (!dir.exists()) dir.mkdirs();
 
-        String fileName  = UUID.randomUUID() + "_" + file.getOriginalFilename();
-        String filePath  = uploadDir + fileName;
-        file.transferTo(new File(filePath));
+        String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+        file.transferTo(new File(uploadDir + fileName));
 
         String imageUrl = "/uploads/profile/" + fileName;
         user.setUserPhoto(imageUrl);
