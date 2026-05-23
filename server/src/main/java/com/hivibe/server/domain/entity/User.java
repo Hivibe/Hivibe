@@ -75,6 +75,10 @@ public class User {
     @Column(name = "USER_PHONE", length = 11)
     private String userPhone;
 
+    // 복습 알림 동의
+    @Column(name = "REVIEW_ALARM_YN", nullable = false, length = 1)
+    private String reviewAlarmYn = "Y";
+
     @PrePersist
     protected void onCreate() {
         if (acntJoinDt == null) acntJoinDt = LocalDateTime.now();

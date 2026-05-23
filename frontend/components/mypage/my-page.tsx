@@ -142,6 +142,12 @@ export function MyPage() {
     reader.readAsDataURL(file);
   };
 
+  const handlePhoneInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const nums = e.target.value.replace(/\D/g, "").slice(0, 11);
+    const formatted = nums.replace(/(\d{3})(\d{4})(\d{4})/, "$1-$2-$3");
+    setTempPhone(formatted);
+  };
+
   const [phone, setPhone] = useState("");
   const [editingPhone, setEditingPhone] = useState(false);
   const [tempPhone, setTempPhone] = useState("");
@@ -152,7 +158,6 @@ export function MyPage() {
   const [marketingEmail, setMarketingEmail] = useState(false);
   const [marketingSms, setMarketingSms] = useState(false);
   const [reviewAlarm, setReviewAlarm] = useState(true);
-  const [analysisAlarm, setAnalysisAlarm] = useState(true);
 
   const currentTierIdx = 3;
   const nextTierProgress = 42;
@@ -594,7 +599,7 @@ export function MyPage() {
                       <div className="flex items-center gap-2">
                         <Input
                           value={tempPhone}
-                          onChange={(e) => setTempPhone(e.target.value)}
+                          onChange={handlePhoneInput}
                           placeholder="010-0000-0000"
                           className="h-9 bg-zinc-950 border-zinc-800 text-zinc-200 text-sm font-ko placeholder:text-zinc-700"
                         />
@@ -626,7 +631,7 @@ export function MyPage() {
                           />
                           <button
                             onClick={() => {
-                              setPhone(tempPhone);
+                              setPhone(tempPhone.replace(/-/g, ""));
                               setPhoneVerified(true);
                               setEditingPhone(false);
                               setShowVerify(false);
@@ -661,12 +666,6 @@ export function MyPage() {
                       desc: "저장한 노트의 복습 시기가 되면 알림을 보내드려요.",
                       value: reviewAlarm,
                       onChange: setReviewAlarm,
-                    },
-                    {
-                      label: "분석 완료 알림",
-                      desc: "AI 분석이 완료되면 알림을 보내드려요.",
-                      value: analysisAlarm,
-                      onChange: setAnalysisAlarm,
                     },
                   ].map((item) => (
                     <div
