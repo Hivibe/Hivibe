@@ -32,6 +32,10 @@ public class User {
     private String lgnPwsd;
 
     //계정 활성화 여부
+    public static final String STATUS_ACTIVE   = "A";
+    public static final String STATUS_INACTIVE = "I";
+    public static final String STATUS_LOCKED   = "L";
+
     @Column(name = "ACNT_STTS_CD", nullable = false, length = 1)
     private String acntSttsCd;
 
