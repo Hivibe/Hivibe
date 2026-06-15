@@ -1,50 +1,87 @@
 // components/notes/note-card.tsx
-"use client"
+"use client";
 
-import { Star } from "lucide-react"
-import type { Note } from "@/types"
+import { Star } from "lucide-react";
+import type { Note } from "@/types";
 
-const BRAND = "#63C1ED"
+const BRAND = "#63C1ED";
 
 interface NoteCardProps {
-  n: Note
-  selNote: number
-  setSelNote: (id: number) => void
-  toggleNoteFav: (id: number) => void
+  n: Note;
+  selNote: number;
+  setSelNote: (id: number) => void;
+  toggleNoteFav: (id: number) => void;
 }
 
-export function NoteCard({ n, selNote, setSelNote, toggleNoteFav }: NoteCardProps) {
+export function NoteCard({
+  n,
+  selNote,
+  setSelNote,
+  toggleNoteFav,
+}: NoteCardProps) {
   return (
     <div
-      onClick={() => setSelNote(n.id)}
+      onClick={() => setSelNote(n.noteId)}
       className="p-3.5 rounded-xl border cursor-pointer transition-all mb-2"
-      style={selNote === n.id
-        ? { borderColor: `${BRAND}44`, background: `${BRAND}08` }
-        : { borderColor: "#27272a", background: "#18181b55" }}>
+      style={
+        selNote === n.noteId
+          ? { borderColor: `${BRAND}44`, background: `${BRAND}08` }
+          : { borderColor: "#27272a", background: "#18181b55" }
+      }
+    >
       <div className="flex justify-between items-start mb-1">
         <h3 className="font-syne text-xs font-semibold text-zinc-100 leading-snug flex-1 mr-2">
-          {n.title}
+          {n.noteName}
         </h3>
         <div className="flex items-center gap-1.5 shrink-0">
-          <span className="font-space text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">
-            {n.grade}
+          <span
+            className="font-space text-[10px] px-1.5 py-0.5 rounded border"
+            style={
+              n.noteType === "LEARNING"
+                ? {
+                    background: `${BRAND}15`,
+                    color: BRAND,
+                    borderColor: `${BRAND}30`,
+                  }
+                : {
+                    background: "#27272a",
+                    color: "#71717a",
+                    borderColor: "#3f3f46",
+                  }
+            }
+          >
+            {n.noteType === "LEARNING" ? "학습" : "직접"}
           </span>
           <button
-            onClick={e => { e.stopPropagation(); toggleNoteFav(n.id) }}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleNoteFav(n.noteId);
+            }}
             className="h-5 w-5 flex items-center justify-center rounded transition-colors"
-            style={{ color: n.favorited ? "#f59e0b" : "#52525b" }}>
-            <Star className={`h-3 w-3 ${n.favorited ? "fill-amber-400" : ""}`} />
+            style={{ color: n.bkmkYn === "Y" ? "#f59e0b" : "#52525b" }}
+          >
+            <Star
+              className={`h-3 w-3 ${n.bkmkYn === "Y" ? "fill-amber-400" : ""}`}
+            />
           </button>
         </div>
       </div>
-      <p className="font-space text-[10px] text-zinc-500 mb-2">{n.date}</p>
+      <p className="font-ko text-xs text-zinc-500 mb-2">
+        {new Date(n.createdAt).toLocaleDateString("ko-KR")}
+      </p>
       <div className="flex flex-wrap gap-1">
-        {n.tags.map(t => (
-          <span key={t} className="font-space text-[10px] px-2 py-0.5 rounded-full border border-zinc-700 text-zinc-400">
-            #{t}
-          </span>
-        ))}
+        {n.tag
+          ?.split(" ")
+          .filter(Boolean)
+          .map((t) => (
+            <span
+              key={t}
+              className="font-space text-[10px] px-2 py-0.5 rounded-full border border-zinc-700 text-zinc-400"
+            >
+              {t}
+            </span>
+          ))}
       </div>
     </div>
-  )
+  );
 }

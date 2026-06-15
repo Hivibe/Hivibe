@@ -34,7 +34,9 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/api/users/signup",
                     "/api/users/login",
-                    "/api/users/check-id"
+                    "/api/users/check-id",
+                    "/api/notes/**",      // ← 추가
+                    "/api/mypage/**"      // ← 추가
                 ).permitAll()
                 .anyRequest().authenticated()
             )
