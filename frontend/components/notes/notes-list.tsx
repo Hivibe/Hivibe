@@ -251,9 +251,13 @@ export function NotesList({ selNote, setSelNote }: NotesListProps) {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify(dto),
-                });
-                setNewNoteOpen(false);
-                fetchNotes(typeFilter);
+                })
+
+                // 노트 저장 후 뱃지 조건 체크 (Bookworm 등)
+                await fetch("http://localhost:8080/api/badges/check", { method: "POST" })
+
+                setNewNoteOpen(false)
+                fetchNotes(typeFilter)
               } catch (e) {
                 console.error("노트 저장 실패:", e);
               }
