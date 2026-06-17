@@ -1,12 +1,16 @@
 package com.hivibe.server.dgns.service;
 
 import com.hivibe.server.domain.entity.Anls;
+import com.hivibe.server.domain.entity.Dgns;
 import com.hivibe.server.domain.entity.OptCd;
 import com.hivibe.server.domain.entity.OrnCd;
+import com.hivibe.server.domain.entity.User;
 import com.hivibe.server.dgns.dto.DiagnosisSaveRequestDto;
 import com.hivibe.server.repository.AnlsRepository;
+import com.hivibe.server.repository.DgnsRepository;
 import com.hivibe.server.repository.OptCdRepository;
 import com.hivibe.server.repository.OrnCdRepository;
+import com.hivibe.server.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,11 +20,16 @@ import org.springframework.transaction.annotation.Transactional;
 public class DiagnosisService {
 
     private final OrnCdRepository ornCdRepository;
-    private final AnlsRepository anlsRepository;
+    private final AnlsRepository  anlsRepository;
     private final OptCdRepository optCdRepository;
+    private final DgnsRepository  dgnsRepository;   // 추가
+    private final UserRepository  userRepository;   // 추가
 
     @Transactional
-    public Long saveDiagnosis(DiagnosisSaveRequestDto request) {
+    public Long saveDiagnosis(String lgnId, DiagnosisSaveRequestDto request) {
+
+        User user = userRepository.findByLgnId(lgnId)
+            .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없어요."));
 
         // 1. 원본 코드 저장
         OrnCd ornCd = OrnCd.builder()
@@ -29,7 +38,6 @@ public class DiagnosisService {
             .stbltYn(request.isStable())
             .cdCn(request.content())
             .build();
-
         OrnCd savedOrnCd = ornCdRepository.save(ornCd);
 
         // 2. 분석 결과 저장
@@ -47,7 +55,6 @@ public class DiagnosisService {
             .cdStyleRsn(request.styleReason())
             .aiSummry(request.summary())
             .build();
-
         Anls savedAnls = anlsRepository.save(anls);
 
         // 3. 최적화 코드 저장
@@ -57,8 +64,15 @@ public class DiagnosisService {
             .cdCn(request.optimizedCode())
             .timeComp(request.timeComplexity())
             .build();
-
         optCdRepository.save(optCd);
+
+        // 4. 진단 이력 저장 (User ↔ Anls 연결, 뱃지 계산용)
+        Dgns dgns = Dgns.builder()
+            .user(user)
+            .anls(savedAnls)
+            .dgnsNm(request.name())
+            .build();
+        dgnsRepository.save(dgns);
 
         return savedAnls.getAnlsId();
     }

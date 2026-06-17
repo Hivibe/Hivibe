@@ -77,7 +77,7 @@ export function NotesList({ selNote, setSelNote }: NotesListProps) {
       );
 
   return (
-    <div className="h-full flex flex-col p-5">
+    <div className="h-full flex flex-col p-5 overflow-hidden">
       {/* 헤더 */}
       <div className="flex items-center justify-between mb-1">
         <p
@@ -158,7 +158,7 @@ export function NotesList({ selNote, setSelNote }: NotesListProps) {
         ))}
       </div>
 
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 min-h-0">
         {loading ? (
           <div className="flex items-center justify-center h-40">
             <p className="font-ko text-sm text-zinc-500">불러오는 중...</p>
