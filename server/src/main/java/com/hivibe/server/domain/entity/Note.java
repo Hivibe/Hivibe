@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "NOTE")
 @Getter
+@Setter  // ← 추가
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
@@ -30,7 +31,8 @@ public class Note {
 
     /** 노트의 기반이 되는 최적화 코드 (OPT_CD FK) */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "OPT_CD_ID", nullable = false)
+    // 2026-06-15 변경 사항
+    @JoinColumn(name = "OPT_CD_ID", nullable = true)
     private OptCd optCd;
 
     /** 노트 제목 */

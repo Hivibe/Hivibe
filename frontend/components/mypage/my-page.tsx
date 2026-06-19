@@ -1,377 +1,586 @@
 // components/mypage/my-page.tsx
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useEffect, useRef } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Camera, ChevronRight, Check, Eye, EyeOff, ArrowLeft, Shield, Star, Zap, Award } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Switch } from "@/components/ui/switch"
+import { apiFetch } from "@/lib/api"
+import {
+  User, Settings, Star, Flame, FolderOpen, BookOpen,
+  Edit2, Check, X, Bell, Shield, Smartphone, Camera,
+} from "lucide-react"
+import type { Note } from "@/types"
 
 const BRAND = "#63C1ED"
 
-const TIER_CONFIG = {
-  Bronze:   { color: "#cd7f32", bg: "#cd7f3215", border: "#cd7f3230", glow: "#cd7f3240", next: "Silver",   xp: 300,  maxXp: 500  },
-  Silver:   { color: "#a8a9ad", bg: "#a8a9ad15", border: "#a8a9ad30", glow: "#a8a9ad40", next: "Gold",     xp: 688,  maxXp: 800  },
-  Gold:     { color: "#ffd700", bg: "#ffd70015", border: "#ffd70030", glow: "#ffd70040", next: "Platinum", xp: 420,  maxXp: 1000 },
-  Platinum: { color: "#63C1ED", bg: "#63C1ED15", border: "#63C1ED30", glow: "#63C1ED40", next: null,       xp: 9999, maxXp: 9999 },
-} as const
-
-type Tier = keyof typeof TIER_CONFIG
-type Page = "main" | "profile-edit" | "password"
-
-const TIER_ICONS: Record<Tier, React.ReactNode> = {
-  Bronze:   <Shield className="h-5 w-5" />,
-  Silver:   <Star   className="h-5 w-5" />,
-  Gold:     <Award  className="h-5 w-5" />,
-  Platinum: <Zap    className="h-5 w-5" />,
+interface Profile {
+  id: number
+  lgnId: string
+  userNm: string
+  userEmail: string
+  userPhone: string | null
+  userPhoto: string | null
+  userGrd: string
+  mktgAgreeYn: string
+  reviewAlarmYn: string
 }
 
-const mockUser = {
-  name:     "성하",
-  email:    "sungha@hivibe.dev",
-  tier:     "Silver" as Tier,
-  avatar:   null as string | null,
-  joinDate: "2025년 3월",
+interface Badge {
+  key: string
+  icon: string
+  name: string
+  desc: string
+  achieved: boolean
+  achievedAt: string | null
 }
 
-/* ────────────────────────────────────────────
-   메인 설정 페이지
-──────────────────────────────────────────── */
-function MainPage({
-  user, onNavigate,
-}: {
-  user: typeof mockUser
-  onNavigate: (p: Page) => void
-}) {
-  const tier   = TIER_CONFIG[user.tier]
-  const xpPct  = Math.min((tier.xp / tier.maxXp) * 100, 100)
-  const xpLeft = tier.maxXp - tier.xp
+const TIERS = [
+  { name: "Bronze", color: "#CD7F32" },
+  { name: "Silver", color: "#C0C0C0" },
+  { name: "Gold", color: "#FFD700" },
+  { name: "Platinum", color: BRAND },
+  { name: "Diamond", color: "#a78bfa" },
+]
+
+export function MyPage() {
+  const [activeTab, setActiveTab] = useState<"profile" | "settings">("profile")
+
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [badges, setBadges] = useState<Badge[]>([])
+  const [notes, setNotes] = useState<Note[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const [editingName, setEditingName] = useState(false)
+  const [tempName, setTempName] = useState("")
+
+  const imgRef = useRef<HTMLInputElement>(null)
+  const [uploadingImg, setUploadingImg] = useState(false)
+
+  const [editingPhone, setEditingPhone] = useState(false)
+  const [tempPhone, setTempPhone] = useState("")
+  const [phoneVerified, setPhoneVerified] = useState(false)
+  const [verifyCode, setVerifyCode] = useState("")
+  const [showVerify, setShowVerify] = useState(false)
+
+  const [marketingEmail, setMarketingEmail] = useState(false)
+  const [marketingSms, setMarketingSms] = useState(false)
+  const [reviewAlarm, setReviewAlarm] = useState(true)
+  const [savingSettings, setSavingSettings] = useState(false)
+
+  /* ── 데이터 불러오기 ── */
+  const fetchProfile = async () => {
+    try {
+      const res = await apiFetch("/api/mypage/me")
+      const data: Profile = await res.json()
+      setProfile(data)
+      setMarketingEmail(data.mktgAgreeYn === "Y")
+      setReviewAlarm(data.reviewAlarmYn === "Y")
+      setPhoneVerified(!!data.userPhone)
+    } catch (e) {
+      console.error("프로필 불러오기 실패:", e)
+    }
+  }
+
+  const fetchBadges = async () => {
+    try {
+      const res = await apiFetch("/api/badges")
+      setBadges(await res.json())
+    } catch (e) {
+      console.error("뱃지 불러오기 실패:", e)
+    }
+  }
+
+  const fetchNotes = async () => {
+    try {
+      const res = await apiFetch("/api/notes")
+      setNotes(await res.json())
+    } catch (e) {
+      console.error("노트 불러오기 실패:", e)
+    }
+  }
+
+  useEffect(() => {
+    Promise.all([fetchProfile(), fetchBadges(), fetchNotes()])
+      .finally(() => setLoading(false))
+  }, [])
+
+  /* ── 이름 수정 ── */
+  const saveName = async () => {
+    if (!tempName.trim()) return
+    try {
+      const res = await apiFetch("/api/mypage/me", {
+        method: "PATCH",
+        body: JSON.stringify({ userNm: tempName }),
+      })
+      const updated = await res.json()
+      setProfile(updated)
+      setEditingName(false)
+    } catch (e) {
+      console.error("이름 수정 실패:", e)
+    }
+  }
+
+  /* ── 프로필 사진 업로드 ── */
+  const handleImgChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploadingImg(true)
+    try {
+      const formData = new FormData()
+      formData.append("image", file)
+      const res = await apiFetch("/api/mypage/me/profile-image", {
+        method: "POST",
+        body: formData,
+      })
+      const imageUrl = (await res.text()).replace(/"/g, "")
+      setProfile(p => p ? { ...p, userPhoto: imageUrl } : p)
+    } catch (e) {
+      console.error("프로필 사진 업로드 실패:", e)
+    } finally {
+      setUploadingImg(false)
+      e.target.value = ""
+    }
+  }
+
+  /* ── 휴대폰 입력 자동 포맷팅 ── */
+  const handlePhoneInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const nums = e.target.value.replace(/\D/g, "").slice(0, 11)
+    const formatted = nums.replace(/(\d{3})(\d{4})(\d{4})/, "$1-$2-$3")
+    setTempPhone(formatted)
+  }
+
+  // 인증번호 확인 (SMS 발송은 추후 연동 — 현재는 프론트 단 임시 확인 후 번호만 저장)
+  const confirmPhone = async () => {
+    try {
+      const res = await apiFetch("/api/mypage/me/phone", {
+        method: "PATCH",
+        body: JSON.stringify({ userPhone: tempPhone.replace(/-/g, "") }),
+      })
+      if (res.ok) {
+        setProfile(p => p ? { ...p, userPhone: tempPhone.replace(/-/g, "") } : p)
+        setPhoneVerified(true)
+        setEditingPhone(false)
+        setShowVerify(false)
+        setVerifyCode("")
+      }
+    } catch (e) {
+      console.error("휴대폰 번호 저장 실패:", e)
+    }
+  }
+
+  /* ── 설정 저장 ── */
+  const saveSettings = async () => {
+    setSavingSettings(true)
+    try {
+      // ⚠️ DB에 마케팅 동의 컬럼이 MKTG_AGREE_YN 하나뿐이라, 이메일 동의 값만 실제로 저장돼요.
+      // SMS 동의는 별도 컬럼이 추가되기 전까지는 프론트에서만 토글 상태가 유지돼요.
+      await apiFetch("/api/mypage/me/settings", {
+        method: "PATCH",
+        body: JSON.stringify({
+          mktgAgreeYn: marketingEmail ? "Y" : "N",
+          reviewAlarmYn: reviewAlarm ? "Y" : "N",
+        }),
+      })
+      alert("설정이 저장되었어요!")
+    } catch (e) {
+      console.error("설정 저장 실패:", e)
+    } finally {
+      setSavingSettings(false)
+    }
+  }
+
+  const formatPhone = (p: string) =>
+    p.replace(/(\d{3})(\d{4})(\d{4})/, "$1-$2-$3")
+
+  if (loading) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <p className="font-ko text-sm text-zinc-500">불러오는 중...</p>
+      </div>
+    )
+  }
+
+  if (!profile) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <p className="font-ko text-sm text-zinc-500">프로필을 불러올 수 없어요</p>
+      </div>
+    )
+  }
+
+  const achievedBadges = badges.filter(b => b.achieved)
+
+  // 사용 언어 — 실제 노트에서 사용된 언어 distinct (상위 3개)
+  const usedLangs = Array.from(new Set(notes.map(n => n.lang).filter(Boolean))).slice(0, 3) as string[]
+
+  // 최근 분석 — Learning 타입 노트 최신 3개 (점수는 노트에 없어서 표시 안 함)
+  const recentLearningNotes = notes
+    .filter(n => n.noteType === "LEARNING")
+    .slice(0, 3)
+
+  // 티어 — userGrd 값으로 매칭 안 되면 0번(Bronze)으로 기본 표시
+  const currentTierIdx = Math.max(0, TIERS.findIndex(t => t.name.toUpperCase() === profile.userGrd?.toUpperCase()))
 
   return (
-    <ScrollArea className="h-full">
-      <div className="h-full px-10 py-10">
-        <p className="font-space text-[10px] tracking-widest mb-1" style={{ color: BRAND }}>// SETTINGS</p>
-        <h1 className="font-syne text-3xl font-bold text-zinc-100 mb-10">설정</h1>
+    <div className="h-full flex flex-col bg-zinc-950 overflow-hidden">
 
-        {/* ── 프로필 섹션 ── */}
-        <div className="mb-8">
-          <p className="font-space text-[10px] tracking-widest text-zinc-600 mb-4 uppercase">프로필</p>
-          <div
-            className="flex items-center gap-5 p-5 rounded-2xl border border-zinc-800 bg-zinc-900/40 cursor-pointer hover:bg-zinc-900/70 transition-colors group"
-            onClick={() => onNavigate("profile-edit")}
-          >
-            {/* 아바타 */}
-            <div className="relative shrink-0">
-              <div
-                className="w-16 h-16 rounded-2xl border-2 flex items-center justify-center overflow-hidden"
-                style={{ borderColor: `${BRAND}44`, background: `${BRAND}10` }}
-              >
-                {user.avatar
-                  ? <img src={user.avatar} alt="avatar" className="w-full h-full object-cover" />
-                  : <span className="font-syne text-2xl font-bold" style={{ color: BRAND }}>{user.name.charAt(0)}</span>
-                }
-              </div>
-              <div
-                className="absolute -bottom-1 -right-1 w-6 h-6 rounded-lg flex items-center justify-center border border-zinc-700 bg-zinc-800"
-                style={{ color: BRAND }}
-              >
-                <Camera className="h-3 w-3" />
-              </div>
-            </div>
 
-            <div className="flex-1 min-w-0">
-              <p className="font-syne text-base font-bold text-zinc-100">{user.name}</p>
-              <p className="font-space text-xs text-zinc-500 mt-0.5">{user.email}</p>
-              <p className="font-ko text-[11px] text-zinc-600 mt-1">{user.joinDate}부터 함께하고 있어요</p>
-            </div>
-            <ChevronRight className="h-4 w-4 text-zinc-600 group-hover:text-zinc-400 transition-colors shrink-0" />
-          </div>
-        </div>
+      {/* 탭 */}
+      <div className="border-b border-zinc-800 px-6 flex items-center gap-1 shrink-0 bg-[#0a0a0a]">
+        {[
+          { id: "profile", label: "프로필", icon: User },
+          { id: "settings", label: "설정", icon: Settings },
+        ].map(({ id, label, icon: Icon }) => (
+          <button key={id} onClick={() => setActiveTab(id as any)}
+            className="flex items-center gap-1.5 px-4 py-3 font-space text-[11px] tracking-wider border-b-2 transition-all"
+            style={activeTab === id
+              ? { borderColor: BRAND, color: BRAND }
+              : { borderColor: "transparent", color: "#52525b" }}>
+            <Icon className="h-3.5 w-3.5" />
+            {label}
+          </button>
+        ))}
+      </div>
 
-        {/* ── 티어 섹션 ── */}
-        <div className="mb-8">
-          <p className="font-space text-[10px] tracking-widest text-zinc-600 mb-4 uppercase">티어</p>
-          <div
-            className="p-5 rounded-2xl border overflow-hidden"
-            style={{ borderColor: tier.border, background: `linear-gradient(135deg, ${tier.bg} 0%, transparent 60%)` }}
-          >
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-11 h-11 rounded-xl flex items-center justify-center"
-                  style={{ background: tier.bg, border: `1px solid ${tier.border}`, color: tier.color, boxShadow: `0 0 16px ${tier.glow}` }}
-                >
-                  {TIER_ICONS[user.tier]}
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="p-6 max-w-3xl mx-auto space-y-5">
+
+          {/* ── 프로필 탭 ── */}
+          {activeTab === "profile" && (
+            <>
+              {/* 프로필 카드 */}
+              <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-5 flex items-center gap-5">
+                <div className="relative w-14 h-14 shrink-0 group cursor-pointer"
+                  onClick={() => imgRef.current?.click()}>
+                  {profile.userPhoto ? (
+                    <img src={`http://localhost:8080${profile.userPhoto}`} alt="프로필"
+                      className="w-14 h-14 rounded-full object-cover border-2"
+                      style={{ borderColor: `${BRAND}44` }} />
+                  ) : (
+                    <div className="w-14 h-14 rounded-full flex items-center justify-center font-syne text-xl font-bold"
+                      style={{ background: `${BRAND}20`, border: `2px solid ${BRAND}44`, color: BRAND }}>
+                      {profile.userNm?.[0] ?? "?"}
+                    </div>
+                  )}
+                  <div className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    {uploadingImg ? (
+                      <span className="font-space text-[9px] text-white">...</span>
+                    ) : (
+                      <Camera className="h-4 w-4 text-white" />
+                    )}
+                  </div>
+                  <input ref={imgRef} type="file" accept="image/*" className="hidden" onChange={handleImgChange} />
                 </div>
-                <div>
-                  <p className="font-space text-[10px] tracking-widest text-zinc-500 mb-0.5">CURRENT TIER</p>
-                  <p className="font-syne text-xl font-bold" style={{ color: tier.color }}>{user.tier}</p>
+
+                <div className="flex-1 min-w-0">
+                  {editingName ? (
+                    <div className="flex items-center gap-2">
+                      <Input value={tempName} onChange={e => setTempName(e.target.value)}
+                        className="h-8 bg-zinc-950 border-zinc-700 text-zinc-200 text-sm font-syne w-40" />
+                      <button onClick={saveName}
+                        className="h-7 w-7 flex items-center justify-center rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors">
+                        <Check className="h-3.5 w-3.5" />
+                      </button>
+                      <button onClick={() => setEditingName(false)}
+                        className="h-7 w-7 flex items-center justify-center rounded bg-zinc-800 text-zinc-400 hover:bg-zinc-700 transition-colors">
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="font-syne text-lg font-bold text-zinc-100">{profile.userNm}</span>
+                      <button onClick={() => { setTempName(profile.userNm); setEditingName(true) }}
+                        className="h-6 w-6 flex items-center justify-center rounded text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800 transition-colors">
+                        <Edit2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
+                  <p className="font-ko text-xs text-zinc-400 mt-0.5">{profile.userEmail}</p>
+                  {usedLangs.length > 0 && (
+                    <div className="flex gap-1.5 mt-2">
+                      {usedLangs.map(l => (
+                        <span key={l} className="font-space text-[9px] px-2 py-0.5 rounded-full border"
+                          style={{ background: `${BRAND}10`, color: BRAND, borderColor: `${BRAND}30` }}>
+                          {l}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  <span className="font-space text-[9px] text-zinc-600 tracking-widest uppercase">// TIER</span>
+                  <span className="font-syne text-2xl font-bold" style={{ color: BRAND }}>
+                    {profile.userGrd || "BASIC"}
+                  </span>
                 </div>
               </div>
-              {tier.next && (
-                <div className="text-right">
-                  <p className="font-space text-[10px] text-zinc-500 mb-0.5">{tier.next} 승급까지</p>
-                  <p className="font-syne text-lg font-bold text-zinc-300">−{xpLeft.toLocaleString()}</p>
+
+              {/* 통계 */}
+              <div className="grid grid-cols-4 gap-3">
+                <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-4">
+                  <div className="mb-2"><FolderOpen className="h-4 w-4" style={{ color: BRAND }} /></div>
+                  <p className="font-syne text-xl font-bold text-zinc-500">—</p>
+                  <p className="font-ko text-xs text-zinc-400 mt-0.5">총 진단 수<br /><span className="text-zinc-600">(연동 예정)</span></p>
                 </div>
-              )}
-            </div>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="font-space text-[11px] text-zinc-400">
-                  {user.tier} <span className="font-bold" style={{ color: tier.color }}>{tier.xp.toLocaleString()}</span>
-                </span>
-                {tier.next && (
-                  <span className="font-space text-[10px] text-zinc-600">{tier.next} {tier.maxXp.toLocaleString()}</span>
+                <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-4">
+                  <div className="mb-2"><Star className="h-4 w-4 text-amber-400" /></div>
+                  <p className="font-syne text-xl font-bold text-zinc-500">—</p>
+                  <p className="font-ko text-xs text-zinc-400 mt-0.5">평균 등급<br /><span className="text-zinc-600">(연동 예정)</span></p>
+                </div>
+                <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-4">
+                  <div className="mb-2"><Flame className="h-4 w-4 text-orange-400" /></div>
+                  <p className="font-syne text-xl font-bold text-zinc-500">—</p>
+                  <p className="font-ko text-xs text-zinc-400 mt-0.5">연속 일수<br /><span className="text-zinc-600">(연동 예정)</span></p>
+                </div>
+                <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-4">
+                  <div className="mb-2"><BookOpen className="h-4 w-4 text-violet-400" /></div>
+                  <p className="font-syne text-xl font-bold text-zinc-100">{notes.length}</p>
+                  <p className="font-ko text-xs text-zinc-400 mt-0.5">저장된 노트</p>
+                </div>
+              </div>
+
+              {/* 티어 트랙 */}
+              <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-5">
+                <p className="font-space text-[9px] tracking-widest mb-1" style={{ color: BRAND }}>// TIER TRACK</p>
+                <p className="font-syne text-sm font-bold text-zinc-100 mb-5">성장 현황</p>
+                <div className="relative flex items-start justify-between">
+                  <div className="absolute top-4 left-4 right-4 h-px bg-zinc-800 z-0" />
+                  {TIERS.map((tier, i) => {
+                    const done = i < currentTierIdx
+                    const current = i === currentTierIdx
+                    const locked = i > currentTierIdx
+                    return (
+                      <div key={tier.name} className="flex flex-col items-center gap-2 z-10 flex-1">
+                        <div className="w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs bg-zinc-950"
+                          style={current
+                            ? { borderColor: tier.color, color: tier.color, boxShadow: `0 0 0 4px ${tier.color}15` }
+                            : done
+                              ? { borderColor: `${tier.color}66`, color: tier.color }
+                              : { borderColor: "#27272a", color: "#3f3f46" }}>
+                          {done ? <Check className="h-3.5 w-3.5" /> : locked ? "🔒" : "👑"}
+                        </div>
+                        <span className="font-ko text-xs"
+                          style={{ color: current ? tier.color : done ? "#71717a" : "#3f3f46" }}>
+                          {tier.name}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+                <p className="font-ko text-xs text-zinc-600 mt-4">티어 산정 기준은 추후 연동될 예정이에요.</p>
+              </div>
+
+              {/* 뱃지 */}
+              <div>
+                <p className="font-space text-[9px] tracking-widest mb-1" style={{ color: BRAND }}>// BADGES</p>
+                <p className="font-syne text-lg font-bold text-zinc-100 mb-3">획득한 뱃지 ({achievedBadges.length} / {badges.length})</p>
+                <div className="grid grid-cols-4 gap-3">
+                  {badges.map(b => (
+                    <div key={b.key}
+                      className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-3 flex flex-col items-center gap-2 text-center"
+                      style={{ opacity: b.achieved ? 1 : 0.35 }}>
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
+                        style={{ background: b.achieved ? `${BRAND}15` : "#27272a" }}>
+                        {b.icon}
+                      </div>
+                      <p className="font-syne text-xs font-bold text-zinc-100 leading-tight">{b.name}</p>
+                      <p className="font-ko text-xs text-zinc-400 leading-relaxed">{b.desc}</p>
+                      <p className="font-ko text-xs" style={{ color: b.achieved ? BRAND : "#3f3f46" }}>
+                        {b.achieved && b.achievedAt
+                          ? new Date(b.achievedAt).toLocaleDateString("ko-KR")
+                          : "미획득"}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 최근 분석 (Learning 노트 기준) */}
+              <div>
+                <p className="font-space text-[9px] tracking-widest mb-1" style={{ color: BRAND }}>// RECENT</p>
+                <p className="font-syne text-lg font-bold text-zinc-100 mb-3">최근 학습 노트</p>
+                {recentLearningNotes.length > 0 ? (
+                  <div className="space-y-2">
+                    {recentLearningNotes.map(n => (
+                      <div key={n.noteId} className="bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 flex items-center gap-4">
+                        <BookOpen className="h-4 w-4 text-violet-400 shrink-0" />
+                        <span className="font-ko text-sm text-zinc-300 flex-1 truncate">{n.noteName}</span>
+                        <span className="font-ko text-xs text-zinc-400 flex items-center gap-1.5 shrink-0">
+                          <span className="w-1.5 h-1.5 rounded-full" style={{ background: BRAND }} />
+                          {n.lang} · {new Date(n.createdAt).toLocaleDateString("ko-KR")}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="font-ko text-sm text-zinc-500">아직 학습 노트가 없어요.</p>
                 )}
               </div>
-              <div className="h-2 rounded-full bg-zinc-800 overflow-hidden">
-                <div
-                  className="h-full rounded-full"
-                  style={{
-                    width: `${xpPct}%`,
-                    background: `linear-gradient(90deg, ${tier.color}88, ${tier.color})`,
-                    boxShadow: `0 0 8px ${tier.glow}`,
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ── 보안 설정 섹션 ── */}
-        <div className="mb-8">
-          <p className="font-space text-[10px] tracking-widest text-zinc-600 mb-4 uppercase">보안 설정</p>
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 overflow-hidden">
-            <button
-              onClick={() => onNavigate("password")}
-              className="w-full flex items-center justify-between px-5 py-4 hover:bg-zinc-800/40 transition-colors group"
-            >
-              <div>
-                <p className="font-ko text-[13px] text-zinc-200 text-left">비밀번호</p>
-                <p className="font-space text-[10px] text-zinc-600 text-left mt-0.5">••••••••</p>
-              </div>
-              <ChevronRight className="h-4 w-4 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
-            </button>
-          </div>
-        </div>
-
-        {/* ── 회원탈퇴 ── */}
-        <div>
-          <p className="font-space text-[10px] tracking-widest text-zinc-600 mb-4 uppercase">계정</p>
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 overflow-hidden">
-            <button className="w-full flex items-center justify-between px-5 py-4 hover:bg-rose-500/5 transition-colors group">
-              <p className="font-ko text-[13px] text-rose-500">회원탈퇴</p>
-              <ChevronRight className="h-4 w-4 text-rose-800 group-hover:text-rose-500 transition-colors" />
-            </button>
-          </div>
-        </div>
-      </div>
-    </ScrollArea>
-  )
-}
-
-/* ────────────────────────────────────────────
-   프로필 수정 페이지
-──────────────────────────────────────────── */
-function ProfileEditPage({
-  user, onBack, onSave,
-}: {
-  user: typeof mockUser
-  onBack: () => void
-  onSave: (name: string, avatar: string | null) => void
-}) {
-  const [nameEdit, setNameEdit] = useState(user.name)
-  const [avatar,   setAvatar]   = useState(user.avatar)
-  const [saved,    setSaved]    = useState(false)
-  const fileRef = useRef<HTMLInputElement>(null)
-
-  const handleAvatar = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0]; if (!f) return
-    setAvatar(URL.createObjectURL(f))
-    e.target.value = ""
-  }
-
-  const handleSave = () => {
-    if (!nameEdit.trim()) return
-    onSave(nameEdit.trim(), avatar)
-    setSaved(true)
-    setTimeout(() => { setSaved(false); onBack() }, 1000)
-  }
-
-  return (
-    <ScrollArea className="h-full">
-      <div className="h-full px-10 py-10">
-        <button
-          onClick={onBack}
-          className="flex items-center gap-2 font-space text-[10px] text-zinc-500 hover:text-zinc-300 transition-colors mb-8"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />설정으로 돌아가기
-        </button>
-
-        <p className="font-space text-[10px] tracking-widest mb-1" style={{ color: BRAND }}>// PROFILE EDIT</p>
-        <h1 className="font-syne text-3xl font-bold text-zinc-100 mb-10">프로필 수정</h1>
-
-        {/* 아바타 */}
-        <div className="flex flex-col items-center mb-10">
-          <div className="relative">
-            <div
-              className="w-24 h-24 rounded-3xl border-2 flex items-center justify-center overflow-hidden cursor-pointer"
-              style={{ borderColor: `${BRAND}44`, background: `${BRAND}10` }}
-              onClick={() => fileRef.current?.click()}
-            >
-              {avatar
-                ? <img src={avatar} alt="avatar" className="w-full h-full object-cover" />
-                : <span className="font-syne text-4xl font-bold" style={{ color: BRAND }}>{nameEdit.charAt(0) || "?"}</span>
-              }
-            </div>
-            <button
-              onClick={() => fileRef.current?.click()}
-              className="absolute -bottom-2 -right-2 w-8 h-8 rounded-xl border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center transition-colors"
-              style={{ color: BRAND }}
-            >
-              <Camera className="h-4 w-4" />
-            </button>
-            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatar} />
-          </div>
-          <p className="font-ko text-[11px] text-zinc-600 mt-4">사진을 클릭해서 변경하세요</p>
-        </div>
-
-        {/* 닉네임 */}
-        <div className="space-y-2 mb-6">
-          <label className="font-ko text-[11px] text-zinc-400">닉네임</label>
-          <input
-            value={nameEdit}
-            onChange={e => setNameEdit(e.target.value)}
-            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 font-ko text-[14px] text-zinc-200 outline-none focus:border-zinc-600 transition-colors"
-          />
-        </div>
-
-        {/* 이메일 (읽기 전용) */}
-        <div className="space-y-2 mb-10">
-          <label className="font-ko text-[11px] text-zinc-400">이메일</label>
-          <div className="w-full bg-zinc-900/30 border border-zinc-800/50 rounded-xl px-4 py-3 font-space text-[12px] text-zinc-600">
-            {user.email}
-          </div>
-          <p className="font-ko text-[11px] text-zinc-600">이메일은 변경할 수 없어요.</p>
-        </div>
-
-        {/* 저장 버튼 */}
-        <button
-          onClick={handleSave}
-          className="w-full py-3.5 rounded-xl text-[14px] font-ko font-medium flex items-center justify-center gap-2 transition-all"
-          style={saved
-            ? { background: "#22c55e22", color: "#22c55e", border: "1px solid #22c55e44" }
-            : { background: `${BRAND}20`, color: BRAND, border: `1px solid ${BRAND}44` }}
-        >
-          {saved ? <><Check className="h-4 w-4" />저장됨</> : "저장하기"}
-        </button>
-      </div>
-    </ScrollArea>
-  )
-}
-
-/* ────────────────────────────────────────────
-   비밀번호 변경 페이지
-──────────────────────────────────────────── */
-function PasswordPage({ onBack }: { onBack: () => void }) {
-  const [pwForm,  setPwForm]  = useState({ current: "", next: "", confirm: "" })
-  const [showPw,  setShowPw]  = useState({ current: false, next: false, confirm: false })
-  const [pwSaved, setPwSaved] = useState(false)
-  const [pwError, setPwError] = useState("")
-
-  const handleSave = () => {
-    setPwError("")
-    if (!pwForm.current || !pwForm.next || !pwForm.confirm) {
-      setPwError("모든 항목을 입력해주세요."); return
-    }
-    if (pwForm.next.length < 8) {
-      setPwError("비밀번호는 8자 이상이어야 해요."); return
-    }
-    if (pwForm.next !== pwForm.confirm) {
-      setPwError("새 비밀번호가 일치하지 않아요."); return
-    }
-    setPwSaved(true)
-    setTimeout(() => { setPwSaved(false); onBack() }, 1200)
-  }
-
-  return (
-    <ScrollArea className="h-full">
-      <div className="h-full px-10 py-10">
-        <button
-          onClick={onBack}
-          className="flex items-center gap-2 font-space text-[10px] text-zinc-500 hover:text-zinc-300 transition-colors mb-8"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />설정으로 돌아가기
-        </button>
-
-        <p className="font-space text-[10px] tracking-widest mb-1" style={{ color: BRAND }}>// SECURITY</p>
-        <h1 className="font-syne text-3xl font-bold text-zinc-100 mb-10">비밀번호 변경</h1>
-
-        <div className="space-y-5 max-w-md">
-          {(["current", "next", "confirm"] as const).map((k) => {
-            const labels = { current: "현재 비밀번호", next: "새 비밀번호", confirm: "새 비밀번호 확인" }
-            const hints  = { current: "", next: "8자 이상 입력해주세요", confirm: "" }
-            return (
-              <div key={k} className="space-y-2">
-                <label className="font-ko text-[11px] text-zinc-400">{labels[k]}</label>
-                <div className="relative">
-                  <input
-                    type={showPw[k] ? "text" : "password"}
-                    value={pwForm[k]}
-                    onChange={e => setPwForm(p => ({ ...p, [k]: e.target.value }))}
-                    placeholder={hints[k]}
-                    className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 pr-12 font-space text-[13px] text-zinc-200 outline-none focus:border-zinc-600 transition-colors placeholder:text-zinc-700"
-                  />
-                  <button
-                    onClick={() => setShowPw(p => ({ ...p, [k]: !p[k] }))}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400 transition-colors"
-                  >
-                    {showPw[k] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-            )
-          })}
-
-          {pwError && (
-            <p className="font-ko text-[12px] text-rose-400">{pwError}</p>
+            </>
           )}
 
-          <button
-            onClick={handleSave}
-            className="w-full py-3.5 rounded-xl text-[14px] font-ko font-medium flex items-center justify-center gap-2 transition-all mt-4"
-            style={pwSaved
-              ? { background: "#22c55e22", color: "#22c55e", border: "1px solid #22c55e44" }
-              : { background: `${BRAND}20`, color: BRAND, border: `1px solid ${BRAND}44` }}
-          >
-            {pwSaved ? <><Check className="h-4 w-4" />변경 완료</> : "비밀번호 변경"}
-          </button>
+          {/* ── 설정 탭 ── */}
+          {activeTab === "settings" && (
+            <div className="space-y-4">
+
+              {/* 계정 정보 */}
+              <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <User className="h-4 w-4" style={{ color: BRAND }} />
+                  <p className="font-syne text-sm font-bold text-zinc-100">계정 정보</p>
+                </div>
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="font-ko text-xs text-zinc-400 uppercase tracking-wider">이름</label>
+                    <div className="flex items-center gap-2">
+                      <Input value={profile.userNm} readOnly
+                        className="h-9 bg-zinc-950 border-zinc-800 text-zinc-300 text-sm font-ko" />
+                      <button onClick={() => { setActiveTab("profile"); setTempName(profile.userNm); setEditingName(true) }}
+                        className="h-9 px-3 rounded-lg border border-zinc-800 font-ko text-xs text-zinc-400 hover:bg-zinc-800 transition-colors shrink-0">
+                        수정
+                      </button>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="font-ko text-xs text-zinc-400 uppercase tracking-wider">이메일</label>
+                    <Input value={profile.userEmail} readOnly
+                      className="h-9 bg-zinc-950 border-zinc-800 text-zinc-500 text-sm font-ko" />
+                  </div>
+                </div>
+              </div>
+
+              {/* 휴대폰 번호 */}
+              <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <Smartphone className="h-4 w-4" style={{ color: BRAND }} />
+                  <p className="font-syne text-sm font-bold text-zinc-100">휴대폰 번호</p>
+                  {phoneVerified && (
+                    <span className="font-ko text-xs px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 ml-auto">
+                      인증 완료
+                    </span>
+                  )}
+                </div>
+                <div className="space-y-3">
+                  {!editingPhone ? (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={profile.userPhone ? formatPhone(profile.userPhone) : ""}
+                        readOnly placeholder="휴대폰 번호를 등록해주세요"
+                        className="h-9 bg-zinc-950 border-zinc-800 text-zinc-300 text-sm font-ko placeholder:text-zinc-700" />
+                      <button onClick={() => {
+                        setTempPhone(profile.userPhone ? formatPhone(profile.userPhone) : "")
+                        setEditingPhone(true)
+                      }}
+                        className="h-9 px-3 rounded-lg border border-zinc-800 font-ko text-xs text-zinc-400 hover:bg-zinc-800 transition-colors shrink-0">
+                        {profile.userPhone ? "변경" : "등록"}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Input value={tempPhone} onChange={handlePhoneInput}
+                          placeholder="010-0000-0000"
+                          className="h-9 bg-zinc-950 border-zinc-800 text-zinc-200 text-sm font-ko placeholder:text-zinc-700" />
+                        <button onClick={() => setShowVerify(true)}
+                          className="h-9 px-3 rounded-lg font-ko text-xs text-white shrink-0 transition-colors"
+                          style={{ background: BRAND }}>
+                          인증번호 발송
+                        </button>
+                        <button onClick={() => { setEditingPhone(false); setShowVerify(false) }}
+                          className="h-9 w-9 flex items-center justify-center rounded-lg border border-zinc-800 text-zinc-500 hover:bg-zinc-800 transition-colors shrink-0">
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      {showVerify && (
+                        <div className="flex items-center gap-2">
+                          <Input value={verifyCode} onChange={e => setVerifyCode(e.target.value)}
+                            placeholder="인증번호 6자리" maxLength={6}
+                            className="h-9 bg-zinc-950 border-zinc-800 text-zinc-200 text-sm font-space placeholder:text-zinc-700" />
+                          <button onClick={confirmPhone}
+                            className="h-9 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 font-ko text-xs text-white shrink-0 transition-colors">
+                            확인
+                          </button>
+                        </div>
+                      )}
+                      <p className="font-ko text-xs text-zinc-400 leading-relaxed">
+                        SMS 인증 발송은 추후 연동될 예정이에요. 지금은 인증번호 입력 없이 확인을 눌러도 번호가 저장돼요.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 알림 설정 */}
+              <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <Bell className="h-4 w-4" style={{ color: BRAND }} />
+                  <p className="font-syne text-sm font-bold text-zinc-100">알림 설정</p>
+                </div>
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="font-ko text-sm text-zinc-200">복습 알림</p>
+                    <p className="font-ko text-xs text-zinc-400 mt-0.5 leading-relaxed">
+                      저장한 노트의 복습 시기가 되면 알림을 보내드려요.
+                    </p>
+                  </div>
+                  <Switch checked={reviewAlarm} onCheckedChange={setReviewAlarm}
+                    className="data-[state=checked]:bg-[#63C1ED] shrink-0 mt-0.5" />
+                </div>
+              </div>
+
+              {/* 마케팅 수신 동의 */}
+              <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-5">
+                <div className="flex items-center gap-2 mb-1">
+                  <Shield className="h-4 w-4" style={{ color: BRAND }} />
+                  <p className="font-syne text-sm font-bold text-zinc-100">마케팅 수신 동의</p>
+                </div>
+                <p className="font-ko text-xs text-zinc-400 mb-4 leading-relaxed">
+                  동의 시 HiVibe의 새로운 기능, 이벤트, 혜택 정보를 받아볼 수 있어요. 언제든지 철회 가능해요.
+                </p>
+                <div className="space-y-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="font-ko text-sm text-zinc-200">이메일 마케팅 수신 동의</p>
+                      <p className="font-ko text-xs text-zinc-400 mt-0.5 leading-relaxed">
+                        이벤트, 프로모션, 신규 기능 안내 이메일을 받아요.
+                      </p>
+                    </div>
+                    <Switch checked={marketingEmail} onCheckedChange={setMarketingEmail}
+                      className="data-[state=checked]:bg-[#63C1ED] shrink-0 mt-0.5" />
+                  </div>
+
+                  <div className="flex items-start justify-between gap-4" style={{ opacity: phoneVerified ? 1 : 0.4 }}>
+                    <div>
+                      <p className="font-ko text-sm text-zinc-200">SMS 마케팅 수신 동의</p>
+                      <p className="font-ko text-xs text-zinc-400 mt-0.5 leading-relaxed">
+                        이벤트, 프로모션 문자를 받아요. 휴대폰 번호 등록 필요.
+                      </p>
+                      {!phoneVerified && (
+                        <p className="font-ko text-xs text-zinc-500 mt-0.5">휴대폰 번호를 먼저 등록해주세요.</p>
+                      )}
+                    </div>
+                    <Switch checked={marketingSms}
+                      onCheckedChange={phoneVerified ? setMarketingSms : undefined}
+                      disabled={!phoneVerified}
+                      className="data-[state=checked]:bg-[#63C1ED] shrink-0 mt-0.5" />
+                  </div>
+                </div>
+              </div>
+
+              {/* 저장 버튼 */}
+              <Button onClick={saveSettings} disabled={savingSettings}
+                className="w-full h-10 font-ko font-semibold text-white text-sm"
+                style={{ background: BRAND }}>
+                {savingSettings ? "저장 중..." : "설정 저장"}
+              </Button>
+            </div>
+          )}
         </div>
-      </div>
-    </ScrollArea>
-  )
-}
-
-/* ────────────────────────────────────────────
-   루트 컴포넌트
-──────────────────────────────────────────── */
-export function MyPage() {
-  const [page, setPage] = useState<Page>("main")
-  const [user, setUser] = useState(mockUser)
-
-  const handleSaveProfile = (name: string, avatar: string | null) => {
-    setUser(p => ({ ...p, name, avatar }))
-  }
-
-  return (
-    <div className="h-full bg-zinc-950">
-      {page === "main" && (
-        <MainPage user={user} onNavigate={setPage} />
-      )}
-      {page === "profile-edit" && (
-        <ProfileEditPage user={user} onBack={() => setPage("main")} onSave={handleSaveProfile} />
-      )}
-      {page === "password" && (
-        <PasswordPage onBack={() => setPage("main")} />
-      )}
+      </ScrollArea>
     </div>
   )
 }

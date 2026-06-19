@@ -8,7 +8,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import {
   Play, Copy, FileCode, Bookmark, Save,
   Share2, Upload, Monitor, HardDrive,
-  Activity as ActivityIcon, GraduationCap, Book, Check,
+  Activity as ActivityIcon, GraduationCap, Book, Check, User,
 } from "lucide-react"
 
 const BRAND = "#63C1ED"
@@ -23,6 +23,7 @@ interface MainHeaderProps {
   setFileName: (v: string) => void
   editorCode: string
   hasAnalyzed: boolean
+  isAnalyzing?: boolean
   selSession: number | null
   codeCopied: boolean
   uploadOpen: boolean
@@ -45,47 +46,52 @@ const headerTitle: Record<string, string> = {
   diagnosis: "코드 분석",
   learning:  "학습하기",
   notes:     "나만의 노트",
+  mypage:    "마이페이지",
+}
+
+const headerIcon: Record<string, any> = {
+  diagnosis: ActivityIcon,
+  learning:  GraduationCap,
+  notes:     Book,
+  mypage:    User,
 }
 
 export function MainHeader({
   activeNav, language, setLanguage,
   aiCoaching, setAiCoaching,
   fileName, setFileName,
-  editorCode, hasAnalyzed, selSession,
+  editorCode, hasAnalyzed, isAnalyzing, selSession,
   codeCopied, uploadOpen, setUploadOpen,
   onRunAnalysis, onGoLearning,
   onCopyCode, onShare, onSaveDiag, onSaveNote, onFileUpload,
 }: MainHeaderProps) {
   const fileExt = ext[language] ?? "txt"
+  const IconComp = headerIcon[activeNav] ?? ActivityIcon
 
   return (
     <header className="bg-[#0a0a0a] border-b border-zinc-800/50 shrink-0">
 
-      {/* Row 1 — 타이틀 + 버튼들 */}
+      {/* Row 1 */}
       <div className="h-14 flex items-center justify-between px-5">
         <div className="flex items-center gap-2">
-          {activeNav === "diagnosis" && <ActivityIcon className="h-4 w-4" style={{ color: BRAND }} />}
-          {activeNav === "learning"  && <GraduationCap className="h-4 w-4" style={{ color: BRAND }} />}
-          {activeNav === "notes"     && <Book className="h-4 w-4" style={{ color: BRAND }} />}
+          <IconComp className="h-4 w-4" style={{ color: BRAND }} />
           <span className="font-syne text-sm font-semibold text-zinc-100">
             {headerTitle[activeNav] ?? ""}
           </span>
         </div>
 
-        {activeNav !== "notes" && (
+        {activeNav !== "notes" && activeNav !== "mypage" && (
           <div className="flex items-center gap-2.5">
-            {/* AI Coaching 토글 */}
             <div className="flex items-center gap-2">
               <Switch
                 checked={aiCoaching}
                 onCheckedChange={setAiCoaching}
                 className="data-[state=checked]:bg-[#63C1ED] scale-90" />
-              <span className="font-space text-[10px] text-zinc-500">Live AI Coaching</span>
+              <span className="font-space text-[10px] text-zinc-500 hidden xl:inline">Live AI Coaching</span>
             </div>
 
             <div className="h-4 w-px bg-zinc-800" />
 
-            {/* 언어 선택 */}
             <Select value={language} onValueChange={setLanguage}>
               <SelectTrigger className="h-8 w-[120px] bg-zinc-900 border-zinc-800 text-xs text-zinc-300">
                 <SelectValue />
@@ -97,40 +103,47 @@ export function MainHeader({
               </SelectContent>
             </Select>
 
-            {/* Diagnosis 버튼들 */}
             {activeNav === "diagnosis" && (
               <Button size="sm" disabled={!hasAnalyzed}
                 onClick={onGoLearning}
                 className={`h-8 text-xs px-4 font-medium text-white ${hasAnalyzed ? "bg-amber-400 hover:bg-amber-500" : "bg-amber-400/25 cursor-not-allowed"}`}>
-                <GraduationCap className="h-3.5 w-3.5 mr-1.5" />Learning
+                <GraduationCap className="h-3.5 w-3.5 mr-1.5 shrink-0" />
+                <span className="hidden lg:inline">Learning</span>
               </Button>
             )}
             {activeNav === "diagnosis" && (
-              <Button size="sm" disabled={!editorCode.trim()}
+              <Button size="sm" disabled={!editorCode.trim() || isAnalyzing}
                 onClick={onRunAnalysis}
-                className={`h-8 text-white text-xs px-4 font-medium ${editorCode.trim() ? "bg-emerald-500 hover:bg-emerald-600" : "bg-emerald-500/25 cursor-not-allowed"}`}>
-                <Play className="h-3.5 w-3.5 mr-1.5" />Run Analysis
+                className={`h-8 text-white text-xs px-4 font-medium ${editorCode.trim() && !isAnalyzing ? "bg-emerald-500 hover:bg-emerald-600" : "bg-emerald-500/25 cursor-not-allowed"}`}>
+                <Play className="h-3.5 w-3.5 mr-1.5 shrink-0" />
+                <span className="hidden lg:inline">Run Analysis</span>
               </Button>
             )}
 
-            {/* Learning Submit */}
             {activeNav === "learning" && selSession && (
               <Button size="sm" className="h-8 text-white text-xs px-4 bg-emerald-500 hover:bg-emerald-600">
-                <Check className="h-3.5 w-3.5 mr-1.5" />Submit
+                <Check className="h-3.5 w-3.5 mr-1.5 shrink-0" />
+                <span className="hidden lg:inline">Submit</span>
               </Button>
             )}
 
-            {/* Save */}
-            <Button size="sm" className="h-8 text-white text-xs px-4 font-medium"
-              style={{ background: BRAND }}
+            <Button size="sm"
+              disabled={activeNav === "diagnosis" && !hasAnalyzed}
+              className={`h-8 text-xs px-4 font-medium ${
+                activeNav === "diagnosis" && !hasAnalyzed
+                  ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
+                  : "text-white"
+              }`}
+              style={activeNav === "diagnosis" && !hasAnalyzed ? {} : { background: BRAND }}
               onClick={onSaveDiag}>
-              <Save className="h-3.5 w-3.5 mr-1.5" />Save
+              <Save className="h-3.5 w-3.5 mr-1.5 shrink-0" />
+              <span className="hidden lg:inline">Save</span>
             </Button>
           </div>
         )}
       </div>
 
-      {/* Row 2 — 파일명 + Upload/Share/Copy */}
+      {/* Row 2 */}
       {(activeNav === "diagnosis" || (activeNav === "learning" && selSession)) && (
         <div className="h-9 flex items-center justify-between px-5 border-t border-zinc-800/40">
           <div className="flex items-center gap-2">
@@ -143,7 +156,6 @@ export function MainHeader({
               style={{ color: "#FAFAFA" }} />
             <span className="font-code text-xs text-zinc-700">.{fileExt}</span>
 
-            {/* Learning 북마크 */}
             {activeNav === "learning" && selSession && (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -161,12 +173,12 @@ export function MainHeader({
           </div>
 
           <div className="flex items-center gap-1.5">
-            {/* Upload 드롭다운 */}
             <div className="relative">
               <button
                 onClick={() => setUploadOpen(!uploadOpen)}
                 className="h-7 px-2.5 flex items-center gap-1.5 rounded border border-zinc-800 font-space text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 text-[11px] transition-colors">
-                <Upload className="h-3 w-3" />Upload
+                <Upload className="h-3 w-3" />
+                <span className="hidden lg:inline">Upload</span>
               </button>
               {uploadOpen && (
                 <>
@@ -199,7 +211,8 @@ export function MainHeader({
             <button
               onClick={onShare}
               className="h-7 px-2.5 flex items-center gap-1.5 rounded border border-zinc-800 font-space text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 text-[11px] transition-colors">
-              <Share2 className="h-3 w-3" />Share
+              <Share2 className="h-3 w-3" />
+              <span className="hidden lg:inline">Share</span>
             </button>
 
             <button
@@ -209,8 +222,8 @@ export function MainHeader({
                 ? { color: BRAND, borderColor: `${BRAND}44` }
                 : { color: "#71717a", borderColor: "#27272a" }}>
               {codeCopied
-                ? <><Check className="h-3 w-3" />Copied!</>
-                : <><Copy className="h-3 w-3" />Copy Code</>}
+                ? <><Check className="h-3 w-3" /><span className="hidden lg:inline">Copied!</span></>
+                : <><Copy className="h-3 w-3" /><span className="hidden lg:inline">Copy Code</span></>}
             </button>
           </div>
         </div>
