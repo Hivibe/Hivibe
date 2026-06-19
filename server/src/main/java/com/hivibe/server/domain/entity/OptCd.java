@@ -12,6 +12,7 @@ import lombok.*;
 @Entity
 @Table(name = "OPT_CD")
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder

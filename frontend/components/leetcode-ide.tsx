@@ -1,6 +1,8 @@
 // components/leetcode-ide.tsx
 "use client"
 
+import { apiFetch } from "@/lib/api"
+
 import { useRouter } from "next/navigation"
 import { useState, useRef } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -121,38 +123,37 @@ export function LeetCodeIDE() {
 
   /* ── 핸들러 ── */
 const handleRunAnalysis = async () => {
-    if (!editorCode.trim()) {
-      alert("코드를 입력해 주세요...")
-      return
-    }
+  if (!editorCode.trim()) {
+    alert("코드를 입력해 주세요...");
+    return;
+  }
 
-    setIsAnalyzing(true)
-    setAiResult(null)       // "" 대신 null로
-    setHasAnalyzed(false)   // 분석 시작할 땐 false로 초기화
-    setDiagPanelOpen(true)
+  setIsAnalyzing(true);
+  setAiResult(null);
+  setHasAnalyzed(false);
+  setDiagPanelOpen(true);
 
-    try {
-      // 백엔드(8080)로 유저 코드 보내기
-      const response = await fetch("http://localhost:8080/api/ai/ask", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          prompt: `다음 코드를 분석하고, 문제점과 개선 방안을 상세히 진단해 줘:\n\n${editorCode}` 
-        }),
-      })
+  try {
+    const response = await apiFetch("/api/ai/ask", {
+      method: "POST",
+      body: JSON.stringify({
+        prompt: `다음 코드를 분석하고, 문제점과 개선 방안을 상세히 진단해 줘:\n\n${editorCode}`,
+      }),
+    });
 
-      const data = await response.json()
-      setAiResult(data)
-      setHasAnalyzed(true) // 분석 완료 상태로 변경
-
-    } catch (error) {
-      console.error("백엔드 통신 실패:", error)
-      setAiResult("서버와 연결할 수 없습니다. 8080 포트가 켜져 있는지 확인해 주세요.")
-      setHasAnalyzed(true)
-    } finally {
-      setIsAnalyzing(false)
-    }
-  }
+    const data = await response.json();
+    setAiResult(data);
+    setHasAnalyzed(true);
+  } catch (error) {
+    console.error("백엔드 통신 실패:", error);
+    setAiResult(
+      "서버와 연결할 수 없습니다. 8080 포트가 켜져 있는지 확인해 주세요.",
+    );
+    setHasAnalyzed(true);
+  } finally {
+    setIsAnalyzing(false);
+  }
+};
 
   const handleShare = async () => {
     if (navigator.share) {

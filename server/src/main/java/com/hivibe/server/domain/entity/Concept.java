@@ -38,7 +38,7 @@ public class Concept {
 
     /** 개념 상세 설명 */
     @Lob
-    @Column(name = "CONC_DESC")
+    @Column(name = "CONC_DESC", columnDefinition = "LONGTEXT")
     private String concDesc;
 
     /** 참고 URL (공식 문서, 블로그 등) */
