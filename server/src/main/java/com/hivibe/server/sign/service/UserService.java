@@ -2,16 +2,14 @@ package com.hivibe.server.sign.service;
 
 import com.hivibe.server.config.jwt.JwtTokenProvider;
 import com.hivibe.server.domain.entity.User;
-import com.hivibe.server.repository.UserRepository;
 import com.hivibe.server.sign.dto.request.LoginRequestDto;
 import com.hivibe.server.sign.dto.request.SignupRequestDto;
 import com.hivibe.server.sign.dto.response.LoginResponseDto;
-
+import com.hivibe.server.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 
 @Service
 @RequiredArgsConstructor
@@ -20,7 +18,6 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
-
 
     @Transactional
     public void signup(SignupRequestDto dto) {
@@ -40,8 +37,7 @@ public class UserService {
         user.setUserPhone(dto.getUserPhone());
         user.setMktgAgreeYn(Boolean.TRUE.equals(dto.getMktgAgreeYn()) ? "Y" : "N");
 
-        // 기본값 세팅
-        user.setAcntSttsCd(User.STATUS_ACTIVE);   // Active
+        user.setAcntSttsCd("A");
         user.setPswdChgYn("N");
         user.setLgnFailNmtm(0);
         user.setUserGrd("BASIC");
@@ -54,10 +50,23 @@ public class UserService {
         User user = userRepository.findByLgnId(dto.getLgnId())
             .orElseThrow(() -> new IllegalArgumentException("아이디 또는 비밀번호가 올바르지 않습니다."));
 
+        // 계정 잠금 확인
+        if ("L".equals(user.getAcntSttsCd())) {
+            throw new IllegalArgumentException("계정이 잠겼습니다. 관리자에게 문의하세요.");
+        }
+
         if (!passwordEncoder.matches(dto.getLgnPwsd(), user.getLgnPwsd())) {
-            // 로그인 실패 횟수 증가
-            user.setLgnFailNmtm(user.getLgnFailNmtm() + 1);
-            throw new IllegalArgumentException("아이디 또는 비밀번호가 올바르지 않습니다.");
+            int failCount = user.getLgnFailNmtm() + 1;
+            user.setLgnFailNmtm(failCount);
+
+            if (failCount >= 5) {
+                user.setAcntSttsCd("L");
+                throw new IllegalArgumentException("비밀번호 5회 오류로 계정이 잠겼습니다. 관리자에게 문의하세요.");
+            }
+
+            throw new IllegalArgumentException(
+                "아이디 또는 비밀번호가 올바르지 않습니다. (" + failCount + "/5)"
+            );
         }
 
         // 로그인 성공 시 실패 횟수 초기화
