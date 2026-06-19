@@ -1,12 +1,12 @@
 package com.hivibe.server.note.controller;
 
-import org.springframework.web.bind.annotation.CrossOrigin;
 import com.hivibe.server.note.dto.NoteResponseDto;
 import com.hivibe.server.note.dto.NoteSaveRequestDto;
 import com.hivibe.server.note.dto.NoteUpdateRequestDto;
 import com.hivibe.server.note.service.NoteService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,11 +19,9 @@ public class NoteController {
 
     private final NoteService noteService;
 
-    // 임시 lgnId — 팀원 JWT 머지 후 SecurityContext로 교체
     private String getCurrentLgnId() {
-        return "cherry123";
+        return SecurityContextHolder.getContext().getAuthentication().getName();
     }
-
     // 전체 노트 목록
     @GetMapping
     public ResponseEntity<List<NoteResponseDto>> getAllNotes(

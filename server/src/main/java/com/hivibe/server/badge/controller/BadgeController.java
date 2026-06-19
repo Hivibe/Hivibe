@@ -4,6 +4,7 @@ import com.hivibe.server.badge.dto.BadgeResponseDto;
 import com.hivibe.server.badge.service.BadgeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,9 +17,8 @@ public class BadgeController {
 
     private final BadgeService badgeService;
 
-    // 임시 lgnId — 팀원 JWT 머지 후 SecurityContext로 교체
     private String getCurrentLgnId() {
-        return "cherry123";
+        return SecurityContextHolder.getContext().getAuthentication().getName();
     }
 
     /** 뱃지 목록 조회 (획득 + 미획득) */

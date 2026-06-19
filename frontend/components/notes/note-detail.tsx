@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api"
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,37 +20,33 @@ const BRAND = "#63C1ED";
 
 interface NoteDetailProps {
   noteId: number | null;
+  onDeleted?: () => void;
 }
 
-export function NoteDetail({ noteId }: NoteDetailProps) {
+export function NoteDetail({ noteId, onDeleted }: NoteDetailProps) {
   const [note, setNote] = useState<Note | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // 1번 안전장치: noteId가 없으면 아예 요청을 안 보냄!
-    if (!noteId) return;
-
-    setLoading(true);
-    fetch(`http://localhost:8080/api/notes/${noteId}`)
-      .then((res) => {
-        // 2번 안전장치: 백엔드 응답이 정상(200 OK)이 아니면 JSON을 까보지 않고 바로 에러로 던짐
-        if (!res.ok) {
-          throw new Error("서버에서 에러가 났어요!");
-        }
-        return res.json();
-      })
-      .then((data) => setNote(data))
-      .catch((e) => console.error("노트 불러오기 실패:", e))
-      .finally(() => setLoading(false));
-  }, [noteId]);
+    if (!noteId) return
+    setLoading(true)
+    apiFetch(`/api/notes/${noteId}`)
+      .then(res => res.json())
+      .then(data => setNote(data))
+      .catch(e => console.error("노트 불러오기 실패:", e))
+      .finally(() => setLoading(false))
+  }, [noteId])
 
   const handleDelete = async () => {
-    if (!noteId || !confirm("노트를 삭제할까요?")) return;
-    await fetch(`http://localhost:8080/api/notes/${noteId}`, {
-      method: "DELETE",
-    });
-    setNote(null);
-  };
+    if (!noteId || !confirm("노트를 삭제할까요?")) return
+    const res = await apiFetch(`/api/notes/${noteId}`, { method: "DELETE" })
+    if (!res.ok) {
+      alert("삭제 실패했어요. 다시 시도해 주세요.")
+      return
+    }
+    setNote(null)
+    onDeleted?.()
+  }
 
   if (!noteId)
     return (

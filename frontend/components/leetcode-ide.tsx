@@ -158,6 +158,7 @@ export function LeetCodeIDE() {
   // notes
   const [notes, setNotes] = useState<Note[]>(mockNotes);
   const [selNote, setSelNote] = useState(1);
+  const [notesRefreshKey, setNotesRefreshKey] = useState(0)
 
   // panel collapse
   const [diagPanelOpen, setDiagPanelOpen] = useState(true);
@@ -397,7 +398,11 @@ export function LeetCodeIDE() {
                 }`}
               >
                 <div className="w-[420px] h-full">
-                  <NotesList selNote={selNote} setSelNote={setSelNote} />
+                  <NotesList
+                    selNote={selNote}
+                    setSelNote={setSelNote}
+                    refreshKey={notesRefreshKey}   // 추가
+                  />
                 </div>
               </div>
               <div className="w-px bg-zinc-800/50 relative flex items-center justify-center shrink-0">
@@ -409,7 +414,10 @@ export function LeetCodeIDE() {
                 </button>
               </div>
               <div className="flex-1 min-w-0 bg-zinc-950">
-                <NoteDetail noteId={selNote} />
+                <NoteDetail
+  noteId={selNote}
+  onDeleted={() => setNotesRefreshKey(k => k + 1)}   // 추가
+/>
               </div>
             </div>
           )}

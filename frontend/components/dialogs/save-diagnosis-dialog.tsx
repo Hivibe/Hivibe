@@ -1,5 +1,5 @@
 "use client"
-
+import { apiFetch } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -33,50 +33,50 @@ export function SaveDiagnosisDialog({
   }
 
   const handleSave = async () => {
-    if (!fileName.trim()) {
-      alert("저장 이름을 입력해 주세요.")
-      return
-    }
-
-    setIsSaving(true)
-    try {
-      const response = await fetch("http://localhost:8080/api/v1/diagnoses", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: fileName,
-          lang: language,
-          content: editorCode,
-          isStable: "Y",
-          grade: getGrade(aiResult?.totalScore ?? 0),
-          score: aiResult?.totalScore ?? 0,
-          summary: aiResult?.summary ?? "",
-          accuracy: aiResult?.accuracy ?? 0,
-          accuracyReason: aiResult?.accuracyReason ?? "",
-          efficiency: aiResult?.efficiency ?? 0,
-          efficiencyReason: aiResult?.efficiencyReason ?? "",
-          readability: aiResult?.readability ?? 0,
-          readabilityReason: aiResult?.readabilityReason ?? "",
-          style: aiResult?.style ?? 0,
-          styleReason: aiResult?.styleReason ?? "",
-          timeComplexity: aiResult?.complexity ?? "",
-          optimizedCode: aiResult?.optimizedCode ?? "",
-        }),
-      })
-
-      if (response.ok) {
-        alert("저장되었습니다!")
-        onOpenChange(false)
-      } else {
-        alert("저장 실패. 다시 시도해 주세요.")
-      }
-    } catch (error) {
-      console.error("저장 실패:", error)
-      alert("서버와 연결할 수 없습니다.")
-    } finally {
-      setIsSaving(false)
-    }
+  if (!fileName.trim()) {
+    alert("저장 이름을 입력해 주세요.")
+    return
   }
+
+  setIsSaving(true)
+  try {
+    const response = await apiFetch("/api/v1/diagnoses", {
+      method: "POST",
+      body: JSON.stringify({
+        name: fileName,
+        lang: language,
+        content: editorCode,
+        isStable: "Y",
+        grade: getGrade(aiResult?.totalScore ?? 0),
+        score: aiResult?.totalScore ?? 0,
+        summary: aiResult?.summary ?? "",
+        accuracy: aiResult?.accuracy ?? 0,
+        accuracyReason: aiResult?.accuracyReason ?? "",
+        efficiency: aiResult?.efficiency ?? 0,
+        efficiencyReason: aiResult?.efficiencyReason ?? "",
+        readability: aiResult?.readability ?? 0,
+        readabilityReason: aiResult?.readabilityReason ?? "",
+        style: aiResult?.style ?? 0,
+        styleReason: aiResult?.styleReason ?? "",
+        timeComplexity: aiResult?.complexity ?? "",
+        optimizedCode: aiResult?.optimizedCode ?? "",
+      }),
+    })
+
+    if (response.ok) {
+      await apiFetch("/api/badges/check", { method: "POST" })
+      alert("저장되었습니다!")
+      onOpenChange(false)
+    } else {
+      alert("저장 실패. 다시 시도해 주세요.")
+    }
+  } catch (error) {
+    console.error("저장 실패:", error)
+    alert("서버와 연결할 수 없습니다.")
+  } finally {
+    setIsSaving(false)
+  }
+}
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

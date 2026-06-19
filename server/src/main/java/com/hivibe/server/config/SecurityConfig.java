@@ -45,9 +45,7 @@ public class SecurityConfig {
                     "/api/users/signup",
                     "/api/users/login",
                     "/api/users/check-id",
-                    "/api/users/check-email",
-                    "/oauth2/**",
-                    "/login/oauth2/**"
+                    "/api/users/check-email"
                 ).permitAll()
                 .anyRequest().authenticated()
             )
