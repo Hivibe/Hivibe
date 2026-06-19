@@ -1,9 +1,11 @@
 // components/layout/sidebar.tsx
 "use client"
 
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { apiFetch } from "@/lib/api"
 import {
   PanelLeft, Home, Activity as ActivityIcon,
   GraduationCap, Book, Settings,
@@ -12,10 +14,10 @@ import {
 const BRAND = "#63C1ED"
 
 const navItems = [
-  { id: "home",      label: "Home",      icon: Home },
+  { id: "home", label: "Home", icon: Home },
   { id: "diagnosis", label: "Diagnosis", icon: ActivityIcon },
-  { id: "learning",  label: "Learning",  icon: GraduationCap },
-  { id: "notes",     label: "My Notes",  icon: Book },
+  { id: "learning", label: "Learning", icon: GraduationCap },
+  { id: "notes", label: "My Notes", icon: Book },
 ]
 
 interface SidebarProps {
@@ -25,10 +27,27 @@ interface SidebarProps {
   onNavClick: (id: string) => void
 }
 
+interface SidebarUser {
+  userNm: string
+  userEmail: string
+  userPhoto: string | null
+}
+
 export function Sidebar({ activeNav, sidebarExp, setSidebarExp, onNavClick }: SidebarProps) {
+  const [user, setUser] = useState<SidebarUser | null>(null)
+
+  useEffect(() => {
+    apiFetch("/api/mypage/me")
+      .then(res => res.json())
+      .then(data => setUser(data))
+      .catch(e => console.error("사이드바 유저 정보 불러오기 실패:", e))
+  }, [])
+
+  const initial = user?.userNm?.[0] ?? "?"
+
   return (
     <div className={`h-full flex flex-col bg-[#0d0d0d] border-r border-zinc-800/50 transition-all duration-300 shrink-0 ${sidebarExp ? "w-52" : "w-14"}`}>
-      
+
       {/* 로고 + 토글 */}
       <div className={`flex items-center h-14 px-4 ${sidebarExp ? "justify-between" : "justify-center"}`}>
         {sidebarExp && (
@@ -73,12 +92,15 @@ export function Sidebar({ activeNav, sidebarExp, setSidebarExp, onNavClick }: Si
       <div className="border-t border-zinc-800/50 p-3">
         <div className={`flex items-center ${sidebarExp ? "gap-3" : "justify-center"}`}>
           <Avatar className="h-7 w-7 shrink-0">
-            <AvatarFallback className="bg-zinc-800 text-zinc-300 text-xs">SH</AvatarFallback>
+            {user?.userPhoto && (
+              <AvatarImage src={`http://localhost:8080${user.userPhoto}`} alt={user.userNm} />
+            )}
+            <AvatarFallback className="bg-zinc-800 text-zinc-300 text-xs">{initial}</AvatarFallback>
           </Avatar>
           {sidebarExp && (
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-zinc-200 truncate">박성하</p>
-              <p className="font-space text-[10px] text-zinc-500 truncate">sungha@hivibe.dev</p>
+              <p className="text-xs font-medium text-zinc-200 truncate">{user?.userNm ?? "..."}</p>
+              <p className="font-space text-[10px] text-zinc-500 truncate">{user?.userEmail ?? ""}</p>
             </div>
           )}
           {sidebarExp && (

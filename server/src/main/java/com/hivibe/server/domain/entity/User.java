@@ -24,7 +24,7 @@ public class User {
     private Long id;
 
     //로그인 아이디
-    @Column(name = "LGN_ID", nullable = false, unique = true, length = 20)
+    @Column(name = "LGN_ID", nullable = false, unique = true, length = 100)
     private String lgnId;
 
     //로그인 비밀번호
@@ -32,6 +32,10 @@ public class User {
     private String lgnPwsd;
 
     //계정 활성화 여부
+    public static final String STATUS_ACTIVE   = "A";
+    public static final String STATUS_INACTIVE = "I";
+    public static final String STATUS_LOCKED   = "L";
+
     @Column(name = "ACNT_STTS_CD", nullable = false, length = 1)
     private String acntSttsCd;
 
@@ -74,6 +78,10 @@ public class User {
     //사용자 전화번호
     @Column(name = "USER_PHONE", length = 11)
     private String userPhone;
+
+    // 복습 알림 동의
+    @Column(name = "REVIEW_ALARM_YN", nullable = false, length = 1)
+    private String reviewAlarmYn = "Y";
 
     @PrePersist
     protected void onCreate() {
