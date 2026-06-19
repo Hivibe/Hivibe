@@ -35,3 +35,6 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### 개인 비밀번호 파일 제외 ###
+**/application-local.yaml
