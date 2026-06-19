@@ -1,6 +1,8 @@
 // components/leetcode-ide.tsx
 "use client";
 
+import { apiFetch } from "@/lib/api"
+
 import { useRouter } from "next/navigation";
 import { useState, useRef } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -178,7 +180,6 @@ export function LeetCodeIDE() {
   const [tagInput, setTagInput] = useState("");
   const [noteMemo, setNoteMemo] = useState("");
 
-  /* ── 핸들러 ── */
   const handleRunAnalysis = async () => {
     if (!editorCode.trim()) {
       alert("코드를 입력해 주세요...");
@@ -186,15 +187,13 @@ export function LeetCodeIDE() {
     }
 
     setIsAnalyzing(true);
-    setAiResult(null); // "" 대신 null로
-    setHasAnalyzed(false); // 분석 시작할 땐 false로 초기화
+    setAiResult(null);
+    setHasAnalyzed(false);
     setDiagPanelOpen(true);
 
     try {
-      // 백엔드(8080)로 유저 코드 보내기
-      const response = await fetch("http://localhost:8080/api/ai/ask", {
+      const response = await apiFetch("/api/ai/ask", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           prompt: `다음 코드를 분석하고, 문제점과 개선 방안을 상세히 진단해 줘:\n\n${editorCode}`,
         }),
@@ -202,7 +201,7 @@ export function LeetCodeIDE() {
 
       const data = await response.json();
       setAiResult(data);
-      setHasAnalyzed(true); // 분석 완료 상태로 변경
+      setHasAnalyzed(true);
     } catch (error) {
       console.error("백엔드 통신 실패:", error);
       setAiResult(
@@ -224,7 +223,7 @@ export function LeetCodeIDE() {
     if (navigator.share) {
       try {
         await navigator.share({ title: "HiVibe", url: window.location.href });
-      } catch {}
+      } catch { }
     } else {
       navigator.clipboard.writeText(window.location.href);
     }
@@ -334,9 +333,8 @@ export function LeetCodeIDE() {
           {activeNav === "diagnosis" && (
             <div className="flex-1 flex overflow-hidden">
               <div
-                className={`transition-all duration-300 ease-in-out overflow-hidden shrink-0 ${
-                  diagPanelOpen ? "w-[420px]" : "w-0"
-                }`}
+                className={`transition-all duration-300 ease-in-out overflow-hidden shrink-0 ${diagPanelOpen ? "w-[420px]" : "w-0"
+                  }`}
               >
                 <div className="w-[420px] h-full">
                   <ScrollArea className="h-full bg-zinc-950">
@@ -393,9 +391,8 @@ export function LeetCodeIDE() {
           {activeNav === "notes" && (
             <div className="flex-1 flex overflow-hidden">
               <div
-                className={`transition-all duration-300 ease-in-out overflow-hidden shrink-0 bg-[#0a0a0a] ${
-                  notesPanelOpen ? "w-[420px]" : "w-0"
-                }`}
+                className={`transition-all duration-300 ease-in-out overflow-hidden shrink-0 bg-[#0a0a0a] ${notesPanelOpen ? "w-[420px]" : "w-0"
+                  }`}
               >
                 <div className="w-[420px] h-full">
                   <NotesList
@@ -415,9 +412,9 @@ export function LeetCodeIDE() {
               </div>
               <div className="flex-1 min-w-0 bg-zinc-950">
                 <NoteDetail
-  noteId={selNote}
-  onDeleted={() => setNotesRefreshKey(k => k + 1)}   // 추가
-/>
+                  noteId={selNote}
+                  onDeleted={() => setNotesRefreshKey(k => k + 1)}   // 추가
+                />
               </div>
             </div>
           )}
