@@ -31,6 +31,12 @@ public class UserController {
         return ResponseEntity.ok(userRepository.existsByLgnId(lgnId));
     }
 
+    //이메일 중복 확인
+    @GetMapping("/check-email")
+    public ResponseEntity<Boolean> checkEmail(@RequestParam String userEmail) {
+        return ResponseEntity.ok(userRepository.existsByUserEmail(userEmail));
+    }
+
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDto> login(@Valid @RequestBody LoginRequestDto dto) {
         return ResponseEntity.ok(userService.login(dto));

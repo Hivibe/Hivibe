@@ -24,7 +24,7 @@ public class User {
     private Long id;
 
     //로그인 아이디
-    @Column(name = "LGN_ID", nullable = false, unique = true, length = 20)
+    @Column(name = "LGN_ID", nullable = false, unique = true, length = 100)
     private String lgnId;
 
     //로그인 비밀번호
