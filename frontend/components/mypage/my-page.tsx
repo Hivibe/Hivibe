@@ -25,6 +25,7 @@ interface Profile {
   userGrd: string
   mktgAgreeYn: string
   reviewAlarmYn: string
+  diagnosisCount: number
 }
 
 interface Badge {
@@ -323,8 +324,8 @@ export function MyPage() {
               <div className="grid grid-cols-4 gap-3">
                 <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-4">
                   <div className="mb-2"><FolderOpen className="h-4 w-4" style={{ color: BRAND }} /></div>
-                  <p className="font-syne text-xl font-bold text-zinc-500">—</p>
-                  <p className="font-ko text-xs text-zinc-400 mt-0.5">총 진단 수<br /><span className="text-zinc-600">(연동 예정)</span></p>
+                  <p className="font-syne text-xl font-bold text-zinc-100">{profile.diagnosisCount}</p>
+                  <p className="font-ko text-xs text-zinc-400 mt-0.5">총 진단 수</p>
                 </div>
                 <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-4">
                   <div className="mb-2"><Star className="h-4 w-4 text-amber-400" /></div>

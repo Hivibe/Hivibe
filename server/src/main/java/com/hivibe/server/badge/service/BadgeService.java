@@ -24,9 +24,9 @@ import java.util.stream.Collectors;
 public class BadgeService {
 
     private final BadgeRepository badgeRepository;
-    private final DgnsRepository  dgnsRepository;
-    private final NoteRepository  noteRepository;
-    private final UserRepository  userRepository;
+    private final DgnsRepository dgnsRepository;
+    private final NoteRepository noteRepository;
+    private final UserRepository userRepository;
 
     /** 전체 뱃지 목록 조회 (획득 + 미획득) */
     public List<BadgeResponseDto> getBadges(String lgnId) {
@@ -34,7 +34,7 @@ public class BadgeService {
 
         List<Badge> achievedList = badgeRepository.findByUser_Id(user.getId());
         Map<String, Badge> achievedMap = achievedList.stream()
-            .collect(Collectors.toMap(Badge::getBadgeKey, b -> b));
+                .collect(Collectors.toMap(Badge::getBadgeKey, b -> b));
 
         List<BadgeResponseDto> result = new ArrayList<>();
         for (BadgeType type : BadgeType.values()) {
@@ -50,6 +50,7 @@ public class BadgeService {
     /**
      * 뱃지 조건 체크 및 신규 지급
      * - 진단 저장 후, 노트 저장 후 호출하면 됨
+     * - 이번 호출에서 새로 획득한 뱃지는 isNew = true로 마킹돼서 내려감 (팝업용)
      */
     @Transactional
     public List<BadgeResponseDto> checkAndAward(String lgnId) {
@@ -60,7 +61,7 @@ public class BadgeService {
 
         // FIRST_SCAN — 진단 1회 이상
         checkBadge(userId, BadgeType.FIRST_SCAN, newBadges, user,
-            () -> dgnsRepository.countByUser_Id(userId) >= 1);
+                () -> dgnsRepository.countByUser_Id(userId) >= 1);
 
         // SPEED_OPTIMIZER — 최고 점수 90점 이상
         checkBadge(userId, BadgeType.SPEED_OPTIMIZER, newBadges, user, () -> {
@@ -82,49 +83,64 @@ public class BadgeService {
 
         // ON_FIRE — 7일 연속 진단
         checkBadge(userId, BadgeType.ON_FIRE, newBadges, user,
-            () -> checkStreak(userId, 7));
+                () -> checkStreak(userId, 7));
 
         // BOOKWORM — 노트 10개 이상
         checkBadge(userId, BadgeType.BOOKWORM, newBadges, user,
-            () -> noteRepository.countByUser_Id(userId) >= 10);
+                () -> noteRepository.countByUser_Id(userId) >= 10);
 
         if (!newBadges.isEmpty()) {
             badgeRepository.saveAll(newBadges);
         }
 
-        return getBadges(lgnId);
+        // 이번에 새로 딴 뱃지 key만 모아서, 전체 목록에 isNew 마킹
+        List<String> newKeys = newBadges.stream()
+                .map(Badge::getBadgeKey)
+                .collect(Collectors.toList());
+
+        List<BadgeResponseDto> result = getBadges(lgnId);
+        result.forEach(dto -> {
+            if (newKeys.contains(dto.getKey())) {
+                dto.markAsNew();
+            }
+        });
+        return result;
     }
 
     /** 조건 체크 후 신규 뱃지 리스트에 추가하는 헬퍼 */
     private void checkBadge(Long userId, BadgeType type, List<Badge> newBadges,
-                             User user, ConditionChecker checker) {
-        if (badgeRepository.existsByUser_IdAndBadgeKey(userId, type.getKey())) return;
+            User user, ConditionChecker checker) {
+        if (badgeRepository.existsByUser_IdAndBadgeKey(userId, type.getKey()))
+            return;
         if (checker.check()) {
             newBadges.add(Badge.builder()
-                .user(user)
-                .badgeKey(type.getKey())
-                .build());
+                    .user(user)
+                    .badgeKey(type.getKey())
+                    .build());
         }
     }
 
     /** 연속 진단 일수 체크 */
     private boolean checkStreak(Long userId, int required) {
         List<Dgns> list = dgnsRepository.findByUser_IdOrderByDgnsDtAsc(userId);
-        if (list.size() < required) return false;
+        if (list.size() < required)
+            return false;
 
         List<LocalDate> dates = list.stream()
-            .map(d -> d.getDgnsDt().toLocalDate())
-            .distinct()
-            .sorted()
-            .collect(Collectors.toList());
+                .map(d -> d.getDgnsDt().toLocalDate())
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
 
-        if (dates.size() < required) return false;
+        if (dates.size() < required)
+            return false;
 
         int streak = 1;
         for (int i = 1; i < dates.size(); i++) {
             if (dates.get(i).equals(dates.get(i - 1).plusDays(1))) {
                 streak++;
-                if (streak >= required) return true;
+                if (streak >= required)
+                    return true;
             } else {
                 streak = 1;
             }
@@ -134,7 +150,7 @@ public class BadgeService {
 
     private User getUser(String lgnId) {
         return userRepository.findByLgnId(lgnId)
-            .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없어요."));
+                .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없어요."));
     }
 
     @FunctionalInterface
