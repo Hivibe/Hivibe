@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
+
 public enum BadgeType {
 
     FIRST_SCAN("first_scan", "🔍", "First Scan", "첫 진단 결과 저장 완료"),
