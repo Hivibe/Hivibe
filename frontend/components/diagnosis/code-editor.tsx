@@ -1,7 +1,6 @@
-// components/diagnosis/code-editor.tsx
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { FileCode, Lightbulb } from "lucide-react"
 import { Highlight, themes } from "prism-react-renderer"
 
@@ -26,7 +25,7 @@ const langMap: Record<string, any> = {
 
 const templates: Record<string, string> = {
   java:
-`import java.util.*;
+    `import java.util.*;
 
 public class Solution {
     public static void main(String[] args) {
@@ -35,7 +34,7 @@ public class Solution {
     }
 }`,
   python:
-`import sys
+    `import sys
 input = sys.stdin.readline
 
 def solution():
@@ -44,21 +43,21 @@ def solution():
 
 solution()`,
   javascript:
-`const readline = require('readline');
+    `const readline = require('readline');
 const rl = readline.createInterface({ input: process.stdin });
 
 rl.on('line', (line) => {
     // 여기에 코드를 작성하세요
 });`,
   typescript:
-`const readline = require('readline');
+    `const readline = require('readline');
 const rl = readline.createInterface({ input: process.stdin });
 
 rl.on('line', (line: string) => {
     // 여기에 코드를 작성하세요
 });`,
   cpp:
-`#include <iostream>
+    `#include <iostream>
 #include <vector>
 #include <algorithm>
 using namespace std;
@@ -70,7 +69,7 @@ int main() {
     return 0;
 }`,
   c:
-`#include <stdio.h>
+    `#include <stdio.h>
 #include <stdlib.h>
 
 int main() {
@@ -82,6 +81,7 @@ int main() {
 interface CodeEditorProps {
   language: string
   fileName: string
+  setFileName: (v: string) => void
   editorCode: string
   setEditorCode: (v: string) => void
   hasAnalyzed: boolean
@@ -89,7 +89,7 @@ interface CodeEditorProps {
 }
 
 export function CodeEditor({
-  language, fileName, editorCode,
+  language, fileName, setFileName, editorCode,
   setEditorCode, hasAnalyzed, aiCoaching,
 }: CodeEditorProps) {
   const ext = extMap[language] ?? "txt"
@@ -97,15 +97,36 @@ export function CodeEditor({
   const prevLang = useRef(language)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-   // 최초 마운트 시 템플릿 세팅
-    useEffect(() => {
-      if (!editorCode.trim()) {
-        setEditorCode(templates[language] ?? "")
-      }
-    }, [language])
+  // 탭 이름 인라인 편집 — 타이핑할 때마다 전역 fileName에 직접 반영 (탭/모달 항상 동일한 값)
+  const [editingName, setEditingName] = useState(false)
+  const nameSnapshotRef = useRef(fileName)   // Esc 취소용 스냅샷
+  const nameInputRef = useRef<HTMLInputElement>(null)
 
-    // 언어 변경 시
-    useEffect(() => {
+  const startEditingName = () => {
+    nameSnapshotRef.current = fileName || "untitled"
+    if (!fileName) setFileName("untitled")
+    setEditingName(true)
+  }
+
+  const commitName = () => {
+    if (!fileName.trim()) setFileName("untitled")
+    setEditingName(false)
+  }
+
+  const cancelEditingName = () => {
+    setFileName(nameSnapshotRef.current)
+    setEditingName(false)
+  }
+
+  // 최초 마운트 시 템플릿 세팅
+  useEffect(() => {
+    if (!editorCode.trim()) {
+      setEditorCode(templates[language] ?? "")
+    }
+  }, [language])
+
+  // 언어 변경 시
+  useEffect(() => {
     if (prevLang.current !== language) {
       if (editorCode.trim()) {
         const confirmed = window.confirm(
@@ -143,11 +164,43 @@ export function CodeEditor({
 
       {/* 탭바 */}
       <div className="flex items-center border-b border-zinc-800/80 bg-[#1a1a1a] shrink-0">
-        <div className="flex items-center gap-2 px-4 py-2 border-r border-zinc-800 bg-[#141414]"
-          style={{ borderBottom: `2px solid ${BRAND}` }}>
-          <FileCode className="h-3 w-3 text-zinc-400" />
-          <span className="font-code text-[13px] text-zinc-300">{fileName || "untitled"}.{ext}</span>
-          {editorCode && <div className="h-1.5 w-1.5 rounded-full bg-amber-400 ml-1" />}
+        <div
+          className="flex items-center gap-2 px-4 py-2 border-r border-zinc-800 bg-[#141414] group"
+          style={{ borderBottom: `2px solid ${BRAND}` }}
+          onDoubleClick={() => !editingName && startEditingName()}
+        >
+          <FileCode className="h-3 w-3 text-zinc-400 shrink-0" />
+
+          {editingName ? (
+            <div className="flex items-center">
+              <input
+                ref={nameInputRef}
+                autoFocus
+                value={fileName}
+                onChange={e => setFileName(e.target.value)}
+                onFocus={e => e.currentTarget.select()}
+                onBlur={commitName}
+                onKeyDown={e => {
+                  if (e.key === "Enter") { e.preventDefault(); commitName() }
+                  if (e.key === "Escape") { e.preventDefault(); cancelEditingName() }
+                }}
+                size={Math.max(4, fileName.length)}
+                className="bg-transparent text-[13px] outline-none border-none font-code"
+                style={{ color: "#FAFAFA" }}
+              />
+              {/* 확장자는 항상 고정 표시 — 언어 바뀌면 ext도 자동으로 따라감 */}
+              <span className="font-code text-[13px] text-zinc-500 select-none">.{ext}</span>
+            </div>
+          ) : (
+            <span
+              className="font-code text-[13px] text-zinc-300 cursor-text select-none group-hover:text-zinc-100 transition-colors"
+              title="더블클릭해서 이름 변경"
+            >
+              {fileName || "untitled"}.{ext}
+            </span>
+          )}
+
+          {editorCode && <div className="h-1.5 w-1.5 rounded-full bg-amber-400 ml-1 shrink-0" />}
         </div>
       </div>
 

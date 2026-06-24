@@ -4,6 +4,7 @@ import com.hivibe.server.dgns.dto.DiagnosisSaveRequestDto;
 import com.hivibe.server.dgns.service.DiagnosisService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -16,9 +17,8 @@ public class DiagnosisController {
 
     private final DiagnosisService diagnosisService;
 
-    // 임시 lgnId — 팀원 JWT 머지 후 SecurityContext로 교체
     private String getCurrentLgnId() {
-        return "cherry123";
+        return SecurityContextHolder.getContext().getAuthentication().getName();
     }
 
     @PostMapping

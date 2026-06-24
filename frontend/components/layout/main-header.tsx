@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import {
-  Play, Copy, FileCode, Bookmark, Save,
+  Play, Copy, Bookmark, Save,
   Share2, Upload, Monitor, HardDrive,
   Activity as ActivityIcon, GraduationCap, Book, Check, User,
 } from "lucide-react"
@@ -19,8 +19,6 @@ interface MainHeaderProps {
   setLanguage: (v: string) => void
   aiCoaching: boolean
   setAiCoaching: (v: boolean) => void
-  fileName: string
-  setFileName: (v: string) => void
   editorCode: string
   hasAnalyzed: boolean
   isAnalyzing?: boolean
@@ -37,35 +35,28 @@ interface MainHeaderProps {
   onFileUpload: () => void
 }
 
-const ext: Record<string, string> = {
-  java: "java", python: "py", javascript: "js",
-  typescript: "ts", cpp: "cpp", c: "c",
-}
-
 const headerTitle: Record<string, string> = {
   diagnosis: "코드 분석",
-  learning:  "학습하기",
-  notes:     "나만의 노트",
-  mypage:    "마이페이지",
+  learning: "학습하기",
+  notes: "나만의 노트",
+  mypage: "마이페이지",
 }
 
 const headerIcon: Record<string, any> = {
   diagnosis: ActivityIcon,
-  learning:  GraduationCap,
-  notes:     Book,
-  mypage:    User,
+  learning: GraduationCap,
+  notes: Book,
+  mypage: User,
 }
 
 export function MainHeader({
   activeNav, language, setLanguage,
   aiCoaching, setAiCoaching,
-  fileName, setFileName,
   editorCode, hasAnalyzed, isAnalyzing, selSession,
   codeCopied, uploadOpen, setUploadOpen,
   onRunAnalysis, onGoLearning,
   onCopyCode, onShare, onSaveDiag, onSaveNote, onFileUpload,
 }: MainHeaderProps) {
-  const fileExt = ext[language] ?? "txt"
   const IconComp = headerIcon[activeNav] ?? ActivityIcon
 
   return (
@@ -97,7 +88,7 @@ export function MainHeader({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-zinc-900 border-zinc-800">
-                {[["java","Java"],["python","Python"],["javascript","JavaScript"],["typescript","TypeScript"],["cpp","C++"],["c","C"]].map(([v, l]) => (
+                {[["java", "Java"], ["python", "Python"], ["javascript", "JavaScript"], ["typescript", "TypeScript"], ["cpp", "C++"], ["c", "C"]].map(([v, l]) => (
                   <SelectItem key={v} value={v} className="text-xs">{l}</SelectItem>
                 ))}
               </SelectContent>
@@ -129,11 +120,10 @@ export function MainHeader({
 
             <Button size="sm"
               disabled={activeNav === "diagnosis" && !hasAnalyzed}
-              className={`h-8 text-xs px-4 font-medium ${
-                activeNav === "diagnosis" && !hasAnalyzed
+              className={`h-8 text-xs px-4 font-medium ${activeNav === "diagnosis" && !hasAnalyzed
                   ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
                   : "text-white"
-              }`}
+                }`}
               style={activeNav === "diagnosis" && !hasAnalyzed ? {} : { background: BRAND }}
               onClick={onSaveDiag}>
               <Save className="h-3.5 w-3.5 mr-1.5 shrink-0" />
@@ -143,29 +133,20 @@ export function MainHeader({
         )}
       </div>
 
-      {/* Row 2 */}
+      {/* Row 2 — 파일명 입력란 제거, 탭에서 더블클릭으로 이름 변경하는 방식으로 통합 */}
       {(activeNav === "diagnosis" || (activeNav === "learning" && selSession)) && (
         <div className="h-9 flex items-center justify-between px-5 border-t border-zinc-800/40">
           <div className="flex items-center gap-2">
-            <FileCode className="h-3.5 w-3.5 text-zinc-600" />
-            <input
-              value={fileName}
-              onChange={e => setFileName(e.target.value)}
-              placeholder="Name your file..."
-              className="bg-transparent text-xs outline-none border-none w-44 font-code placeholder:text-zinc-700"
-              style={{ color: "#FAFAFA" }} />
-            <span className="font-code text-xs text-zinc-700">.{fileExt}</span>
-
             {activeNav === "learning" && selSession && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
                     onClick={onSaveNote}
-                    className="h-5 w-5 flex items-center justify-center rounded text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800 transition-colors ml-1">
+                    className="h-5 w-5 flex items-center justify-center rounded text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800 transition-colors">
                     <Bookmark className="h-3.5 w-3.5" />
                   </button>
                 </TooltipTrigger>
-                <TooltipContent className="bg-zinc-900 border-zinc-700 text-zinc-200 text-xs font-space" side="bottom">
+                <TooltipContent side="bottom">
                   노트에 저장
                 </TooltipContent>
               </Tooltip>
