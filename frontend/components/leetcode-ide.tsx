@@ -86,50 +86,7 @@ const initSessions: LearningSession[] = [
   },
 ];
 
-const mockNotes: Note[] = [
-  {
-    id: 1,
-    title: "Graph DFS Optimization",
-    date: "Oct 24, 2025",
-    grade: "B+",
-    gradeColor: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-    tags: ["DFS", "Recursion", "Graph"],
-    language: "Python",
-    favorited: false,
-    category: "Graph",
-    memo: "Applied memoization to avoid redundant traversals in dense graphs.\n\nKey insight: storing visited nodes in a shared set across recursive calls eliminates duplicate work.",
-    code: `def dfs(graph, start, visited=None):
-    if visited is None:
-        visited = set()
-    visited.add(start)
-    for next_node in graph[start]:
-        if next_node not in visited:
-            dfs(graph, next_node, visited)
-    return visited`,
-  },
-  {
-    id: 2,
-    title: "Binary Search Implementation",
-    date: "Oct 20, 2025",
-    grade: "A",
-    gradeColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-    tags: ["Binary Search", "Arrays", "O(log n)"],
-    language: "Java",
-    favorited: true,
-    category: "Arrays",
-    memo: "Classic divide-and-conquer approach. Key is maintaining correct lo/hi boundaries.",
-    code: `public int search(int[] nums, int target) {
-    int lo = 0, hi = nums.length - 1;
-    while (lo <= hi) {
-        int mid = lo + (hi - lo) / 2;
-        if (nums[mid] == target) return mid;
-        else if (nums[mid] < target) lo = mid + 1;
-        else hi = mid - 1;
-    }
-    return -1;
-}`,
-  },
-];
+
 
 /* ── COMPONENT ── */
 export function LeetCodeIDE() {
@@ -161,7 +118,6 @@ export function LeetCodeIDE() {
   const [selSession, setSelSession] = useState<number | null>(null);
 
   // notes
-  const [notes, setNotes] = useState<Note[]>(mockNotes);
   const [selNote, setSelNote] = useState(1);
   const [notesRefreshKey, setNotesRefreshKey] = useState(0)
 
@@ -182,6 +138,8 @@ export function LeetCodeIDE() {
   ]);
   const [tagInput, setTagInput] = useState("");
   const [noteMemo, setNoteMemo] = useState("");
+
+  const [sidebarRefreshKey, setSidebarRefreshKey] = useState(0)
 
   const [unlockedBadges, setUnlockedBadges] = useState<UnlockedBadge[]>([])
 
@@ -259,11 +217,6 @@ export function LeetCodeIDE() {
       p.map((s) => (s.id === id ? { ...s, favorited: !s.favorited } : s)),
     );
 
-  const toggleNoteFav = (id: number) =>
-    setNotes((p) =>
-      p.map((n) => (n.id === id ? { ...n, favorited: !n.favorited } : n)),
-    );
-
   const addTag = () => {
     const t = tagInput.trim();
     if (t && !noteTags.includes(t)) {
@@ -293,6 +246,7 @@ export function LeetCodeIDE() {
           sidebarExp={sidebarExp}
           setSidebarExp={setSidebarExp}
           onNavClick={handleNavClick}
+          refreshKey={sidebarRefreshKey}
         />
 
         {/* 메인 */}
@@ -427,7 +381,7 @@ export function LeetCodeIDE() {
           {/* ── MYPAGE ── */}
           {activeNav === "mypage" && (
             <div className="flex-1 overflow-hidden">
-              <MyPage />
+              <MyPage onProfileUpdated={() => setSidebarRefreshKey(k => k + 1)} />
             </div>
           )}
         </div>

@@ -25,6 +25,7 @@ interface SidebarProps {
   sidebarExp: boolean
   setSidebarExp: (v: boolean) => void
   onNavClick: (id: string) => void
+  refreshKey?: number   // 마이페이지에서 프로필 수정 시 올려서 재조회 트리거
 }
 
 interface SidebarUser {
@@ -33,7 +34,7 @@ interface SidebarUser {
   userPhoto: string | null
 }
 
-export function Sidebar({ activeNav, sidebarExp, setSidebarExp, onNavClick }: SidebarProps) {
+export function Sidebar({ activeNav, sidebarExp, setSidebarExp, onNavClick, refreshKey }: SidebarProps) {
   const [user, setUser] = useState<SidebarUser | null>(null)
 
   useEffect(() => {
@@ -41,7 +42,7 @@ export function Sidebar({ activeNav, sidebarExp, setSidebarExp, onNavClick }: Si
       .then(res => res.json())
       .then(data => setUser(data))
       .catch(e => console.error("사이드바 유저 정보 불러오기 실패:", e))
-  }, [])
+  }, [refreshKey])
 
   const initial = user?.userNm?.[0] ?? "?"
 

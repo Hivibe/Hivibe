@@ -66,7 +66,7 @@ export function MainHeader({
       <div className="h-14 flex items-center justify-between px-5">
         <div className="flex items-center gap-2">
           <IconComp className="h-4 w-4" style={{ color: BRAND }} />
-          <span className="font-syne text-sm font-semibold text-zinc-100">
+          <span className="font-ko text-sm font-semibold text-zinc-100">
             {headerTitle[activeNav] ?? ""}
           </span>
         </div>

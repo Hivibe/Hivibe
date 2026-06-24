@@ -1,4 +1,3 @@
-// components/dialogs/save-note-dialog.tsx
 "use client"
 
 import { Button } from "@/components/ui/button"
@@ -31,7 +30,7 @@ export function SaveNoteDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-zinc-900 border-zinc-800 text-zinc-100 sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-syne flex items-center gap-2 text-emerald-400">
+          <DialogTitle className="font-ko flex items-center gap-2 text-emerald-400">
             <Bookmark className="h-4 w-4" />노트에 저장
           </DialogTitle>
         </DialogHeader>
@@ -41,7 +40,7 @@ export function SaveNoteDialog({
             <Input
               value={noteTitle}
               onChange={e => setNoteTitle(e.target.value)}
-              className="bg-zinc-950 border-zinc-800 text-zinc-200 text-sm font-space" />
+              className="bg-zinc-950 border-zinc-800 text-zinc-200 text-sm font-ko" />
           </div>
           <div className="space-y-2">
             <label className="font-space text-[10px] text-zinc-500 uppercase tracking-wider">Tags</label>
