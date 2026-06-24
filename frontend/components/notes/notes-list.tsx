@@ -20,11 +20,11 @@ interface NotesListProps {
 }
 
 export function NotesList({ selNote, setSelNote, refreshKey }: NotesListProps) {
-  const [notes,       setNotes]       = useState<Note[]>([])
-  const [search,      setSearch]      = useState("")
-  const [langFilter,  setLangFilter]  = useState("All")
-  const [typeFilter,  setTypeFilter]  = useState("ALL")
-  const [loading,     setLoading]     = useState(true)
+  const [notes, setNotes] = useState<Note[]>([])
+  const [search, setSearch] = useState("")
+  const [langFilter, setLangFilter] = useState("All")
+  const [typeFilter, setTypeFilter] = useState("ALL")
+  const [loading, setLoading] = useState(true)
   const [newNoteOpen, setNewNoteOpen] = useState(false)
 
   const fetchNotes = async (type?: string) => {
@@ -40,7 +40,7 @@ export function NotesList({ selNote, setSelNote, refreshKey }: NotesListProps) {
     }
   }
 
-    useEffect(() => {
+  useEffect(() => {
     fetchNotes(typeFilter)
   }, [typeFilter, refreshKey])   // refreshKey 추가
 
@@ -56,7 +56,7 @@ export function NotesList({ selNote, setSelNote, refreshKey }: NotesListProps) {
     }
   }
 
-  const favNotes    = notes.filter(n => n.bkmkYn === "Y")
+  const favNotes = notes.filter(n => n.bkmkYn === "Y")
   const recentNotes = notes.filter(n => n.bkmkYn === "N")
 
   const filtered = (list: Note[]) =>
@@ -94,9 +94,9 @@ export function NotesList({ selNote, setSelNote, refreshKey }: NotesListProps) {
       {/* 타입 필터 */}
       <div className="flex gap-1.5 mb-2 flex-wrap">
         {[
-          { id: "ALL",      label: "전체"     },
+          { id: "ALL", label: "전체" },
           { id: "LEARNING", label: "학습 노트" },
-          { id: "MANUAL",   label: "자유 노트" },
+          { id: "MANUAL", label: "자유 노트" },
         ].map(f => (
           <button key={f.id} onClick={() => setTypeFilter(f.id)}
             className="font-ko text-[11px] px-2.5 py-1 rounded-full border transition-all"
@@ -191,21 +191,21 @@ export function NotesList({ selNote, setSelNote, refreshKey }: NotesListProps) {
           </DialogHeader>
           <NewNoteForm
             onSave={async (dto) => {
-            try {
-              await apiFetch("/api/notes", {
-                method: "POST",
-                body: JSON.stringify(dto),
-              })
+              try {
+                await apiFetch("/api/notes", {
+                  method: "POST",
+                  body: JSON.stringify(dto),
+                })
 
-              setNewNoteOpen(false)
-              fetchNotes(typeFilter)
+                setNewNoteOpen(false)
+                fetchNotes(typeFilter)
 
-              // 뱃지 체크는 백그라운드로 — UI를 막지 않음
-              apiFetch("/api/badges/check", { method: "POST" }).catch(() => {})
-            } catch (e) {
-              console.error("노트 저장 실패:", e)
-            }
-          }}
+                // 뱃지 체크는 백그라운드로 — UI를 막지 않음
+                apiFetch("/api/badges/check", { method: "POST" }).catch(() => { })
+              } catch (e) {
+                console.error("노트 저장 실패:", e)
+              }
+            }}
             onCancel={() => setNewNoteOpen(false)}
           />
         </DialogContent>
@@ -221,21 +221,21 @@ function NewNoteForm({ onSave, onCancel }: {
 }) {
   const [noteName, setNoteName] = useState("")
   const [noteMemo, setNoteMemo] = useState("")
-  const [noteCn,   setNoteCn]   = useState("")
-  const [tag,      setTag]      = useState("")
-  const [lang,     setLang]     = useState("Java")
+  const [noteCn, setNoteCn] = useState("")
+  const [tag, setTag] = useState("")
+  const [lang, setLang] = useState("Java")
 
   return (
     <div className="space-y-4 py-2">
       <div className="space-y-1.5">
-        <label className="font-space text-[10px] text-zinc-500 uppercase tracking-wider">제목</label>
+        <label className="font-ko text-[10px] text-zinc-500 uppercase tracking-wider">제목</label>
         <Input value={noteName} onChange={e => setNoteName(e.target.value)}
           placeholder="노트 제목을 입력하세요"
           className="h-9 bg-zinc-950 border-zinc-800 text-zinc-200 text-sm font-ko" />
       </div>
 
       <div className="space-y-1.5">
-        <label className="font-space text-[10px] text-zinc-500 uppercase tracking-wider">언어</label>
+        <label className="font-ko text-[10px] text-zinc-500 uppercase tracking-wider">언어</label>
         <div className="flex gap-2 flex-wrap">
           {["Java", "Python", "JavaScript", "TypeScript", "C++", "C"].map(l => (
             <button key={l} onClick={() => setLang(l)}
@@ -250,21 +250,21 @@ function NewNoteForm({ onSave, onCancel }: {
       </div>
 
       <div className="space-y-1.5">
-        <label className="font-space text-[10px] text-zinc-500 uppercase tracking-wider">코드 (선택)</label>
+        <label className="font-ko text-[10px] text-zinc-500 uppercase tracking-wider">코드 (선택)</label>
         <textarea value={noteCn} onChange={e => setNoteCn(e.target.value)}
           placeholder="코드를 입력하세요"
           className="font-code w-full h-28 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 text-xs p-3 resize-none outline-none" />
       </div>
 
       <div className="space-y-1.5">
-        <label className="font-space text-[10px] text-zinc-500 uppercase tracking-wider">메모 (선택)</label>
+        <label className="font-ko text-[10px] text-zinc-500 uppercase tracking-wider">메모 (선택)</label>
         <textarea value={noteMemo} onChange={e => setNoteMemo(e.target.value)}
           placeholder="메모를 입력하세요"
           className="font-ko w-full h-20 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 text-sm p-3 resize-none outline-none" />
       </div>
 
       <div className="space-y-1.5">
-        <label className="font-space text-[10px] text-zinc-500 uppercase tracking-wider">태그 (선택)</label>
+        <label className="font-ko text-[10px] text-zinc-500 uppercase tracking-wider">태그 (선택)</label>
         <Input value={tag} onChange={e => setTag(e.target.value)}
           placeholder="#DP #Graph (공백으로 구분)"
           className="h-9 bg-zinc-950 border-zinc-800 text-zinc-200 text-sm font-space" />

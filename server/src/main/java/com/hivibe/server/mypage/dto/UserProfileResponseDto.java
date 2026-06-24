@@ -14,16 +14,18 @@ public class UserProfileResponseDto {
     private String userGrd;
     private String mktgAgreeYn;
     private String reviewAlarmYn;
+    private long diagnosisCount;
 
-    public UserProfileResponseDto(User user) {
-        this.id            = user.getId();
-        this.lgnId         = user.getLgnId();
-        this.userNm        = user.getUserNm();
-        this.userEmail     = user.getUserEmail();
-        this.userPhone     = user.getUserPhone();
-        this.userPhoto     = user.getUserPhoto();
-        this.userGrd       = user.getUserGrd();
-        this.mktgAgreeYn   = user.getMktgAgreeYn();
+    public UserProfileResponseDto(User user, long diagnosisCount) {
+        this.id = user.getId();
+        this.lgnId = user.getLgnId();
+        this.userNm = user.getUserNm();
+        this.userEmail = user.getUserEmail();
+        this.userPhone = user.getUserPhone();
+        this.userPhoto = user.getUserPhoto();
+        this.userGrd = user.getUserGrd();
+        this.mktgAgreeYn = user.getMktgAgreeYn();
         this.reviewAlarmYn = user.getReviewAlarmYn();
+        this.diagnosisCount = diagnosisCount;
     }
 }

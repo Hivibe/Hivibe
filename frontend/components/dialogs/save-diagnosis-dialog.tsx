@@ -16,10 +16,11 @@ interface SaveDiagnosisDialogProps {
   language: string
   editorCode: string
   aiResult: any
+  onBadgesUnlocked?: (badges: { key: string; icon: string; name: string; desc: string }[]) => void
 }
 
 export function SaveDiagnosisDialog({
-  open, onOpenChange, fileName, setFileName, language, editorCode, aiResult
+  open, onOpenChange, fileName, setFileName, language, editorCode, aiResult, onBadgesUnlocked
 }: SaveDiagnosisDialogProps) {
 
   const [isSaving, setIsSaving] = useState(false)
@@ -33,50 +34,67 @@ export function SaveDiagnosisDialog({
   }
 
   const handleSave = async () => {
-  if (!fileName.trim()) {
-    alert("저장 이름을 입력해 주세요.")
-    return
-  }
-
-  setIsSaving(true)
-  try {
-    const response = await apiFetch("/api/v1/diagnoses", {
-      method: "POST",
-      body: JSON.stringify({
-        name: fileName,
-        lang: language,
-        content: editorCode,
-        isStable: "Y",
-        grade: getGrade(aiResult?.totalScore ?? 0),
-        score: aiResult?.totalScore ?? 0,
-        summary: aiResult?.summary ?? "",
-        accuracy: aiResult?.accuracy ?? 0,
-        accuracyReason: aiResult?.accuracyReason ?? "",
-        efficiency: aiResult?.efficiency ?? 0,
-        efficiencyReason: aiResult?.efficiencyReason ?? "",
-        readability: aiResult?.readability ?? 0,
-        readabilityReason: aiResult?.readabilityReason ?? "",
-        style: aiResult?.style ?? 0,
-        styleReason: aiResult?.styleReason ?? "",
-        timeComplexity: aiResult?.complexity ?? "",
-        optimizedCode: aiResult?.optimizedCode ?? "",
-      }),
-    })
-
-    if (response.ok) {
-      await apiFetch("/api/badges/check", { method: "POST" })
-      alert("저장되었습니다!")
-      onOpenChange(false)
-    } else {
-      alert("저장 실패. 다시 시도해 주세요.")
+    if (!fileName.trim()) {
+      alert("저장 이름을 입력해 주세요.")
+      return
     }
-  } catch (error) {
-    console.error("저장 실패:", error)
-    alert("서버와 연결할 수 없습니다.")
-  } finally {
-    setIsSaving(false)
+
+    setIsSaving(true)
+    try {
+      const response = await apiFetch("/api/v1/diagnoses", {
+        method: "POST",
+        body: JSON.stringify({
+          name: fileName,
+          lang: language,
+          content: editorCode,
+          isStable: "Y",
+          grade: getGrade(aiResult?.totalScore ?? 0),
+          score: aiResult?.totalScore ?? 0,
+          summary: aiResult?.summary ?? "",
+          accuracy: aiResult?.accuracy ?? 0,
+          accuracyReason: aiResult?.accuracyReason ?? "",
+          efficiency: aiResult?.efficiency ?? 0,
+          efficiencyReason: aiResult?.efficiencyReason ?? "",
+          readability: aiResult?.readability ?? 0,
+          readabilityReason: aiResult?.readabilityReason ?? "",
+          style: aiResult?.style ?? 0,
+          styleReason: aiResult?.styleReason ?? "",
+          timeComplexity: aiResult?.complexity ?? "",
+          optimizedCode: aiResult?.optimizedCode ?? "",
+        }),
+      })
+
+      if (response.ok) {
+        // 뱃지 체크 — 새로 딴 뱃지(isNew=true)만 골라서 부모에 전달
+        let newlyUnlocked: any[] = []
+        try {
+          const badgeRes = await apiFetch("/api/badges/check", { method: "POST" })
+          if (badgeRes.ok) {
+            const allBadges = await badgeRes.json()
+            newlyUnlocked = allBadges.filter((b: any) => b.newlyAchieved)
+          }
+        } catch (badgeErr) {
+          console.error("뱃지 체크 실패:", badgeErr)
+          // 뱃지 체크가 실패해도 진단 저장 자체는 이미 성공했으니 무시하고 진행
+        }
+
+        if (newlyUnlocked.length > 0 && onBadgesUnlocked) {
+          onBadgesUnlocked(newlyUnlocked)   // 뱃지 팝업이 저장 성공 피드백을 대신함
+        } else {
+          alert("저장되었습니다!")
+        }
+
+        onOpenChange(false)
+      } else {
+        alert("저장 실패. 다시 시도해 주세요.")
+      }
+    } catch (error) {
+      console.error("저장 실패:", error)
+      alert("서버와 연결할 수 없습니다.")
+    } finally {
+      setIsSaving(false)
+    }
   }
-}
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
