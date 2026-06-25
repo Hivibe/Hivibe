@@ -45,33 +45,87 @@ import {
   TrendingUp,
   Sparkles,
 } from "lucide-react";
+import { Highlight, themes } from "prism-react-renderer";
+import Prism from "prismjs";
+import "prismjs/components/prism-java";
 
 const BRAND = "#63C1ED";
 
-/* ── mock 코드 타이핑 애니메이션용 ── */
-const CODE_LINES = [
-  { text: "public int[] twoSum(int[] nums, int t) {", color: "text-zinc-300" },
-  { text: "    for (int i = 0; i < n; i++) {", color: "text-zinc-300" },
-  { text: "        for (int j = i+1; j < n; j++) {", color: "text-rose-400" },
-  { text: "            if (nums[i]+nums[j] == t)", color: "text-rose-400" },
-  { text: "                return new int[]{i, j};", color: "text-rose-400" },
-  { text: "        }", color: "text-rose-400" },
-  { text: "    }", color: "text-rose-400" },
-  { text: "    return new int[]{};", color: "text-zinc-300" },
-  { text: "}", color: "text-zinc-300" },
-];
+/* ── mock 코드 (실제 Prism 하이라이팅용 단일 문자열) ── */
+const ORIGINAL_CODE = `public int[] twoSum(int[] nums, int t) {
+    for (int i = 0; i < n; i++) {
+        for (int j = i+1; j < n; j++) {
+            if (nums[i]+nums[j] == t)
+                return new int[]{i, j};
+        }
+    }
+    return new int[]{};
+}`;
 
-const OPTIMIZED_LINES = [
-  { text: "public int[] twoSum(int[] nums, int t) {", brand: false },
-  { text: "    Map<Integer,Integer> map = new HashMap<>();", brand: true },
-  { text: "    for (int i = 0; i < nums.length; i++) {", brand: true },
-  { text: "        int c = t - nums[i];", brand: true },
-  { text: "        if (map.containsKey(c))", brand: true },
-  { text: "            return new int[]{map.get(c), i};", brand: true },
-  { text: "        map.put(nums[i], i);", brand: true },
-  { text: "    }", brand: false },
-  { text: "    return new int[]{};", brand: false },
-];
+// 버그/비효율 구간으로 강조할 줄 번호 (0-indexed)
+const ORIGINAL_HIGHLIGHT = [2, 3, 4, 5, 6];
+
+const OPTIMIZED_CODE = `public int[] twoSum(int[] nums, int t) {
+    Map<Integer,Integer> map = new HashMap<>();
+    for (int i = 0; i < nums.length; i++) {
+        int c = t - nums[i];
+        if (map.containsKey(c))
+            return new int[]{map.get(c), i};
+        map.put(nums[i], i);
+    }
+    return new int[]{};
+}`;
+
+// 개선된 구간으로 강조할 줄 번호 (0-indexed)
+const OPTIMIZED_HIGHLIGHT = [1, 2, 3, 4, 5, 6];
+
+/* ── 실제 문법 강조 + 줄별 하이라이트 배경을 같이 적용하는 미니 코드 블록 ── */
+function MiniCodeBlock({
+  code,
+  highlightLines,
+  accent,
+}: {
+  code: string;
+  highlightLines: number[];
+  accent: "rose" | "brand";
+}) {
+  const highlightSet = new Set(highlightLines);
+  const bg = accent === "rose" ? "rgba(244,63,94,0.07)" : `${BRAND}08`;
+  const borderColor = accent === "rose" ? "rgba(244,63,94,0.5)" : `${BRAND}66`;
+
+  return (
+    <Highlight prism={Prism as any} theme={themes.vsDark} code={code} language="java">
+      {({ tokens, getLineProps, getTokenProps }) => (
+        <>
+          {tokens.map((line, i) => {
+            const isHi = highlightSet.has(i);
+            return (
+              <div
+                key={i}
+                {...getLineProps({ line })}
+                className="leading-5 whitespace-pre-wrap"
+                style={
+                  isHi
+                    ? {
+                      background: bg,
+                      borderLeft: `2px solid ${borderColor}`,
+                      paddingLeft: "6px",
+                      marginLeft: "-6px",
+                    }
+                    : { paddingLeft: "6px" }
+                }
+              >
+                {line.map((token, key) => (
+                  <span key={key} {...getTokenProps({ token })} />
+                ))}
+              </div>
+            );
+          })}
+        </>
+      )}
+    </Highlight>
+  );
+}
 
 const FEATURES = [
   {
@@ -279,7 +333,7 @@ export default function HomePage() {
                 className={`flex flex-col sm:flex-row items-center gap-3 justify-center lg:justify-start ${visible ? "anim-3" : "opacity-0"}`}
               >
                 <Link
-                  href="/main"
+                  href="/login"
                   className="glow-btn flex items-center gap-2 px-6 py-3 rounded-full text-white font-ko font-semibold text-sm transition-all hover:scale-105"
                   style={{ background: BRAND }}
                 >
@@ -371,7 +425,7 @@ export default function HomePage() {
                   </div>
 
                   {/* split code view */}
-                  <div className="flex text-[11px] font-space">
+                  <div className="flex text-[11px] font-code">
                     {/* original */}
                     <div className="flex-1 border-r border-zinc-800">
                       <div className="px-3 py-1.5 border-b border-zinc-800/50">
@@ -380,23 +434,11 @@ export default function HomePage() {
                         </span>
                       </div>
                       <div className="p-3 space-y-0.5">
-                        {CODE_LINES.map((line, i) => (
-                          <div
-                            key={i}
-                            className={`leading-5 whitespace-pre-wrap ${line.color}`}
-                            style={
-                              line.color.includes("rose")
-                                ? {
-                                    background: "rgba(244,63,94,0.07)",
-                                    borderLeft: "2px solid rgba(244,63,94,0.5)",
-                                    paddingLeft: "6px",
-                                  }
-                                : {}
-                            }
-                          >
-                            {line.text}
-                          </div>
-                        ))}
+                        <MiniCodeBlock
+                          code={ORIGINAL_CODE}
+                          highlightLines={ORIGINAL_HIGHLIGHT}
+                          accent="rose"
+                        />
                       </div>
                     </div>
 
@@ -411,24 +453,11 @@ export default function HomePage() {
                         </span>
                       </div>
                       <div className="p-3 space-y-0.5">
-                        {OPTIMIZED_LINES.map((line, i) => (
-                          <div
-                            key={i}
-                            className="leading-5 whitespace-pre-wrap"
-                            style={
-                              line.brand
-                                ? {
-                                    background: `${BRAND}08`,
-                                    borderLeft: `2px solid ${BRAND}66`,
-                                    paddingLeft: "6px",
-                                    color: BRAND,
-                                  }
-                                : { color: "#d4d4d8" }
-                            }
-                          >
-                            {line.text}
-                          </div>
-                        ))}
+                        <MiniCodeBlock
+                          code={OPTIMIZED_CODE}
+                          highlightLines={OPTIMIZED_HIGHLIGHT}
+                          accent="brand"
+                        />
                       </div>
                     </div>
                   </div>
@@ -467,7 +496,7 @@ export default function HomePage() {
                       <Zap className="h-3.5 w-3.5" style={{ color: BRAND }} />
                     </div>
                     <div>
-                      <p className="font-syne text-xs font-bold text-zinc-100">
+                      <p className="font-ko text-xs font-bold text-zinc-100">
                         분석 완료
                       </p>
                       <p className="font-space text-[9px] text-zinc-500">
@@ -619,7 +648,7 @@ export default function HomePage() {
                 <br />
               </p>
               <Link
-                href="/main"
+                href="/login"
                 className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full font-ko font-semibold text-white text-sm transition-all hover:scale-105 hover:opacity-95"
                 style={{ background: BRAND }}
               >

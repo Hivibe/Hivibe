@@ -25,9 +25,10 @@ const BRAND = "#63C1ED";
 interface NoteDetailProps {
   noteId: number | null;
   onDeleted?: () => void;
+  onUpdated?: () => void;
 }
 
-export function NoteDetail({ noteId, onDeleted }: NoteDetailProps) {
+export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
   const [note, setNote] = useState<Note | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -36,6 +37,7 @@ export function NoteDetail({ noteId, onDeleted }: NoteDetailProps) {
   const [editName, setEditName] = useState("");
   const [editMemo, setEditMemo] = useState("");
   const [editTag, setEditTag] = useState("");
+  const [editCode, setEditCode] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -54,6 +56,7 @@ export function NoteDetail({ noteId, onDeleted }: NoteDetailProps) {
     setEditName(note.noteName ?? "")
     setEditMemo(note.noteMemo ?? "")
     setEditTag(note.tag ?? "")
+    setEditCode(note.noteCn ?? "")   // 자유 노트일 때만 의미 있음
     setIsEditing(true)
   }
 
@@ -75,6 +78,8 @@ export function NoteDetail({ noteId, onDeleted }: NoteDetailProps) {
           noteName: editName.trim(),
           noteMemo: editMemo,
           tag: editTag,
+          // 학습 노트는 코드가 AI 최적화 결과(optCdContent)라 수정 대상 아님 — 자유 노트일 때만 noteCn 전송
+          ...(note?.noteType !== "LEARNING" ? { noteCn: editCode } : {}),
         }),
       })
       if (!res.ok) {
@@ -84,6 +89,7 @@ export function NoteDetail({ noteId, onDeleted }: NoteDetailProps) {
       const updated = await res.json()
       setNote(updated)
       setIsEditing(false)
+      onUpdated?.()   // 목록(NotesList)에도 변경사항 반영되도록 알림
     } catch (e) {
       console.error("노트 수정 실패:", e)
       alert("서버와 연결할 수 없습니다.")
@@ -132,7 +138,7 @@ export function NoteDetail({ noteId, onDeleted }: NoteDetailProps) {
         {/* 헤더 */}
         <div className="flex justify-between items-start gap-4">
           <div className="flex-1 min-w-0">
-            <p className="font-space text-[10px] tracking-widest mb-1.5 text-zinc-500">
+            <p className="font-ko text-xs tracking-widest mb-2 text-zinc-500">
               // {note.category} · {note.lang}
             </p>
 
@@ -141,15 +147,15 @@ export function NoteDetail({ noteId, onDeleted }: NoteDetailProps) {
                 value={editName}
                 onChange={e => setEditName(e.target.value)}
                 autoFocus
-                className="font-syne text-2xl font-bold bg-zinc-900 border-zinc-700 text-zinc-100 h-auto py-1.5"
+                className="font-ko text-2xl font-bold bg-zinc-900 border-zinc-700 text-zinc-100 h-auto py-1.5"
               />
             ) : (
-              <h1 className="font-syne text-3xl font-bold text-zinc-100 leading-tight">
+              <h1 className="font-ko text-3xl font-bold text-zinc-100 leading-tight">
                 {note.noteName}
               </h1>
             )}
 
-            <p className="font-ko text-xs text-zinc-500 mt-1.5">
+            <p className="font-ko text-xs text-zinc-500 mt-2">
               {new Date(note.createdAt).toLocaleDateString("ko-KR")}
             </p>
           </div>
@@ -161,10 +167,10 @@ export function NoteDetail({ noteId, onDeleted }: NoteDetailProps) {
                   size="sm"
                   onClick={saveEditing}
                   disabled={isSaving}
-                  className="h-8 text-white text-xs gap-1.5 font-ko"
+                  className="h-9 text-white text-sm gap-1.5 font-ko px-4"
                   style={{ background: BRAND }}
                 >
-                  <Check className="h-3 w-3" />
+                  <Check className="h-3.5 w-3.5" />
                   {isSaving ? "저장 중..." : "저장"}
                 </Button>
                 <Button
@@ -172,9 +178,9 @@ export function NoteDetail({ noteId, onDeleted }: NoteDetailProps) {
                   variant="outline"
                   onClick={cancelEditing}
                   disabled={isSaving}
-                  className="h-8 border-zinc-800 bg-zinc-900 text-zinc-400 text-xs gap-1.5 font-ko"
+                  className="h-9 border-zinc-700 bg-zinc-900 text-zinc-300 text-sm gap-1.5 font-ko px-4"
                 >
-                  <X className="h-3 w-3" />
+                  <X className="h-3.5 w-3.5" />
                   취소
                 </Button>
               </>
@@ -184,26 +190,26 @@ export function NoteDetail({ noteId, onDeleted }: NoteDetailProps) {
                   size="sm"
                   variant="outline"
                   onClick={startEditing}
-                  className="h-8 border-zinc-800 bg-zinc-900 text-zinc-400 text-xs gap-1.5"
+                  className="h-9 border-zinc-700 bg-zinc-900 text-zinc-300 text-sm gap-1.5 px-4"
                 >
-                  <Edit2 className="h-3 w-3" />
+                  <Edit2 className="h-3.5 w-3.5" />
                   Edit
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-8 border-zinc-800 bg-zinc-900 text-zinc-400 text-xs gap-1.5"
+                  className="h-9 border-zinc-700 bg-zinc-900 text-zinc-300 text-sm gap-1.5 px-4"
                 >
-                  <Share2 className="h-3 w-3" />
+                  <Share2 className="h-3.5 w-3.5" />
                   Share
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={handleDelete}
-                  className="h-8 w-8 p-0 border-rose-900/50 bg-rose-500/10 text-rose-500"
+                  className="h-9 w-9 p-0 border-rose-900/50 bg-rose-500/10 text-rose-500"
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
+                  <Trash2 className="h-4 w-4" />
                 </Button>
               </>
             )}
@@ -214,14 +220,14 @@ export function NoteDetail({ noteId, onDeleted }: NoteDetailProps) {
         {note.noteType === "LEARNING" && note.aiSummary && (
           <Card
             className="border-zinc-800"
-            style={{ background: `${BRAND}06`, borderColor: `${BRAND}20` }}
+            style={{ background: `${BRAND}08`, borderColor: `${BRAND}25` }}
           >
-            <CardContent className="p-5">
+            <CardContent className="p-6">
               <p
-                className="font-space text-[10px] tracking-widest mb-3 flex items-center gap-2"
+                className="font-space text-xs tracking-widest mb-3 flex items-center gap-2"
                 style={{ color: BRAND }}
               >
-                <Sparkles className="h-3 w-3" />
+                <Sparkles className="h-3.5 w-3.5" />
                 // AI SUMMARY
               </p>
               <p className="font-ko text-sm text-zinc-300 leading-relaxed">
@@ -233,10 +239,10 @@ export function NoteDetail({ noteId, onDeleted }: NoteDetailProps) {
 
         {/* 메모 */}
         {(note.noteMemo || isEditing) && (
-          <Card className="bg-zinc-900/50 border-zinc-800">
-            <CardContent className="p-5">
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardContent className="p-6">
               <p
-                className="font-space text-[10px] tracking-widest mb-3"
+                className="font-space text-xs tracking-widest mb-3"
                 style={{ color: BRAND }}
               >
                 // PERSONAL NOTES
@@ -246,7 +252,7 @@ export function NoteDetail({ noteId, onDeleted }: NoteDetailProps) {
                   value={editMemo}
                   onChange={e => setEditMemo(e.target.value)}
                   placeholder="메모를 입력하세요"
-                  className="font-ko w-full min-h-[100px] rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 text-sm p-3 resize-none outline-none"
+                  className="font-ko w-full min-h-[100px] rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 text-sm p-3.5 resize-none outline-none"
                 />
               ) : (
                 <p className="font-ko text-sm text-zinc-300 leading-relaxed whitespace-pre-line">
@@ -259,10 +265,10 @@ export function NoteDetail({ noteId, onDeleted }: NoteDetailProps) {
 
         {/* 태그 (수정 모드일 때만 노출) */}
         {isEditing && (
-          <Card className="bg-zinc-900/50 border-zinc-800">
-            <CardContent className="p-5">
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardContent className="p-6">
               <p
-                className="font-space text-[10px] tracking-widest mb-3"
+                className="font-space text-xs tracking-widest mb-3"
                 style={{ color: BRAND }}
               >
                 // TAGS
@@ -271,60 +277,80 @@ export function NoteDetail({ noteId, onDeleted }: NoteDetailProps) {
                 value={editTag}
                 onChange={e => setEditTag(e.target.value)}
                 placeholder="#DP #Graph (공백으로 구분)"
-                className="bg-zinc-950 border-zinc-800 text-zinc-200 text-sm font-space"
+                className="bg-zinc-950 border-zinc-800 text-zinc-200 text-sm font-ko"
               />
             </CardContent>
           </Card>
         )}
 
-        {/* 코드 스냅샷 */}
-        {code && (
-          <Card className="bg-zinc-900/50 border-zinc-800 overflow-hidden">
-            <CardHeader className="pb-0 pt-4 px-5 flex flex-row items-center justify-between">
+        {/* 코드 스냅샷 / 코드 수정 (자유 노트만) */}
+        {isEditing && note.noteType !== "LEARNING" ? (
+          <Card className="bg-zinc-900 border-zinc-800 overflow-hidden">
+            <CardHeader className="pb-0 pt-5 px-6">
               <CardTitle
-                className="font-space text-[10px] tracking-widest flex items-center gap-2"
+                className="font-space text-xs tracking-widest flex items-center gap-2"
                 style={{ color: BRAND }}
               >
-                <Code2 className="h-3.5 w-3.5" />
+                <Code2 className="h-4 w-4" />
                 Code Snapshot
               </CardTitle>
-              <span className="font-space text-[10px] px-2 py-0.5 rounded border border-zinc-700 text-zinc-400">
+            </CardHeader>
+            <CardContent className="p-6">
+              <textarea
+                value={editCode}
+                onChange={e => setEditCode(e.target.value)}
+                placeholder="코드를 입력하세요"
+                className="font-code placeholder-ko w-full h-48 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 text-sm p-3.5 resize-none outline-none"
+              />
+            </CardContent>
+          </Card>
+        ) : code && (
+          <Card className="bg-zinc-900 border-zinc-800 overflow-hidden">
+            <CardHeader className="pb-0 pt-5 px-6 flex flex-row items-center justify-between">
+              <CardTitle
+                className="font-space text-xs tracking-widest flex items-center gap-2"
+                style={{ color: BRAND }}
+              >
+                <Code2 className="h-4 w-4" />
+                Code Snapshot
+              </CardTitle>
+              <span className="font-space text-xs px-2.5 py-1 rounded border border-zinc-700 text-zinc-300">
                 {note.lang}
               </span>
             </CardHeader>
-            <CardContent className="px-0 pb-0 pt-3">
+            <CardContent className="px-0 pb-0 pt-4">
               <div className="flex items-center border-t border-b border-zinc-800/80 bg-[#1a1a1a]">
                 <div
-                  className="flex items-center gap-2 px-4 py-2 border-r border-zinc-800 bg-[#141414]"
+                  className="flex items-center gap-2 px-4 py-2.5 border-r border-zinc-800 bg-[#141414]"
                   style={{ borderBottom: `2px solid ${BRAND}` }}
                 >
-                  <FileCode className="h-3 w-3 text-zinc-500" />
-                  <span className="font-code text-[11px] text-zinc-300">
+                  <FileCode className="h-3.5 w-3.5 text-zinc-500" />
+                  <span className="font-code text-xs text-zinc-300">
                     {note.noteName?.toLowerCase().replace(/ /g, "_")}.
                     {note.lang === "Python" ? "py" : "java"}
                   </span>
                 </div>
                 <div className="ml-auto flex items-center gap-3 px-4">
-                  <span className="font-space text-[10px] text-zinc-600">
+                  <span className="font-space text-xs text-zinc-500">
                     {code.split("\n").length} lines
                   </span>
                   <button
                     onClick={() => navigator.clipboard.writeText(code)}
-                    className="font-space text-[10px] text-zinc-600 hover:text-zinc-300 transition-colors flex items-center gap-1"
+                    className="font-space text-xs text-zinc-500 hover:text-zinc-200 transition-colors flex items-center gap-1"
                   >
-                    <Copy className="h-3 w-3" />
+                    <Copy className="h-3.5 w-3.5" />
                     copy
                   </button>
                 </div>
               </div>
-              <div className="bg-[#141414] font-code text-[13px] overflow-x-auto">
+              <div className="bg-[#141414] font-code text-sm overflow-x-auto">
                 <div className="flex">
                   <div className="select-none shrink-0 border-r border-zinc-800/60 py-4">
                     <div className="px-4 text-right min-w-[48px]">
                       {code.split("\n").map((_: string, i: number) => (
                         <div
                           key={i}
-                          className="leading-[1.625rem] text-zinc-700 text-[12px]"
+                          className="leading-[1.625rem] text-zinc-600 text-xs"
                         >
                           {i + 1}
                         </div>
@@ -336,14 +362,14 @@ export function NoteDetail({ noteId, onDeleted }: NoteDetailProps) {
                   </div>
                 </div>
               </div>
-              <div className="h-6 bg-[#1a1a1a] border-t border-zinc-800/60 flex items-center px-4 gap-4">
-                <span className="font-space text-[10px] text-zinc-600">
+              <div className="h-7 bg-[#1a1a1a] border-t border-zinc-800/60 flex items-center px-4 gap-4">
+                <span className="font-space text-xs text-zinc-500">
                   {note.lang}
                 </span>
-                <span className="font-space text-[10px] text-zinc-600">
+                <span className="font-space text-xs text-zinc-500">
                   UTF-8
                 </span>
-                <span className="font-space text-[10px] text-zinc-600 ml-auto">
+                <span className="font-space text-xs text-zinc-500 ml-auto">
                   {code.length} chars
                 </span>
               </div>

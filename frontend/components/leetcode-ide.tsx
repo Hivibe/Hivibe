@@ -38,6 +38,7 @@ import { MyPage } from "@/components/mypage/my-page";
 // dialogs
 import { SaveDiagnosisDialog } from "@/components/dialogs/save-diagnosis-dialog";
 import { SaveNoteDialog } from "@/components/dialogs/save-note-dialog";
+import { LoadDiagnosisDialog } from "@/components/dialogs/load-diagnosis-dialog"
 
 // types
 import type { LearningSession, Note } from "@/types";
@@ -118,6 +119,9 @@ export function LeetCodeIDE() {
   const [noteTags, setNoteTags] = useState(["Java", "Optimization", "DataStructure"]);
   const [tagInput, setTagInput] = useState("");
   const [noteMemo, setNoteMemo] = useState("");
+  const [loadDiagOpen, setLoadDiagOpen] = useState(false)
+
+  const [sidebarRefreshKey, setSidebarRefreshKey] = useState(0)
 
   const [unlockedBadges, setUnlockedBadges] = useState<UnlockedBadge[]>([])
 
@@ -275,8 +279,20 @@ export function LeetCodeIDE() {
     e.target.value = "";
   };
 
+  const handleLoadDiagnosis = (content: string, lang: string, name: string) => {
+    setEditorCode(content)
+    setLanguage(lang)
+    setFileName(name)
+  }
   const toggleFav = (id: number) =>
-    setSessions((p) => p.map((s) => (s.id === id ? { ...s, favorited: !s.favorited } : s)));
+    setSessions((p) =>
+      p.map((s) => (s.id === id ? { ...s, favorited: !s.favorited } : s)),
+    );
+
+  const toggleNoteFav = (id: number) =>
+    setNotes((p) =>
+      p.map((n) => (n.id === id ? { ...n, favorited: !n.favorited } : n)),
+    );
 
   const addTag = () => {
     const t = tagInput.trim();
@@ -290,24 +306,24 @@ export function LeetCodeIDE() {
     setNoteTags((p) => p.filter((t) => t !== tag));
 
   const currentSession = useMemo<LearningSession | null>(() => {
-  if (!selSession) return null
+    if (!selSession) return null
 
-  // 1) 방금 만든 학습 세션이면 그걸로 표시
-  if (currentLearning && currentLearning.lrnId === selSession) {
-    return {
-      id: currentLearning.lrnId,
-      title: fileName || "학습 세션",
-      date: new Date().toLocaleDateString("ko-KR"),
-      grade: aiResult?.grade || getGradeFromScore(aiResult?.totalScore ?? 0),
-      tags: [],
-      language: language.charAt(0).toUpperCase() + language.slice(1),
-      favorited: false,
+    // 1) 방금 만든 학습 세션이면 그걸로 표시
+    if (currentLearning && currentLearning.lrnId === selSession) {
+      return {
+        id: currentLearning.lrnId,
+        title: fileName || "학습 세션",
+        date: new Date().toLocaleDateString("ko-KR"),
+        grade: aiResult?.grade || getGradeFromScore(aiResult?.totalScore ?? 0),
+        tags: [],
+        language: language.charAt(0).toUpperCase() + language.slice(1),
+        favorited: false,
+      }
     }
-  }
 
-  // 2) 아카이브에서 클릭한 경우 (목 데이터)
-  return sessions.find((s) => s.id === selSession) ?? null
-}, [selSession, currentLearning, sessions, fileName, language, aiResult])
+    // 2) 아카이브에서 클릭한 경우 (목 데이터)
+    return sessions.find((s) => s.id === selSession) ?? null
+  }, [selSession, currentLearning, sessions, fileName, language, aiResult])
 
   return (
     <TooltipProvider>
@@ -323,6 +339,7 @@ export function LeetCodeIDE() {
           sidebarExp={sidebarExp}
           setSidebarExp={setSidebarExp}
           onNavClick={handleNavClick}
+          refreshKey={sidebarRefreshKey}
         />
 
         <div className="flex-1 flex flex-col min-w-0">
@@ -347,6 +364,7 @@ export function LeetCodeIDE() {
             onSaveDiag={() => setSaveDiagOpen(true)}
             onSaveNote={() => setSaveNoteOpen(true)}
             onFileUpload={() => fileRef.current?.click()}
+            onLoadPrevious={() => setLoadDiagOpen(true)}
           />
 
           <input
@@ -371,10 +389,11 @@ export function LeetCodeIDE() {
                   </ScrollArea>
                 </div>
               </div>
-              <div className="w-px bg-zinc-800/50 relative flex items-center justify-center shrink-0">
+              <div className="w-4 relative flex items-center justify-center shrink-0">
+                <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-zinc-800/50" />
                 <button
                   onClick={() => setDiagPanelOpen((p) => !p)}
-                  className="absolute z-10 w-4 h-8 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-sm flex items-center justify-center text-zinc-400 hover:text-zinc-200 transition-colors"
+                  className="relative z-10 w-4 h-8 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-sm flex items-center justify-center text-zinc-400 hover:text-zinc-200 transition-colors"
                 >
                   {diagPanelOpen ? "‹" : "›"}
                 </button>
@@ -448,7 +467,7 @@ export function LeetCodeIDE() {
 
           {activeNav === "mypage" && (
             <div className="flex-1 overflow-hidden">
-              <MyPage />
+              <MyPage onProfileUpdated={() => setSidebarRefreshKey(k => k + 1)} />
             </div>
           )}
         </div>
@@ -462,6 +481,12 @@ export function LeetCodeIDE() {
           editorCode={editorCode}
           aiResult={aiResult}
           onBadgesUnlocked={setUnlockedBadges}
+        />
+
+        <LoadDiagnosisDialog
+          open={loadDiagOpen}
+          onOpenChange={setLoadDiagOpen}
+          onSelect={handleLoadDiagnosis}
         />
 
         <BadgeUnlockDialog

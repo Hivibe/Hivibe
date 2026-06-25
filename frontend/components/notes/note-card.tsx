@@ -22,61 +22,43 @@ export function NoteCard({
   return (
     <div
       onClick={() => setSelNote(n.noteId)}
-      className="p-3.5 rounded-xl border cursor-pointer transition-all mb-2"
+      className="p-4 rounded-xl border cursor-pointer transition-all mb-2.5"
       style={
         selNote === n.noteId
-          ? { borderColor: `${BRAND}44`, background: `${BRAND}08` }
-          : { borderColor: "#27272a", background: "#18181b55" }
+          ? { borderColor: `${BRAND}55`, background: `${BRAND}0d` }
+          : { borderColor: "#27272a", background: "#18181b" }
       }
     >
-      <div className="flex justify-between items-start mb-1">
-        <h3 className="font-syne text-xs font-semibold text-zinc-100 leading-snug flex-1 mr-2">
+      <div className="flex justify-between items-start mb-1.5 gap-2">
+        <h3 className="font-ko text-sm font-bold text-zinc-100 leading-snug flex-1">
           {n.noteName}
         </h3>
-        <div className="flex items-center gap-1.5 shrink-0">
-          <span
-            className="font-space text-[10px] px-1.5 py-0.5 rounded border"
-            style={
-              n.noteType === "LEARNING"
-                ? {
-                    background: `${BRAND}15`,
-                    color: BRAND,
-                    borderColor: `${BRAND}30`,
-                  }
-                : {
-                    background: "#27272a",
-                    color: "#71717a",
-                    borderColor: "#3f3f46",
-                  }
-            }
-          >
-            {n.noteType === "LEARNING" ? "학습" : "직접"}
-          </span>
+        <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={(e) => {
               e.stopPropagation();
               toggleNoteFav(n.noteId);
             }}
-            className="h-5 w-5 flex items-center justify-center rounded transition-colors"
-            style={{ color: n.bkmkYn === "Y" ? "#f59e0b" : "#52525b" }}
+            className="h-6 w-6 flex items-center justify-center rounded transition-colors hover:bg-zinc-800"
+            style={{ color: n.bkmkYn === "Y" ? "#f59e0b" : "#71717a" }}
           >
             <Star
-              className={`h-3 w-3 ${n.bkmkYn === "Y" ? "fill-amber-400" : ""}`}
+              className={`h-3.5 w-3.5 ${n.bkmkYn === "Y" ? "fill-amber-400" : ""}`}
             />
           </button>
         </div>
       </div>
-      <p className="font-ko text-xs text-zinc-500 mb-2">
+      <p className="font-ko text-xs text-zinc-500 mb-2.5">
         {new Date(n.createdAt).toLocaleDateString("ko-KR")}
       </p>
-      <div className="flex flex-wrap gap-1">
+      <div className="flex flex-wrap gap-1.5">
         {n.tag
           ?.split(" ")
           .filter(Boolean)
           .map((t) => (
             <span
               key={t}
-              className="font-space text-[10px] px-2 py-0.5 rounded-full border border-zinc-700 text-zinc-400"
+              className="font-space text-[11px] px-2 py-0.5 rounded-full border border-zinc-700 text-zinc-400"
             >
               {t}
             </span>
