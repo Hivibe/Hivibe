@@ -18,9 +18,12 @@ import com.hivibe.server.config.jwt.JwtTokenProvider;
 import com.hivibe.server.config.oauth2.CustomOAuth2UserService;
 import com.hivibe.server.config.oauth2.OAuth2SuccessHandler;
 
+import jakarta.servlet.http.HttpServletResponse;
+
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
+import org.springframework.http.MediaType;
 
 @Configuration
 @EnableWebSecurity
@@ -56,7 +59,22 @@ public class SecurityConfig {
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(customOAuth2UserService))
-                        .successHandler(oAuth2SuccessHandler));
+                        .successHandler(oAuth2SuccessHandler))
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            response.setCharacterEncoding("UTF-8");
+                            response.getWriter().write(
+                                    "{\"error\":\"Unauthorized\",\"message\":\"인증이 필요합니다.\"}");
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            response.setCharacterEncoding("UTF-8");
+                            response.getWriter().write(
+                                    "{\"error\":\"Forbidden\",\"message\":\"권한이 없습니다.\"}");
+                        }));
 
         return http.build();
     }

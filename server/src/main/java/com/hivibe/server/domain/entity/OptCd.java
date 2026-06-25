@@ -12,6 +12,7 @@ import lombok.*;
 @Entity
 @Table(name = "OPT_CD")
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
@@ -34,7 +35,7 @@ public class OptCd {
 
     /** 빈칸 채우기 학습용 코드 (특정 부분을 blank 처리한 버전) */
     @Lob
-    @Column(name = "BLANK")
+    @Column(name = "BLANK", columnDefinition = "LONGTEXT")
     private String blank;
 
     /** 최적화된 전체 코드 내용 */
@@ -45,4 +46,9 @@ public class OptCd {
     /** 최적화 코드의 시간복잡도 (예: O(n log n)) */
     @Column(name = "TIME_COMP", length = 10)
     private String timeComp;
+
+    // OptCd 엔티티 클래스 안 적당한 위치에
+    public void updateBlank(String blank) {
+        this.blank = blank;
+    }
 }

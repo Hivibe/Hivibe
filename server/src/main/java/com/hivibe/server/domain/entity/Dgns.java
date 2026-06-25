@@ -34,7 +34,7 @@ public class Dgns {
     private Anls anls;
 
     /** 진단명 (예: 알고리즘 효율성 진단) */
-    @Column(name = "DGNS_NM", length = 20)
+    @Column(name = "DGNS_NM", length = 200)
     private String dgnsNm;
 
     /** 진단 일시 (최초 생성 후 변경 불가) */

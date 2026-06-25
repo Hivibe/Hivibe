@@ -34,6 +34,7 @@ interface MainHeaderProps {
   onSaveNote: () => void
   onFileUpload: () => void
   onLoadPrevious: () => void
+  isStartingLearning?: boolean
 }
 
 const headerTitle: Record<string, string> = {
@@ -56,7 +57,9 @@ export function MainHeader({
   editorCode, hasAnalyzed, isAnalyzing, selSession,
   codeCopied, uploadOpen, setUploadOpen,
   onRunAnalysis, onGoLearning,
+
   onCopyCode, onShare, onSaveDiag, onSaveNote, onFileUpload, onLoadPrevious,
+  isStartingLearning,
 }: MainHeaderProps) {
   const IconComp = headerIcon[activeNav] ?? ActivityIcon
 
@@ -96,14 +99,6 @@ export function MainHeader({
             </Select>
 
             {activeNav === "diagnosis" && (
-              <Button size="sm" disabled={!hasAnalyzed}
-                onClick={onGoLearning}
-                className={`h-8 text-xs px-4 font-medium text-white ${hasAnalyzed ? "bg-amber-400 hover:bg-amber-500" : "bg-amber-400/25 cursor-not-allowed"}`}>
-                <GraduationCap className="h-3.5 w-3.5 mr-1.5 shrink-0" />
-                <span className="hidden lg:inline">Learning</span>
-              </Button>
-            )}
-            {activeNav === "diagnosis" && (
               <Button size="sm" disabled={!editorCode.trim() || isAnalyzing}
                 onClick={onRunAnalysis}
                 className={`h-8 text-white text-xs px-4 font-medium ${editorCode.trim() && !isAnalyzing ? "bg-emerald-500 hover:bg-emerald-600" : "bg-emerald-500/25 cursor-not-allowed"}`}>
@@ -112,10 +107,17 @@ export function MainHeader({
               </Button>
             )}
 
-            {activeNav === "learning" && selSession && (
-              <Button size="sm" className="h-8 text-white text-xs px-4 bg-emerald-500 hover:bg-emerald-600">
-                <Check className="h-3.5 w-3.5 mr-1.5 shrink-0" />
-                <span className="hidden lg:inline">Submit</span>
+            {activeNav === "diagnosis" && (
+              <Button size="sm" disabled={!hasAnalyzed || isStartingLearning}
+                onClick={onGoLearning}
+                className={`h-8 text-xs px-4 font-medium text-white ${hasAnalyzed && !isStartingLearning
+                    ? "bg-amber-400 hover:bg-amber-500"
+                    : "bg-amber-400/25 cursor-not-allowed"
+                  }`}>
+                <GraduationCap className="h-3.5 w-3.5 mr-1.5 shrink-0" />
+                <span className="hidden lg:inline">
+                  {isStartingLearning ? "Loading..." : "Learning"}
+                </span>
               </Button>
             )}
 

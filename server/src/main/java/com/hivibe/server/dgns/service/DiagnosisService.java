@@ -8,6 +8,7 @@ import com.hivibe.server.domain.entity.User;
 import com.hivibe.server.dgns.dto.DiagnosisDetailDto;
 import com.hivibe.server.dgns.dto.DiagnosisListItemDto;
 import com.hivibe.server.dgns.dto.DiagnosisSaveRequestDto;
+import com.hivibe.server.dgns.dto.DiagnosisSaveResponseDto;
 import com.hivibe.server.repository.AnlsRepository;
 import com.hivibe.server.repository.DgnsRepository;
 import com.hivibe.server.repository.OptCdRepository;
@@ -31,7 +32,7 @@ public class DiagnosisService {
     private final UserRepository userRepository;
 
     @Transactional
-    public Long saveDiagnosis(String lgnId, DiagnosisSaveRequestDto request) {
+    public DiagnosisSaveResponseDto saveDiagnosis(String lgnId, DiagnosisSaveRequestDto request) {
 
         User user = userRepository.findByLgnId(lgnId)
                 .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없어요."));
@@ -69,17 +70,21 @@ public class DiagnosisService {
                 .cdCn(request.optimizedCode())
                 .timeComp(request.timeComplexity())
                 .build();
-        optCdRepository.save(optCd);
+        OptCd savedOptCd = optCdRepository.save(optCd);
 
-        // 4. 진단 이력 저장 (User ↔ Anls 연결, 뱃지 계산용)
+        // 4. 진단 이력 저장
         Dgns dgns = Dgns.builder()
                 .user(user)
                 .anls(savedAnls)
                 .dgnsNm(request.name())
                 .build();
-        dgnsRepository.save(dgns);
+        Dgns savedDgns = dgnsRepository.save(dgns);
 
-        return savedAnls.getAnlsId();
+        return new DiagnosisSaveResponseDto(
+                savedAnls.getAnlsId(),
+                savedOrnCd.getOrnCdId(),
+                savedOptCd.getOptCdId(),
+                savedDgns.getDgnsId());
     }
 
     /** 내 진단 목록 (최신순) — "이전 분석에서 불러오기" 용 */
