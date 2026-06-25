@@ -33,6 +33,7 @@ interface MainHeaderProps {
   onSaveDiag: () => void
   onSaveNote: () => void
   onFileUpload: () => void
+  onLoadPrevious: () => void
 }
 
 const headerTitle: Record<string, string> = {
@@ -55,7 +56,7 @@ export function MainHeader({
   editorCode, hasAnalyzed, isAnalyzing, selSession,
   codeCopied, uploadOpen, setUploadOpen,
   onRunAnalysis, onGoLearning,
-  onCopyCode, onShare, onSaveDiag, onSaveNote, onFileUpload,
+  onCopyCode, onShare, onSaveDiag, onSaveNote, onFileUpload, onLoadPrevious,
 }: MainHeaderProps) {
   const IconComp = headerIcon[activeNav] ?? ActivityIcon
 
@@ -78,7 +79,7 @@ export function MainHeader({
                 checked={aiCoaching}
                 onCheckedChange={setAiCoaching}
                 className="data-[state=checked]:bg-[#63C1ED] scale-90" />
-              <span className="font-space text-[10px] text-zinc-500 hidden xl:inline">Live AI Coaching</span>
+              <span className="font-ko text-[12px] text-zinc-500 hidden xl:inline">Live AI Coaching</span>
             </div>
 
             <div className="h-4 w-px bg-zinc-800" />
@@ -121,8 +122,8 @@ export function MainHeader({
             <Button size="sm"
               disabled={activeNav === "diagnosis" && !hasAnalyzed}
               className={`h-8 text-xs px-4 font-medium ${activeNav === "diagnosis" && !hasAnalyzed
-                  ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
-                  : "text-white"
+                ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
+                : "text-white"
                 }`}
               style={activeNav === "diagnosis" && !hasAnalyzed ? {} : { background: BRAND }}
               onClick={onSaveDiag}>
@@ -157,7 +158,7 @@ export function MainHeader({
             <div className="relative">
               <button
                 onClick={() => setUploadOpen(!uploadOpen)}
-                className="h-7 px-2.5 flex items-center gap-1.5 rounded border border-zinc-800 font-space text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 text-[11px] transition-colors">
+                className="h-7 px-2.5 flex items-center gap-1.5 rounded border border-zinc-800 font-ko text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 text-[11px] transition-colors">
                 <Upload className="h-3 w-3" />
                 <span className="hidden lg:inline">Upload</span>
               </button>
@@ -170,18 +171,18 @@ export function MainHeader({
                       className="w-full flex items-center gap-3 px-4 py-3 hover:bg-zinc-800 transition-colors text-left">
                       <HardDrive className="h-4 w-4 text-zinc-400 shrink-0" />
                       <div>
-                        <p className="font-space text-xs text-zinc-200 font-bold">내 컴퓨터에서 코드 불러오기</p>
-                        <p className="font-space text-[10px] text-zinc-500 mt-0.5">모든 코드 파일 지원</p>
+                        <p className="font-ko text-xs text-zinc-200 font-bold">내 컴퓨터에서 코드 불러오기</p>
+                        <p className="font-ko text-[12px] text-zinc-500 mt-0.5">모든 코드 파일 지원</p>
                       </div>
                     </button>
                     <div className="h-px bg-zinc-800" />
                     <button
-                      onClick={() => setUploadOpen(false)}
+                      onClick={() => { setUploadOpen(false); onLoadPrevious() }}
                       className="w-full flex items-center gap-3 px-4 py-3 hover:bg-zinc-800 transition-colors text-left">
                       <Monitor className="h-4 w-4 text-zinc-400 shrink-0" />
                       <div>
-                        <p className="font-space text-xs text-zinc-200 font-bold">이전 분석에서</p>
-                        <p className="font-space text-[10px] text-zinc-500 mt-0.5">저장된 코드 불러오기</p>
+                        <p className="font-ko text-xs text-zinc-200 font-bold">이전 분석에서</p>
+                        <p className="font-ko text-[12px] text-zinc-500 mt-0.5">저장된 코드 불러오기</p>
                       </div>
                     </button>
                   </div>
@@ -191,14 +192,14 @@ export function MainHeader({
 
             <button
               onClick={onShare}
-              className="h-7 px-2.5 flex items-center gap-1.5 rounded border border-zinc-800 font-space text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 text-[11px] transition-colors">
+              className="h-7 px-2.5 flex items-center gap-1.5 rounded border border-zinc-800 font-ko text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 text-[11px] transition-colors">
               <Share2 className="h-3 w-3" />
               <span className="hidden lg:inline">Share</span>
             </button>
 
             <button
               onClick={onCopyCode}
-              className="h-7 px-2.5 flex items-center gap-1.5 rounded border font-space text-[11px] transition-colors hover:bg-zinc-800"
+              className="h-7 px-2.5 flex items-center gap-1.5 rounded border font-ko text-[11px] transition-colors hover:bg-zinc-800"
               style={codeCopied
                 ? { color: BRAND, borderColor: `${BRAND}44` }
                 : { color: "#71717a", borderColor: "#27272a" }}>

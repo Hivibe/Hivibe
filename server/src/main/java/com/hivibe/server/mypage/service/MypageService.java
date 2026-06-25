@@ -32,9 +32,24 @@ public class MypageService {
                         HttpStatus.NOT_FOUND, "유저를 찾을 수 없어요."));
     }
 
+    // 평균 점수 -> 등급 환산 (프론트 getGrade()와 동일 기준)
+    private String scoreToGrade(double score) {
+        if (score >= 90)
+            return "S";
+        if (score >= 80)
+            return "A";
+        if (score >= 70)
+            return "B";
+        if (score >= 60)
+            return "C";
+        return "F";
+    }
+
     private UserProfileResponseDto toResponseDto(User user) {
         long diagnosisCount = dgnsRepository.countByUser_Id(user.getId());
-        return new UserProfileResponseDto(user, diagnosisCount);
+        Double avgScore = dgnsRepository.findAvgScoreByUserId(user.getId());
+        String avgGrade = avgScore != null ? scoreToGrade(avgScore) : null;
+        return new UserProfileResponseDto(user, diagnosisCount, avgGrade);
     }
 
     // 마이페이지 조회

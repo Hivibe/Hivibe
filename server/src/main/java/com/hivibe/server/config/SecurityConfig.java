@@ -45,6 +45,10 @@ public class SecurityConfig {
                                 "/api/users/check-id",
                                 "/api/users/check-email")
                         .permitAll()
+                        // 프로필 사진 등 <img> 태그로 직접 불러오는 정적 파일은
+                        // Authorization 헤더를 못 붙이니 인증 없이 허용해야 함
+                        .requestMatchers("/uploads/**")
+                        .permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(
                         new JwtAuthenticationFilter(jwtTokenProvider, customUserDetailsService),

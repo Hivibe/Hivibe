@@ -26,6 +26,7 @@ interface Profile {
   mktgAgreeYn: string
   reviewAlarmYn: string
   diagnosisCount: number
+  avgGrade: string | null
 }
 
 interface Badge {
@@ -330,8 +331,8 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
                 </div>
                 <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
                   <div className="mb-2.5"><Star className="h-4 w-4 text-amber-400" /></div>
-                  <p className="font-syne text-2xl font-bold text-zinc-500">—</p>
-                  <p className="font-ko text-xs text-zinc-400 mt-1">평균 등급<br /><span className="text-zinc-600">(연동 예정)</span></p>
+                  <p className="font-syne text-2xl font-bold text-zinc-100">{profile.avgGrade ?? "—"}</p>
+                  <p className="font-ko text-xs text-zinc-400 mt-1">평균 등급</p>
                 </div>
                 <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
                   <div className="mb-2.5"><Flame className="h-4 w-4 text-orange-400" /></div>
@@ -438,14 +439,30 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
                 <div className="space-y-4">
                   <div className="space-y-1.5">
                     <label className="font-ko text-xs text-zinc-500 uppercase tracking-wider">이름</label>
-                    <div className="flex items-center gap-2">
-                      <Input value={profile.userNm} readOnly
-                        className="h-10 bg-zinc-950 border-zinc-800 text-zinc-300 text-sm font-ko" />
-                      <button onClick={() => { setActiveTab("profile"); setTempName(profile.userNm); setEditingName(true) }}
-                        className="h-10 px-4 rounded-lg border border-zinc-700 font-ko text-sm text-zinc-300 hover:bg-zinc-800 transition-colors shrink-0">
-                        수정
-                      </button>
-                    </div>
+                    {editingName ? (
+                      <div className="flex items-center gap-2">
+                        <Input value={tempName} onChange={e => setTempName(e.target.value)}
+                          autoFocus
+                          className="h-10 bg-zinc-950 border-zinc-700 text-zinc-200 text-sm font-ko" />
+                        <button onClick={saveName}
+                          className="h-10 w-10 flex items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors shrink-0">
+                          <Check className="h-4 w-4" />
+                        </button>
+                        <button onClick={() => setEditingName(false)}
+                          className="h-10 w-10 flex items-center justify-center rounded-lg border border-zinc-700 text-zinc-400 hover:bg-zinc-800 transition-colors shrink-0">
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Input value={profile.userNm} readOnly
+                          className="h-10 bg-zinc-950 border-zinc-800 text-zinc-300 text-sm font-ko" />
+                        <button onClick={() => { setTempName(profile.userNm); setEditingName(true) }}
+                          className="h-10 px-4 rounded-lg border border-zinc-700 font-ko text-sm text-zinc-300 hover:bg-zinc-800 transition-colors shrink-0">
+                          수정
+                        </button>
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-1.5">
                     <label className="font-ko text-xs text-zinc-500 uppercase tracking-wider">이메일</label>

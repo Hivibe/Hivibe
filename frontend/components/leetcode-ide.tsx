@@ -33,6 +33,7 @@ import { MyPage } from "@/components/mypage/my-page";
 // dialogs
 import { SaveDiagnosisDialog } from "@/components/dialogs/save-diagnosis-dialog";
 import { SaveNoteDialog } from "@/components/dialogs/save-note-dialog";
+import { LoadDiagnosisDialog } from "@/components/dialogs/load-diagnosis-dialog"
 
 // types
 import type { LearningSession, Note } from "@/types";
@@ -138,6 +139,7 @@ export function LeetCodeIDE() {
   ]);
   const [tagInput, setTagInput] = useState("");
   const [noteMemo, setNoteMemo] = useState("");
+  const [loadDiagOpen, setLoadDiagOpen] = useState(false)
 
   const [sidebarRefreshKey, setSidebarRefreshKey] = useState(0)
 
@@ -212,6 +214,11 @@ export function LeetCodeIDE() {
     e.target.value = "";
   };
 
+  const handleLoadDiagnosis = (content: string, lang: string, name: string) => {
+    setEditorCode(content)
+    setLanguage(lang)
+    setFileName(name)
+  }
   const toggleFav = (id: number) =>
     setSessions((p) =>
       p.map((s) => (s.id === id ? { ...s, favorited: !s.favorited } : s)),
@@ -276,6 +283,7 @@ export function LeetCodeIDE() {
             onSaveDiag={() => setSaveDiagOpen(true)}
             onSaveNote={() => setSaveNoteOpen(true)}
             onFileUpload={() => fileRef.current?.click()}
+            onLoadPrevious={() => setLoadDiagOpen(true)}
           />
 
           {/* hidden file input */}
@@ -304,10 +312,11 @@ export function LeetCodeIDE() {
                   </ScrollArea>
                 </div>
               </div>
-              <div className="w-px bg-zinc-800/50 relative flex items-center justify-center shrink-0">
+              <div className="w-4 relative flex items-center justify-center shrink-0">
+                <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-zinc-800/50" />
                 <button
                   onClick={() => setDiagPanelOpen((p) => !p)}
-                  className="absolute z-10 w-4 h-8 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-sm flex items-center justify-center text-zinc-400 hover:text-zinc-200 transition-colors"
+                  className="relative z-10 w-4 h-8 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-sm flex items-center justify-center text-zinc-400 hover:text-zinc-200 transition-colors"
                 >
                   {diagPanelOpen ? "‹" : "›"}
                 </button>
@@ -396,6 +405,12 @@ export function LeetCodeIDE() {
           editorCode={editorCode} // 추가
           aiResult={aiResult}
           onBadgesUnlocked={setUnlockedBadges}
+        />
+
+        <LoadDiagnosisDialog
+          open={loadDiagOpen}
+          onOpenChange={setLoadDiagOpen}
+          onSelect={handleLoadDiagnosis}
         />
 
         <BadgeUnlockDialog
