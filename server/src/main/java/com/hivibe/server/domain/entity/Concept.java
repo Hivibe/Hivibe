@@ -33,12 +33,12 @@ public class Concept {
     private String cdType;
 
     /** 개념 제목 (예: HashMap, 버블 정렬, DFS) */
-    @Column(name = "CONC_TITLE", length = 100, nullable = false)
+    @Column(name = "CONC_TITLE", length = 200, nullable = false)
     private String concTitle;
 
     /** 개념 상세 설명 */
     @Lob
-    @Column(name = "CONC_DESC")
+    @Column(name = "CONC_DESC", columnDefinition = "LONGTEXT")
     private String concDesc;
 
     /** 참고 URL (공식 문서, 블로그 등) */

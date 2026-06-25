@@ -1,11 +1,16 @@
 // components/leetcode-ide.tsx
 "use client";
 
-
-import { apiFetch } from "@/lib/api"
+import {
+  apiFetch,
+  saveDiagnosis,
+  generateAiLearning,
+  saveLearning,
+  type AiLearningResponse,
+} from "@/lib/api"
 
 import { useRouter } from "next/navigation";
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -37,101 +42,32 @@ import { SaveNoteDialog } from "@/components/dialogs/save-note-dialog";
 // types
 import type { LearningSession, Note } from "@/types";
 
+
 /* ── 목 데이터 ── */
 const initSessions: LearningSession[] = [
-  {
-    id: 1,
-    title: "Binary Search Implementation",
-    date: "Oct 20, 2025",
-    grade: "B+",
-    tags: ["Binary Search", "Arrays", "O(log n)"],
-    language: "Java",
-    favorited: true,
-  },
-  {
-    id: 2,
-    title: "Graph DFS Optimization",
-    date: "Oct 24, 2025",
-    grade: "B+",
-    tags: ["DFS", "Recursion", "Graph"],
-    language: "Java",
-    favorited: false,
-  },
-  {
-    id: 3,
-    title: "Dynamic Programming – Knapsack",
-    date: "Oct 18, 2025",
-    grade: "A",
-    tags: ["DP", "Memoization", "Optimization"],
-    language: "Python",
-    favorited: false,
-  },
-  {
-    id: 4,
-    title: "Merge Sort Deep Dive",
-    date: "Oct 12, 2025",
-    grade: "A+",
-    tags: ["Sorting", "Divide&Conquer"],
-    language: "Java",
-    favorited: false,
-  },
-  {
-    id: 5,
-    title: "Linked List Operations",
-    date: "Oct 8,  2025",
-    grade: "B+",
-    tags: ["LinkedList", "Pointers"],
-    language: "Java",
-    favorited: false,
-  },
+  { id: 1, title: "Binary Search Implementation", date: "Oct 20, 2025", grade: "B+", tags: ["Binary Search", "Arrays", "O(log n)"], language: "Java", favorited: true },
+  { id: 2, title: "Graph DFS Optimization", date: "Oct 24, 2025", grade: "B+", tags: ["DFS", "Recursion", "Graph"], language: "Java", favorited: false },
+  { id: 3, title: "Dynamic Programming – Knapsack", date: "Oct 18, 2025", grade: "A", tags: ["DP", "Memoization", "Optimization"], language: "Python", favorited: false },
+  { id: 4, title: "Merge Sort Deep Dive", date: "Oct 12, 2025", grade: "A+", tags: ["Sorting", "Divide&Conquer"], language: "Java", favorited: false },
+  { id: 5, title: "Linked List Operations", date: "Oct 8,  2025", grade: "B+", tags: ["LinkedList", "Pointers"], language: "Java", favorited: false },
 ];
 
-const mockNotes: Note[] = [
-  {
-    id: 1,
-    title: "Graph DFS Optimization",
-    date: "Oct 24, 2025",
-    grade: "B+",
-    gradeColor: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-    tags: ["DFS", "Recursion", "Graph"],
-    language: "Python",
-    favorited: false,
-    category: "Graph",
-    memo: "Applied memoization to avoid redundant traversals in dense graphs.\n\nKey insight: storing visited nodes in a shared set across recursive calls eliminates duplicate work.",
-    code: `def dfs(graph, start, visited=None):
-    if visited is None:
-        visited = set()
-    visited.add(start)
-    for next_node in graph[start]:
-        if next_node not in visited:
-            dfs(graph, next_node, visited)
-    return visited`,
-  },
-  {
-    id: 2,
-    title: "Binary Search Implementation",
-    date: "Oct 20, 2025",
-    grade: "A",
-    gradeColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-    tags: ["Binary Search", "Arrays", "O(log n)"],
-    language: "Java",
-    favorited: true,
-    category: "Arrays",
-    memo: "Classic divide-and-conquer approach. Key is maintaining correct lo/hi boundaries.",
-    code: `public int search(int[] nums, int target) {
-    int lo = 0, hi = nums.length - 1;
-    while (lo <= hi) {
-        int mid = lo + (hi - lo) / 2;
-        if (nums[mid] == target) return mid;
-        else if (nums[mid] < target) lo = mid + 1;
-        else hi = mid - 1;
-    }
-    return -1;
-}`,
-  },
-];
+/* 점수 → 등급 (백엔드와 일치) */
+function getGradeFromScore(score: number): string {
+  if (score >= 90) return 'S'
+  if (score >= 80) return 'A'
+  if (score >= 70) return 'B'
+  if (score >= 60) return 'C'
+  return 'F'
+}
 
-/* ── COMPONENT ── */
+/* 학습 세션 콘텐츠 (AI 학습 + 저장 결과 합친 형태) */
+type CurrentLearning = {
+  lrnId: number
+  optimizedCode: AiLearningResponse["optimizedCode"]
+  concepts: AiLearningResponse["concepts"]
+}
+
 export function LeetCodeIDE() {
   const router = useRouter();
 
@@ -147,8 +83,15 @@ export function LeetCodeIDE() {
   const [analyzedCode, setAnalyzedCode] = useState("");
 
   // AI
-  const [isAnalyzing, setIsAnalyzing] = useState(false); // 분석 중 로딩 상태
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiResult, setAiResult] = useState<any>(null);
+
+  // 진단 저장 추적 (중복 저장 방지) — dgnsId 기준
+  const [savedDgnsId, setSavedDgnsId] = useState<number | null>(null);
+
+  // 학습 세션
+  const [isStartingLearning, setIsStartingLearning] = useState(false);
+  const [currentLearning, setCurrentLearning] = useState<CurrentLearning | null>(null);
 
   // files
   const [fileName, setFileName] = useState("");
@@ -161,7 +104,6 @@ export function LeetCodeIDE() {
   const [selSession, setSelSession] = useState<number | null>(null);
 
   // notes
-  const [notes, setNotes] = useState<Note[]>(mockNotes);
   const [selNote, setSelNote] = useState(1);
   const [notesRefreshKey, setNotesRefreshKey] = useState(0)
 
@@ -172,20 +114,16 @@ export function LeetCodeIDE() {
   // dialogs
   const [saveDiagOpen, setSaveDiagOpen] = useState(false);
   const [saveNoteOpen, setSaveNoteOpen] = useState(false);
-  const [noteTitle, setNoteTitle] = useState(
-    "Nested Loop vs HashMap Performance",
-  );
-  const [noteTags, setNoteTags] = useState([
-    "Java",
-    "Optimization",
-    "DataStructure",
-  ]);
+  const [noteTitle, setNoteTitle] = useState("Nested Loop vs HashMap Performance");
+  const [noteTags, setNoteTags] = useState(["Java", "Optimization", "DataStructure"]);
   const [tagInput, setTagInput] = useState("");
   const [noteMemo, setNoteMemo] = useState("");
 
   const [unlockedBadges, setUnlockedBadges] = useState<UnlockedBadge[]>([])
 
   /* ── 핸들러 ── */
+
+  // 진단 실행 (AI 분석만 — DB 저장 X)
   const handleRunAnalysis = async () => {
     if (!editorCode.trim()) {
       alert("코드를 입력해 주세요...");
@@ -196,6 +134,8 @@ export function LeetCodeIDE() {
     setAiResult(null);
     setHasAnalyzed(false);
     setDiagPanelOpen(true);
+    setSavedDgnsId(null);            // 새 분석 시작 → 이전 저장 상태 리셋
+    setCurrentLearning(null);
 
     try {
       const response = await apiFetch("/api/ai/ask", {
@@ -204,18 +144,98 @@ export function LeetCodeIDE() {
           prompt: `다음 코드를 분석하고, 문제점과 개선 방안을 상세히 진단해 줘:\n\n${editorCode}`,
         }),
       });
-
       const data = await response.json();
       setAiResult(data);
       setHasAnalyzed(true);
     } catch (error) {
       console.error("백엔드 통신 실패:", error);
-      setAiResult(
-        "서버와 연결할 수 없습니다. 8080 포트가 켜져 있는지 확인해 주세요.",
-      );
+      setAiResult("서버와 연결할 수 없습니다. 8080 포트가 켜져 있는지 확인해 주세요.");
       setHasAnalyzed(true);
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  // aiResult → DiagnosisSaveRequest 변환
+  const buildSaveRequest = () => {
+    if (!aiResult || typeof aiResult !== "object") {
+      throw new Error("진단 결과가 없습니다.");
+    }
+    const score = aiResult.totalScore ?? 0;
+    return {
+      name: fileName || `진단 ${new Date().toLocaleString("ko-KR")}`,
+      lang: language,
+      content: editorCode,
+      isStable: "Y",
+      grade: getGradeFromScore(score),
+      score,
+      summary: aiResult.summary ?? "",
+      accuracy: aiResult.accuracy ?? 0,
+      accuracyReason: aiResult.accuracyReason ?? "",
+      efficiency: aiResult.efficiency ?? 0,
+      efficiencyReason: aiResult.efficiencyReason ?? "",
+      readability: aiResult.readability ?? 0,
+      readabilityReason: aiResult.readabilityReason ?? "",
+      style: aiResult.style ?? 0,
+      styleReason: aiResult.styleReason ?? "",
+      timeComplexity: aiResult.complexity ?? "",
+      optimizedCode: aiResult.optimizedCode ?? "",
+    };
+  };
+
+  // Learning 클릭 → 자동 진단 저장 → AI 학습 생성 → 학습 저장 → 학습 화면
+  const handleGoLearning = async () => {
+    if (!hasAnalyzed || !aiResult) {
+      alert("먼저 코드 분석을 완료해 주세요.");
+      return;
+    }
+    if (isAnalyzing || isStartingLearning) return;
+
+    setIsStartingLearning(true);
+    setAnalyzedCode(editorCode);
+
+    try {
+      // 1. 아직 저장 안 됐으면 진단 자동 저장
+      let dgnsId = savedDgnsId;
+      if (!dgnsId) {
+        const saveRes = await saveDiagnosis(buildSaveRequest());
+        dgnsId = saveRes.dgnsId;
+        setSavedDgnsId(dgnsId);
+      }
+
+      // 2. AI 학습 생성 (서버에서 OptCd 가져다 빈칸 + 개념 만듦)
+      const aiLearn = await generateAiLearning({ diagnosisId: dgnsId });
+
+      // 3. 학습 세션 저장
+      const lrnRes = await saveLearning({
+        diagnosisId: dgnsId,
+        name: fileName || `학습 ${new Date().toLocaleString("ko-KR")}`,
+        tags: "",
+        optimizedCode: aiLearn.optimizedCode,
+        concepts: aiLearn.concepts.map((c, i) => ({
+          type: c.type,
+          title: c.title,
+          description: c.description,
+          referenceUrl: c.referenceUrl,
+          sortOrder: i + 1,
+        })),
+      });
+
+      // 4. 학습 콘텐츠 상태에 저장 (DiffView에서 사용)
+      setCurrentLearning({
+        lrnId: lrnRes.id,
+        optimizedCode: aiLearn.optimizedCode,
+        concepts: aiLearn.concepts,
+      });
+
+      // 5. 학습 화면으로 전환
+      setActiveNav("learning");
+      setSelSession(lrnRes.id);
+    } catch (error: any) {
+      console.error("학습 시작 실패:", error);
+      alert(error.message || "학습 세션 시작에 실패했어요.");
+    } finally {
+      setIsStartingLearning(false);
     }
   };
 
@@ -241,7 +261,8 @@ export function LeetCodeIDE() {
       return;
     }
     setActiveNav(id);
-    if (id !== "learning") setSelSession(null);
+    setSelSession(null);
+    setCurrentLearning(null);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -255,14 +276,7 @@ export function LeetCodeIDE() {
   };
 
   const toggleFav = (id: number) =>
-    setSessions((p) =>
-      p.map((s) => (s.id === id ? { ...s, favorited: !s.favorited } : s)),
-    );
-
-  const toggleNoteFav = (id: number) =>
-    setNotes((p) =>
-      p.map((n) => (n.id === id ? { ...n, favorited: !n.favorited } : n)),
-    );
+    setSessions((p) => p.map((s) => (s.id === id ? { ...s, favorited: !s.favorited } : s)));
 
   const addTag = () => {
     const t = tagInput.trim();
@@ -275,9 +289,26 @@ export function LeetCodeIDE() {
   const removeTag = (tag: string) =>
     setNoteTags((p) => p.filter((t) => t !== tag));
 
-  const currentSession = sessions.find((s) => s.id === selSession) ?? null;
+  const currentSession = useMemo<LearningSession | null>(() => {
+  if (!selSession) return null
 
-  /* ── RENDER ── */
+  // 1) 방금 만든 학습 세션이면 그걸로 표시
+  if (currentLearning && currentLearning.lrnId === selSession) {
+    return {
+      id: currentLearning.lrnId,
+      title: fileName || "학습 세션",
+      date: new Date().toLocaleDateString("ko-KR"),
+      grade: aiResult?.grade || getGradeFromScore(aiResult?.totalScore ?? 0),
+      tags: [],
+      language: language.charAt(0).toUpperCase() + language.slice(1),
+      favorited: false,
+    }
+  }
+
+  // 2) 아카이브에서 클릭한 경우 (목 데이터)
+  return sessions.find((s) => s.id === selSession) ?? null
+}, [selSession, currentLearning, sessions, fileName, language, aiResult])
+
   return (
     <TooltipProvider>
       <style>{`
@@ -287,7 +318,6 @@ export function LeetCodeIDE() {
       `}</style>
 
       <div className="h-screen w-full bg-zinc-950 flex overflow-hidden">
-        {/* 사이드바 */}
         <Sidebar
           activeNav={activeNav}
           sidebarExp={sidebarExp}
@@ -295,9 +325,7 @@ export function LeetCodeIDE() {
           onNavClick={handleNavClick}
         />
 
-        {/* 메인 */}
         <div className="flex-1 flex flex-col min-w-0">
-          {/* 헤더 */}
           <MainHeader
             activeNav={activeNav}
             language={language}
@@ -310,13 +338,10 @@ export function LeetCodeIDE() {
             codeCopied={codeCopied}
             uploadOpen={uploadOpen}
             setUploadOpen={setUploadOpen}
-            // 수정
             onRunAnalysis={handleRunAnalysis}
-            onGoLearning={() => {
-              setAnalyzedCode(editorCode);
-              setActiveNav("learning");
-            }}
-            isAnalyzing={isAnalyzing} // 추가
+            onGoLearning={handleGoLearning}
+            isAnalyzing={isAnalyzing}
+            isStartingLearning={isStartingLearning}
             onCopyCode={handleCopyCode}
             onShare={handleShare}
             onSaveDiag={() => setSaveDiagOpen(true)}
@@ -324,7 +349,6 @@ export function LeetCodeIDE() {
             onFileUpload={() => fileRef.current?.click()}
           />
 
-          {/* hidden file input */}
           <input
             ref={fileRef}
             type="file"
@@ -336,10 +360,7 @@ export function LeetCodeIDE() {
           {/* ── DIAGNOSIS ── */}
           {activeNav === "diagnosis" && (
             <div className="flex-1 flex overflow-hidden">
-              <div
-                className={`transition-all duration-300 ease-in-out overflow-hidden shrink-0 ${diagPanelOpen ? "w-[420px]" : "w-0"
-                  }`}
-              >
+              <div className={`transition-all duration-300 ease-in-out overflow-hidden shrink-0 ${diagPanelOpen ? "w-[420px]" : "w-0"}`}>
                 <div className="w-[420px] h-full">
                   <ScrollArea className="h-full bg-zinc-950">
                     <DiagnosisPanel
@@ -386,7 +407,11 @@ export function LeetCodeIDE() {
                 <DiffView
                   session={currentSession}
                   analyzedCode={analyzedCode}
-                  onBack={() => setSelSession(null)}
+                  learningContent={currentLearning}
+                  onBack={() => {
+                    setSelSession(null);
+                    setCurrentLearning(null);
+                  }}
                 />
               )}
             </>
@@ -395,15 +420,12 @@ export function LeetCodeIDE() {
           {/* ── NOTES ── */}
           {activeNav === "notes" && (
             <div className="flex-1 flex overflow-hidden">
-              <div
-                className={`transition-all duration-300 ease-in-out overflow-hidden shrink-0 bg-[#0a0a0a] ${notesPanelOpen ? "w-[420px]" : "w-0"
-                  }`}
-              >
+              <div className={`transition-all duration-300 ease-in-out overflow-hidden shrink-0 bg-[#0a0a0a] ${notesPanelOpen ? "w-[420px]" : "w-0"}`}>
                 <div className="w-[420px] h-full">
                   <NotesList
                     selNote={selNote}
                     setSelNote={setSelNote}
-                    refreshKey={notesRefreshKey}   // 추가
+                    refreshKey={notesRefreshKey}
                   />
                 </div>
               </div>
@@ -418,13 +440,12 @@ export function LeetCodeIDE() {
               <div className="flex-1 min-w-0 bg-zinc-950">
                 <NoteDetail
                   noteId={selNote}
-                  onDeleted={() => setNotesRefreshKey(k => k + 1)}   // 추가
+                  onDeleted={() => setNotesRefreshKey(k => k + 1)}
                 />
               </div>
             </div>
           )}
 
-          {/* ── MYPAGE ── */}
           {activeNav === "mypage" && (
             <div className="flex-1 overflow-hidden">
               <MyPage />
@@ -432,14 +453,13 @@ export function LeetCodeIDE() {
           )}
         </div>
 
-        {/* ── 다이얼로그 ── */}
         <SaveDiagnosisDialog
           open={saveDiagOpen}
           onOpenChange={setSaveDiagOpen}
           fileName={fileName}
           setFileName={setFileName}
           language={language}
-          editorCode={editorCode} // 추가
+          editorCode={editorCode}
           aiResult={aiResult}
           onBadgesUnlocked={setUnlockedBadges}
         />
