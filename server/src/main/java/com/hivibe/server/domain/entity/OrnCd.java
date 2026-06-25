@@ -29,7 +29,7 @@ public class OrnCd {
     private User user;
 
     /** 코드 제목 (사용자가 직접 입력) */
-    @Column(name = "CD_NAME", length = 100)
+    @Column(name = "CD_NAME", length = 200)
     private String cdName;
 
     /** 프로그래밍 언어 (예: Java, Python) */

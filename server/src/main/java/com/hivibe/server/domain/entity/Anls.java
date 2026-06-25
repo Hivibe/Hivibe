@@ -58,7 +58,7 @@ public class Anls {
 
     /** 효율성이유 */
     @Lob
-    @Column(name = "CD_EFCN_RSN")
+    @Column(name = "CD_EFCN_RSN", length = 1000)
     private String cdEfcnRsn;
 
     /*정확성이유 */

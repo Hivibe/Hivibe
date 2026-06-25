@@ -1,13 +1,12 @@
 package com.hivibe.server.dgns.controller;
 
 import com.hivibe.server.dgns.dto.DiagnosisSaveRequestDto;
+import com.hivibe.server.dgns.dto.DiagnosisSaveResponseDto;
 import com.hivibe.server.dgns.service.DiagnosisService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/diagnoses")
@@ -22,9 +21,9 @@ public class DiagnosisController {
     }
 
     @PostMapping
-    public ResponseEntity<Map<String, Object>> saveDiagnosis(
+    public ResponseEntity<DiagnosisSaveResponseDto> saveDiagnosis(
             @RequestBody DiagnosisSaveRequestDto request) {
-        Long id = diagnosisService.saveDiagnosis(getCurrentLgnId(), request);
-        return ResponseEntity.ok(Map.of("message", "진단 결과 저장 완료", "id", id));
+        DiagnosisSaveResponseDto response = diagnosisService.saveDiagnosis(getCurrentLgnId(), request);
+        return ResponseEntity.ok(response);
     }
 }

@@ -49,7 +49,7 @@ public class Lrn {
     private OrnCd ornCd;
 
     /** 학습 제목 (사용자가 직접 입력) */
-    @Column(name = "LRN_NAME", length = 100)
+    @Column(name = "LRN_NAME", length = 200)
     private String lrnName;
 
     /** 즐겨찾기 여부 (Y: 즐겨찾기 / N: 일반) */
