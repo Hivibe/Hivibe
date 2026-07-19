@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
+import { Toaster } from "@/components/ui/sonner"
 
 export const metadata: Metadata = {
   title: "HiVibe — 코드를 이해하는 개발자",
@@ -38,6 +39,16 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         {children}
+        <Toaster
+          theme="dark"
+          position="bottom-right"
+          toastOptions={{
+            classNames: {
+              toast: "bg-[#17171b] border border-white/10 text-zinc-200",
+              description: "text-zinc-400",
+            },
+          }}
+        />
         <Analytics />
       </body>
     </html>
