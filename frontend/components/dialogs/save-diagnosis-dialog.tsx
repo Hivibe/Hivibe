@@ -100,7 +100,7 @@ export function SaveDiagnosisDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-zinc-900 border-zinc-800 text-zinc-100 sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-syne flex items-center gap-2" style={{ color: BRAND }}>
+          <DialogTitle className="font-ko flex items-center gap-2" style={{ color: BRAND }}>
             <Save className="h-4 w-4" />진단 결과 저장
           </DialogTitle>
         </DialogHeader>

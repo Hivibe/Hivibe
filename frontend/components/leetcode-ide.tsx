@@ -44,6 +44,7 @@ import { MyPage } from "@/components/mypage/my-page";
 // dialogs
 import { SaveDiagnosisDialog } from "@/components/dialogs/save-diagnosis-dialog";
 import { SaveNoteDialog } from "@/components/dialogs/save-note-dialog";
+import { LoadDiagnosisDialog } from "@/components/dialogs/load-diagnosis-dialog"
 
 // types
 import type { LearningSession } from "@/types";
@@ -136,6 +137,9 @@ export function LeetCodeIDE() {
   const [noteTags, setNoteTags] = useState(["Java", "Optimization", "DataStructure"]);
   const [tagInput, setTagInput] = useState("");
   const [noteMemo, setNoteMemo] = useState("");
+  const [loadDiagOpen, setLoadDiagOpen] = useState(false)
+
+  const [sidebarRefreshKey, setSidebarRefreshKey] = useState(0)
 
   const [unlockedBadges, setUnlockedBadges] = useState<UnlockedBadge[]>([]);
 
@@ -450,6 +454,15 @@ const handleNavClick = (id: string) => {
       });
     }
   };
+  const handleLoadDiagnosis = (content: string, lang: string, name: string) => {
+    setEditorCode(content)
+    setLanguage(lang)
+    setFileName(name)
+  }
+  const toggleFav = (id: number) =>
+    setSessions((p) =>
+      p.map((s) => (s.id === id ? { ...s, favorited: !s.favorited } : s)),
+    );
 
   const addTag = () => {
     const t = tagInput.trim();
@@ -463,19 +476,24 @@ const handleNavClick = (id: string) => {
     setNoteTags((p) => p.filter((t) => t !== tag));
 
   const currentSession = useMemo<LearningSession | null>(() => {
-    if (!selSession) return null;
-    return sessions.find((s) => s.id === selSession) ?? null;
-  }, [selSession, sessions]);
+    if (!selSession) return null
 
-  const currentLearningContent = useMemo<LearningContent | null>(() => {
-    if (!selSession) return null;
-    return learnings.get(selSession) ?? null;
-  }, [selSession, learnings]);
+    // 1) 방금 만든 학습 세션이면 그걸로 표시
+    if (currentLearning && currentLearning.lrnId === selSession) {
+      return {
+        id: currentLearning.lrnId,
+        title: fileName || "학습 세션",
+        date: new Date().toLocaleDateString("ko-KR"),
+        grade: aiResult?.grade || getGradeFromScore(aiResult?.totalScore ?? 0),
+        tags: [],
+        language: language.charAt(0).toUpperCase() + language.slice(1),
+        favorited: false,
+      }
+    }
 
-  const currentAnalyzedCode = useMemo<string>(() => {
-    if (!selSession) return "";
-    return analyzedCodeMap.get(selSession) ?? "";
-  }, [selSession, analyzedCodeMap]);
+    // 2) 아카이브에서 클릭한 경우 (목 데이터)
+    return sessions.find((s) => s.id === selSession) ?? null
+  }, [selSession, currentLearning, sessions, fileName, language, aiResult])
 
   return (
     <TooltipProvider>
@@ -491,6 +509,7 @@ const handleNavClick = (id: string) => {
           sidebarExp={sidebarExp}
           setSidebarExp={setSidebarExp}
           onNavClick={handleNavClick}
+          refreshKey={sidebarRefreshKey}
         />
 
         <div className="flex-1 flex flex-col min-w-0">
@@ -515,6 +534,7 @@ const handleNavClick = (id: string) => {
             onSaveDiag={() => setSaveDiagOpen(true)}
             onSaveNote={() => setSaveNoteOpen(true)}
             onFileUpload={() => fileRef.current?.click()}
+            onLoadPrevious={() => setLoadDiagOpen(true)}
           />
 
           <input
@@ -539,10 +559,11 @@ const handleNavClick = (id: string) => {
                   </ScrollArea>
                 </div>
               </div>
-              <div className="w-px bg-zinc-800/50 relative flex items-center justify-center shrink-0">
+              <div className="w-4 relative flex items-center justify-center shrink-0">
+                <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-zinc-800/50" />
                 <button
                   onClick={() => setDiagPanelOpen((p) => !p)}
-                  className="absolute z-10 w-4 h-8 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-sm flex items-center justify-center text-zinc-400 hover:text-zinc-200 transition-colors"
+                  className="relative z-10 w-4 h-8 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-sm flex items-center justify-center text-zinc-400 hover:text-zinc-200 transition-colors"
                 >
                   {diagPanelOpen ? "‹" : "›"}
                 </button>
@@ -639,7 +660,7 @@ const handleNavClick = (id: string) => {
 
           {activeNav === "mypage" && (
             <div className="flex-1 overflow-hidden">
-              <MyPage />
+              <MyPage onProfileUpdated={() => setSidebarRefreshKey(k => k + 1)} />
             </div>
           )}
         </div>
@@ -653,6 +674,12 @@ const handleNavClick = (id: string) => {
           editorCode={editorCode}
           aiResult={aiResult}
           onBadgesUnlocked={setUnlockedBadges}
+        />
+
+        <LoadDiagnosisDialog
+          open={loadDiagOpen}
+          onOpenChange={setLoadDiagOpen}
+          onSelect={handleLoadDiagnosis}
         />
 
         <BadgeUnlockDialog

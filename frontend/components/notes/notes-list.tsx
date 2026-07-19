@@ -6,7 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Search, Star } from "lucide-react"
+import { Search, Star, X } from "lucide-react"
 import { NoteCard } from "@/components/notes/note-card"
 import { apiFetch } from "@/lib/api"
 import type { Note } from "@/types"
@@ -23,14 +23,12 @@ export function NotesList({ selNote, setSelNote, refreshKey }: NotesListProps) {
   const [notes, setNotes] = useState<Note[]>([])
   const [search, setSearch] = useState("")
   const [langFilter, setLangFilter] = useState("All")
-  const [typeFilter, setTypeFilter] = useState("ALL")
   const [loading, setLoading] = useState(true)
   const [newNoteOpen, setNewNoteOpen] = useState(false)
 
-  const fetchNotes = async (type?: string) => {
+  const fetchNotes = async () => {
     try {
-      const query = type && type !== "ALL" ? `?type=${type}` : ""
-      const res = await apiFetch(`/api/notes${query}`)
+      const res = await apiFetch(`/api/notes`)
       const data = await res.json()
       setNotes(data)
     } catch (e) {
@@ -41,18 +39,28 @@ export function NotesList({ selNote, setSelNote, refreshKey }: NotesListProps) {
   }
 
   useEffect(() => {
-    fetchNotes(typeFilter)
-  }, [typeFilter, refreshKey])   // refreshKey 추가
+    fetchNotes()
+  }, [refreshKey])
 
   const toggleNoteFav = async (noteId: number) => {
+    // 1. 클릭 즉시 화면 먼저 바꿈 (서버 응답 기다리지 않음)
+    setNotes(p => p.map(n =>
+      n.noteId === noteId ? { ...n, bkmkYn: n.bkmkYn === "Y" ? "N" : "Y" } : n
+    ))
+
     try {
       const res = await apiFetch(`/api/notes/${noteId}/bookmark`, {
         method: "PATCH",
       })
       const updated = await res.json()
+      // 2. 서버 응답으로 최종 확정 (실제 값으로 동기화)
       setNotes(p => p.map(n => n.noteId === noteId ? updated : n))
     } catch (e) {
       console.error("즐겨찾기 토글 실패:", e)
+      // 3. 실패하면 원래대로 되돌림
+      setNotes(p => p.map(n =>
+        n.noteId === noteId ? { ...n, bkmkYn: n.bkmkYn === "Y" ? "N" : "Y" } : n
+      ))
     }
   }
 
@@ -85,27 +93,10 @@ export function NotesList({ selNote, setSelNote, refreshKey }: NotesListProps) {
 
       {/* 검색 */}
       <div className="relative mb-3">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-500" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
         <Input value={search} onChange={e => setSearch(e.target.value)}
           placeholder="Search by keywords or tags..."
-          className="pl-9 bg-zinc-900 border-zinc-800 text-zinc-200 text-xs h-8 font-space" />
-      </div>
-
-      {/* 타입 필터 */}
-      <div className="flex gap-1.5 mb-2 flex-wrap">
-        {[
-          { id: "ALL", label: "전체" },
-          { id: "LEARNING", label: "학습 노트" },
-          { id: "MANUAL", label: "자유 노트" },
-        ].map(f => (
-          <button key={f.id} onClick={() => setTypeFilter(f.id)}
-            className="font-ko text-[11px] px-2.5 py-1 rounded-full border transition-all"
-            style={typeFilter === f.id
-              ? { background: `${BRAND}15`, color: BRAND, borderColor: `${BRAND}44` }
-              : { color: "#71717a", borderColor: "#27272a" }}>
-            {f.label}
-          </button>
-        ))}
+          className="pl-9 bg-zinc-900 border-zinc-800 text-zinc-200 text-sm h-9 font-space" />
       </div>
 
       {/* 언어 필터 */}
@@ -115,7 +106,7 @@ export function NotesList({ selNote, setSelNote, refreshKey }: NotesListProps) {
             className="font-space text-[10px] px-2.5 py-1 rounded-full border transition-all"
             style={langFilter === l
               ? { background: `${BRAND}15`, color: BRAND, borderColor: `${BRAND}44` }
-              : { color: "#71717a", borderColor: "#27272a" }}>
+              : { color: "#a1a1aa", borderColor: "#3f3f46" }}>
             {l}
           </button>
         ))}
@@ -170,7 +161,7 @@ export function NotesList({ selNote, setSelNote, refreshKey }: NotesListProps) {
             {/* 빈 상태 */}
             {notes.length === 0 && (
               <div className="flex flex-col items-center justify-center h-40 gap-3">
-                <p className="font-syne text-base font-bold text-zinc-400">노트가 없어요</p>
+                <p className="font-ko text-base font-bold text-zinc-400">노트가 없어요</p>
                 <p className="font-ko text-sm text-zinc-500">New 버튼으로 첫 노트를 만들어보세요</p>
                 <Button size="sm" onClick={() => setNewNoteOpen(true)}
                   className="h-8 px-4 text-white font-ko text-xs mt-1"
@@ -187,7 +178,7 @@ export function NotesList({ selNote, setSelNote, refreshKey }: NotesListProps) {
       <Dialog open={newNoteOpen} onOpenChange={setNewNoteOpen}>
         <DialogContent className="bg-zinc-900 border-zinc-800 text-zinc-100 sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-syne" style={{ color: BRAND }}>새 노트 만들기</DialogTitle>
+            <DialogTitle className="font-ko" style={{ color: BRAND }}>새 노트 만들기</DialogTitle>
           </DialogHeader>
           <NewNoteForm
             onSave={async (dto) => {
@@ -198,7 +189,7 @@ export function NotesList({ selNote, setSelNote, refreshKey }: NotesListProps) {
                 })
 
                 setNewNoteOpen(false)
-                fetchNotes(typeFilter)
+                fetchNotes()
 
                 // 뱃지 체크는 백그라운드로 — UI를 막지 않음
                 apiFetch("/api/badges/check", { method: "POST" }).catch(() => { })
@@ -222,8 +213,21 @@ function NewNoteForm({ onSave, onCancel }: {
   const [noteName, setNoteName] = useState("")
   const [noteMemo, setNoteMemo] = useState("")
   const [noteCn, setNoteCn] = useState("")
-  const [tag, setTag] = useState("")
+  const [tags, setTags] = useState<string[]>([])
+  const [tagInput, setTagInput] = useState("")
   const [lang, setLang] = useState("Java")
+
+  const addTag = () => {
+    const t = tagInput.trim().replace(/^#/, "")   // 앞에 # 붙여 쳐도 중복 안 되게 제거
+    if (t && !tags.includes(t)) {
+      setTags(p => [...p, t])
+    }
+    setTagInput("")
+  }
+
+  const removeTag = (tag: string) => {
+    setTags(p => p.filter(t => t !== tag))
+  }
 
   return (
     <div className="space-y-4 py-2">
@@ -242,7 +246,7 @@ function NewNoteForm({ onSave, onCancel }: {
               className="font-space text-[10px] px-3 py-1 rounded-full border transition-all"
               style={lang === l
                 ? { background: `#63C1ED15`, color: "#63C1ED", borderColor: `#63C1ED44` }
-                : { color: "#71717a", borderColor: "#27272a" }}>
+                : { color: "#a1a1aa", borderColor: "#3f3f46" }}>
               {l}
             </button>
           ))}
@@ -253,7 +257,7 @@ function NewNoteForm({ onSave, onCancel }: {
         <label className="font-ko text-[10px] text-zinc-500 uppercase tracking-wider">코드 (선택)</label>
         <textarea value={noteCn} onChange={e => setNoteCn(e.target.value)}
           placeholder="코드를 입력하세요"
-          className="font-code w-full h-28 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 text-xs p-3 resize-none outline-none" />
+          className="font-code placeholder-ko w-full h-28 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 text-sm p-3 resize-none outline-none" />
       </div>
 
       <div className="space-y-1.5">
@@ -265,9 +269,27 @@ function NewNoteForm({ onSave, onCancel }: {
 
       <div className="space-y-1.5">
         <label className="font-ko text-[10px] text-zinc-500 uppercase tracking-wider">태그 (선택)</label>
-        <Input value={tag} onChange={e => setTag(e.target.value)}
-          placeholder="#DP #Graph (공백으로 구분)"
-          className="h-9 bg-zinc-950 border-zinc-800 text-zinc-200 text-sm font-space" />
+        {tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {tags.map(tag => (
+              <span key={tag} className="font-space text-[10px] px-2 py-0.5 rounded-full border border-zinc-700 text-zinc-400 flex items-center gap-1">
+                #{tag}
+                <button onClick={() => removeTag(tag)}>
+                  <X className="h-2.5 w-2.5 ml-0.5 hover:text-zinc-100" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+        <div className="flex gap-2">
+          <Input value={tagInput} onChange={e => setTagInput(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addTag() } }}
+            placeholder="태그 입력 후 Enter..."
+            className="h-9 bg-zinc-950 border-zinc-800 text-zinc-200 text-sm font-ko" />
+          <Button size="sm" variant="outline" className="border-zinc-800 text-zinc-400 font-ko text-xs shrink-0" onClick={addTag}>
+            추가
+          </Button>
+        </div>
       </div>
 
       <DialogFooter>
@@ -279,7 +301,7 @@ function NewNoteForm({ onSave, onCancel }: {
         <Button size="sm"
           className="text-white font-ko text-xs"
           style={{ background: "#63C1ED" }}
-          onClick={() => onSave({ noteName, noteMemo, noteCn, tag, lang, category: "자유 노트" })}>
+          onClick={() => onSave({ noteName, noteMemo, noteCn, tag: tags.join(" "), lang, category: "자유 노트" })}>
           저장
         </Button>
       </DialogFooter>
