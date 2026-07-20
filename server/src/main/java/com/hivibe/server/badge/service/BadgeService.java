@@ -28,7 +28,7 @@ public class BadgeService {
     private final NoteRepository noteRepository;
     private final UserRepository userRepository;
 
-    /** 전체 뱃지 목록 조회 (획득 + 미획득) */
+    // ── 뱃지 목록 조회 (획득 + 미획득 전체) ──
     public List<BadgeResponseDto> getBadges(String lgnId) {
         User user = getUser(lgnId);
 
@@ -47,17 +47,15 @@ public class BadgeService {
         return result;
     }
 
-    /**
-     * 뱃지 조건 체크 및 신규 지급
-     * - 진단 저장 후, 노트 저장 후 호출하면 됨
-     * - 이번 호출에서 새로 획득한 뱃지는 isNew = true로 마킹돼서 내려감 (팝업용)
-     */
+    // ── 뱃지 조건 체크 및 신규 지급 ──
     @Transactional
     public List<BadgeResponseDto> checkAndAward(String lgnId) {
         User user = getUser(lgnId);
         Long userId = user.getId();
 
         List<Badge> newBadges = new ArrayList<>();
+
+        // ── 진단 관련 ──
 
         // FIRST_SCAN — 진단 1회 이상
         checkBadge(userId, BadgeType.FIRST_SCAN, newBadges, user,
@@ -75,6 +73,10 @@ public class BadgeService {
             return maxScore != null && maxScore >= 100;
         });
 
+        // GRADE_S — S등급 달성 (cdGrd == "S")
+        checkBadge(userId, BadgeType.GRADE_S, newBadges, user,
+                () -> dgnsRepository.existsByUserIdAndGrade(userId, "S"));
+
         // POLYGLOT — 3개 이상 언어
         checkBadge(userId, BadgeType.POLYGLOT, newBadges, user, () -> {
             List<String> langs = dgnsRepository.findDistinctLangByUserId(userId);
@@ -85,29 +87,65 @@ public class BadgeService {
         checkBadge(userId, BadgeType.ON_FIRE, newBadges, user,
                 () -> checkStreak(userId, 7));
 
+        // CONSISTENT — 30일 연속 진단
+        checkBadge(userId, BadgeType.CONSISTENT, newBadges, user,
+                () -> checkStreak(userId, 30));
+
+        // CODE_VETERAN — 진단 50회 이상
+        checkBadge(userId, BadgeType.CODE_VETERAN, newBadges, user,
+                () -> dgnsRepository.countByUser_Id(userId) >= 50);
+
+        // ── 노트 관련 ──
+
         // BOOKWORM — 노트 10개 이상
         checkBadge(userId, BadgeType.BOOKWORM, newBadges, user,
                 () -> noteRepository.countByUser_Id(userId) >= 10);
+
+        // NOTE_MASTER — 노트 30개 이상
+        checkBadge(userId, BadgeType.NOTE_MASTER, newBadges, user,
+                () -> noteRepository.countByUser_Id(userId) >= 30);
+
+        // ── 학습 관련 (LRN 테이블 연동 필요) ──
+        // TODO: 팀원 학습 기능 Repository 연동 후 구현 예정
+        // FIRST_LEARNER — lrnRepository.countByUser_Id(userId) >= 1
+        // PERFECT_ANSWER — lrnRepository.existsPerfectSubmissionByUserId(userId)
+        // STUDY_HARD — lrnRepository.countByUser_Id(userId) >= 10
 
         if (!newBadges.isEmpty()) {
             badgeRepository.saveAll(newBadges);
         }
 
-        // 이번에 새로 딴 뱃지 key만 모아서, 전체 목록에 isNew 마킹
-        List<String> newKeys = newBadges.stream()
-                .map(Badge::getBadgeKey)
-                .collect(Collectors.toList());
-
-        List<BadgeResponseDto> result = getBadges(lgnId);
-        result.forEach(dto -> {
-            if (newKeys.contains(dto.getKey())) {
-                dto.markAsNew();
-            }
-        });
-        return result;
+        return getBadges(lgnId);
     }
 
-    /** 조건 체크 후 신규 뱃지 리스트에 추가하는 헬퍼 */
+    // ── 학습 뱃지 전용 체크 (팀원 학습 기능에서 직접 호출) ──
+    @Transactional
+    public void checkLearningBadges(String lgnId, long learningCount, boolean isPerfect) {
+        User user = getUser(lgnId);
+        Long userId = user.getId();
+
+        List<Badge> newBadges = new ArrayList<>();
+
+        // FIRST_LEARNER — 첫 학습 완료
+        checkBadge(userId, BadgeType.FIRST_LEARNER, newBadges, user,
+                () -> learningCount >= 1);
+
+        // STUDY_HARD — 학습 10회 이상
+        checkBadge(userId, BadgeType.STUDY_HARD, newBadges, user,
+                () -> learningCount >= 10);
+
+        // PERFECT_ANSWER — 빈칸 100% 정답
+        if (isPerfect) {
+            checkBadge(userId, BadgeType.PERFECT_ANSWER, newBadges, user, () -> true);
+        }
+
+        if (!newBadges.isEmpty()) {
+            badgeRepository.saveAll(newBadges);
+        }
+    }
+
+    // ── 헬퍼 메서드 ──
+
     private void checkBadge(Long userId, BadgeType type, List<Badge> newBadges,
             User user, ConditionChecker checker) {
         if (badgeRepository.existsByUser_IdAndBadgeKey(userId, type.getKey()))
@@ -120,7 +158,6 @@ public class BadgeService {
         }
     }
 
-    /** 연속 진단 일수 체크 */
     private boolean checkStreak(Long userId, int required) {
         List<Dgns> list = dgnsRepository.findByUser_IdOrderByDgnsDtAsc(userId);
         if (list.size() < required)

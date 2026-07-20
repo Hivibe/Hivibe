@@ -33,4 +33,8 @@ public interface DgnsRepository extends JpaRepository<Dgns, Long> {
     // 유저별 평균 점수 (마이페이지 평균 등급용)
     @Query("SELECT AVG(d.anls.cdScr) FROM Dgns d WHERE d.user.id = :userId")
     Double findAvgScoreByUserId(Long userId);
+
+    // S등급 달성 여부 (Grade S 뱃지용)
+    @Query("SELECT COUNT(d) > 0 FROM Dgns d WHERE d.user.id = :userId AND d.anls.cdGrd = :grade")
+    boolean existsByUserIdAndGrade(Long userId, String grade);
 }
