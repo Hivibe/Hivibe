@@ -158,18 +158,6 @@ public class LrnGradingService {
 
         log.info("채점 완료 lrnId={}, attemptNo={}, {}/{} 정답", lrnId, attemptNo, correctCount, totalBlanks);
 
-        // 7.20 추가
-        try {
-            long lrnCount = lrnRepository.countByUser_Id(currentUser.getId());
-            badgeService.checkLearningBadges(
-                    currentUser.getLgnId(),
-                    lrnCount,
-                    allCorrect);
-            badgeService.checkAndAward(currentUser.getLgnId());
-        } catch (Exception e) {
-            log.warn("뱃지 체크 실패 — 채점 결과에는 영향 없음", e);
-        }
-
         return new SubmissionResponseDto(
                 lrn.getLrnId(),
                 attemptNo,

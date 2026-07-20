@@ -28,6 +28,7 @@ public class BadgeService {
     private final DgnsRepository dgnsRepository;
     private final NoteRepository noteRepository;
     private final UserRepository userRepository;
+    private final com.hivibe.server.repository.LrnRepository lrnRepository;
 
     // ── 뱃지 목록 조회 (획득 + 미획득 전체) ──
     public List<BadgeResponseDto> getBadges(String lgnId) {
@@ -215,5 +216,73 @@ public class BadgeService {
     @FunctionalInterface
     private interface ConditionChecker {
         boolean check();
+    }
+
+    @Transactional
+    public List<BadgeResponseDto> checkAndAwardWithLearning(String lgnId, boolean isPerfect) {
+        User user = getUser(lgnId);
+        Long userId = user.getId();
+
+        List<Badge> newBadges = new ArrayList<>();
+
+        // 학습 관련
+        long lrnCount = lrnRepository.countByUser_Id(userId);
+        checkBadge(userId, BadgeType.FIRST_LEARNER, newBadges, user, () -> lrnCount >= 1);
+        checkBadge(userId, BadgeType.STUDY_HARD, newBadges, user, () -> lrnCount >= 10);
+        if (isPerfect) {
+            checkBadge(userId, BadgeType.PERFECT_ANSWER, newBadges, user, () -> true);
+        }
+
+        // 진단 관련
+        checkBadge(userId, BadgeType.FIRST_SCAN, newBadges, user,
+                () -> dgnsRepository.countByUser_Id(userId) >= 1);
+        checkBadge(userId, BadgeType.SPEED_OPTIMIZER, newBadges, user, () -> {
+            Integer maxScore = dgnsRepository.findMaxScoreByUserId(userId);
+            return maxScore != null && maxScore >= 90;
+        });
+        checkBadge(userId, BadgeType.PERFECTIONIST, newBadges, user, () -> {
+            Integer maxScore = dgnsRepository.findMaxScoreByUserId(userId);
+            return maxScore != null && maxScore >= 100;
+        });
+        checkBadge(userId, BadgeType.GRADE_S, newBadges, user,
+                () -> dgnsRepository.existsByUserIdAndGrade(userId, "S"));
+        checkBadge(userId, BadgeType.POLYGLOT, newBadges, user, () -> {
+            List<String> langs = dgnsRepository.findDistinctLangByUserId(userId);
+            return langs.size() >= 3;
+        });
+        checkBadge(userId, BadgeType.ON_FIRE, newBadges, user, () -> checkStreak(userId, 7));
+        checkBadge(userId, BadgeType.CONSISTENT, newBadges, user, () -> checkStreak(userId, 30));
+        checkBadge(userId, BadgeType.CODE_VETERAN, newBadges, user,
+                () -> dgnsRepository.countByUser_Id(userId) >= 50);
+
+        // 노트 관련
+        checkBadge(userId, BadgeType.BOOKWORM, newBadges, user,
+                () -> noteRepository.countByUser_Id(userId) >= 10);
+        checkBadge(userId, BadgeType.NOTE_MASTER, newBadges, user,
+                () -> noteRepository.countByUser_Id(userId) >= 30);
+
+        if (!newBadges.isEmpty())
+            badgeRepository.saveAll(newBadges);
+
+        // newlyAchieved 포함해서 반환
+        Set<String> newKeys = newBadges.stream()
+                .map(Badge::getBadgeKey)
+                .collect(Collectors.toSet());
+
+        List<Badge> achievedList = badgeRepository.findByUser_Id(userId);
+        Map<String, Badge> achievedMap = achievedList.stream()
+                .collect(Collectors.toMap(Badge::getBadgeKey, b -> b));
+
+        List<BadgeResponseDto> result = new ArrayList<>();
+        for (BadgeType type : BadgeType.values()) {
+            if (newKeys.contains(type.getKey())) {
+                result.add(new BadgeResponseDto(type, true)); // newlyAchieved: true
+            } else if (achievedMap.containsKey(type.getKey())) {
+                result.add(new BadgeResponseDto(achievedMap.get(type.getKey()), type));
+            } else {
+                result.add(new BadgeResponseDto(type));
+            }
+        }
+        return result;
     }
 }

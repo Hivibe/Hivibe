@@ -3,10 +3,22 @@
 import { CodeHighlight } from "@/components/shared/code-highlight"
 import { apiFetch } from "@/lib/api"
 import { useState, useEffect } from "react";
+import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import {
   Edit2,
   Share2,
@@ -60,6 +72,9 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
     setIsEditing(true)
   }
 
+  const [deleteOpen, setDeleteOpen] = useState(false)
+
+
   const cancelEditing = () => {
     setIsEditing(false)
   }
@@ -99,12 +114,13 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
   }
 
   const handleDelete = async () => {
-    if (!noteId || !confirm("노트를 삭제할까요?")) return
+    if (!noteId) return
     const res = await apiFetch(`/api/notes/${noteId}`, { method: "DELETE" })
     if (!res.ok) {
-      alert("삭제 실패했어요. 다시 시도해 주세요.")
+      toast.error("삭제 실패했어요. 다시 시도해 주세요.")
       return
     }
+    toast.success("노트를 삭제했어요!")
     setNote(null)
     onDeleted?.()
   }
@@ -203,14 +219,40 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
                   <Share2 className="h-3.5 w-3.5" />
                   Share
                 </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleDelete}
-                  className="h-9 w-9 p-0 border-rose-900/50 bg-rose-500/10 text-rose-500"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-9 w-9 p-0 border-rose-900/50 bg-rose-500/10 text-rose-500"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="bg-[#17171b] border-white/10">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="font-syne text-white">
+                        노트를 삭제할까요?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription className="font-ko text-zinc-400 leading-relaxed">
+                        <span className="text-zinc-200 font-bold">{note?.noteName}</span>
+                        <br />
+                        삭제된 노트는 되돌릴 수 없어요.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel className="bg-transparent border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100 font-ko text-xs">
+                        취소
+                      </AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDelete}
+                        className="bg-rose-500 hover:bg-rose-600 text-white font-ko text-xs"
+                      >
+                        삭제
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </>
             )}
           </div>
@@ -224,7 +266,7 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
           >
             <CardContent className="p-6">
               <p
-                className="font-space text-xs tracking-widest mb-3 flex items-center gap-2"
+                className="font-ko text-xs tracking-widest mb-3 flex items-center gap-2"
                 style={{ color: BRAND }}
               >
                 <Sparkles className="h-3.5 w-3.5" />
@@ -242,7 +284,7 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
           <Card className="bg-zinc-900 border-zinc-800">
             <CardContent className="p-6">
               <p
-                className="font-space text-xs tracking-widest mb-3"
+                className="font-ko text-xs tracking-widest mb-3"
                 style={{ color: BRAND }}
               >
                 // PERSONAL NOTES
@@ -268,7 +310,7 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
           <Card className="bg-zinc-900 border-zinc-800">
             <CardContent className="p-6">
               <p
-                className="font-space text-xs tracking-widest mb-3"
+                className="font-ko text-xs tracking-widest mb-3"
                 style={{ color: BRAND }}
               >
                 // TAGS
@@ -288,7 +330,7 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
           <Card className="bg-zinc-900 border-zinc-800 overflow-hidden">
             <CardHeader className="pb-0 pt-5 px-6">
               <CardTitle
-                className="font-space text-xs tracking-widest flex items-center gap-2"
+                className="font-ko text-xs tracking-widest flex items-center gap-2"
                 style={{ color: BRAND }}
               >
                 <Code2 className="h-4 w-4" />
@@ -308,13 +350,13 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
           <Card className="bg-zinc-900 border-zinc-800 overflow-hidden">
             <CardHeader className="pb-0 pt-5 px-6 flex flex-row items-center justify-between">
               <CardTitle
-                className="font-space text-xs tracking-widest flex items-center gap-2"
+                className="font-ko text-xs tracking-widest flex items-center gap-2"
                 style={{ color: BRAND }}
               >
                 <Code2 className="h-4 w-4" />
                 Code Snapshot
               </CardTitle>
-              <span className="font-space text-xs px-2.5 py-1 rounded border border-zinc-700 text-zinc-300">
+              <span className="font-ko text-xs px-2.5 py-1 rounded border border-zinc-700 text-zinc-300">
                 {note.lang}
               </span>
             </CardHeader>
@@ -331,12 +373,12 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
                   </span>
                 </div>
                 <div className="ml-auto flex items-center gap-3 px-4">
-                  <span className="font-space text-xs text-zinc-500">
+                  <span className="font-ko text-xs text-zinc-500">
                     {code.split("\n").length} lines
                   </span>
                   <button
                     onClick={() => navigator.clipboard.writeText(code)}
-                    className="font-space text-xs text-zinc-500 hover:text-zinc-200 transition-colors flex items-center gap-1"
+                    className="font-ko text-xs text-zinc-500 hover:text-zinc-200 transition-colors flex items-center gap-1"
                   >
                     <Copy className="h-3.5 w-3.5" />
                     copy
@@ -363,13 +405,13 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
                 </div>
               </div>
               <div className="h-7 bg-[#1a1a1a] border-t border-zinc-800/60 flex items-center px-4 gap-4">
-                <span className="font-space text-xs text-zinc-500">
+                <span className="font-ko text-xs text-zinc-500">
                   {note.lang}
                 </span>
-                <span className="font-space text-xs text-zinc-500">
+                <span className="font-ko text-xs text-zinc-500">
                   UTF-8
                 </span>
-                <span className="font-space text-xs text-zinc-500 ml-auto">
+                <span className="font-ko text-xs text-zinc-500 ml-auto">
                   {code.length} chars
                 </span>
               </div>

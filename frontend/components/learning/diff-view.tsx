@@ -42,6 +42,7 @@ interface DiffViewProps {
   analyzedCode: string
   learningContent: LearningContent | null
   onBack: () => void
+  onBadgesUnlocked?: (badges: any[]) => void  // ← 추가
 }
 
 function highlightLine(text: string) {
@@ -183,7 +184,7 @@ function ResultPopover({ result }: { result: BlankResult }) {
   )
 }
 
-export function DiffView({ session, analyzedCode, learningContent, onBack }: DiffViewProps) {
+export function DiffView({ session, analyzedCode, learningContent, onBack, onBadgesUnlocked }: DiffViewProps) {
   const [panelOpen, setPanelOpen] = useState(true)
   const [answers, setAnswers] = useState<Record<number, string>>({})
   const [userName, setUserName] = useState<string>("사용자")
@@ -229,6 +230,7 @@ export function DiffView({ session, analyzedCode, learningContent, onBack }: Dif
         grade: prev.grade,
         overallComment: prev.overallComment,
       })
+
     } else {
       setAnswers({})
       setResults(null)
@@ -291,14 +293,18 @@ export function DiffView({ session, analyzedCode, learningContent, onBack }: Dif
       // 추가 (07.20)
 
       // 채점 완료 후 일반 뱃지 체크 (ON_FIRE 등) — 백그라운드
-      apiFetch("/api/badges/check", { method: "POST" }).catch(() => { })
-
-      // PERFECT_ANSWER 뱃지 — 100% 정답 시
-      if (res.allCorrect) {
-        apiFetch("/api/badges/check/learning", {
+      try {
+        const badgeRes = await apiFetch("/api/badges/check/learning", {
           method: "POST",
-          body: JSON.stringify({ isPerfect: true }),
-        }).catch(() => { })
+          body: JSON.stringify({ isPerfect: res.allCorrect }),
+        })
+        if (badgeRes.ok) {
+          const allBadges = await badgeRes.json()
+          const newBadges = allBadges.filter((b: any) => b.newlyAchieved)
+          if (newBadges.length > 0) onBadgesUnlocked?.(newBadges)
+        }
+      } catch (badgeErr) {
+        console.warn("뱃지 체크 실패", badgeErr)
       }
 
       if (res.allCorrect) {
@@ -501,8 +507,8 @@ export function DiffView({ session, analyzedCode, learningContent, onBack }: Dif
               </span>
               {isGraded && summary ? (
                 <span className={`font-space text-[10px] px-2 py-0.5 rounded border ${summary.correctCount === summary.totalBlanks
-                    ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-400"
-                    : "bg-rose-500/10 border-rose-500/40 text-rose-400"
+                  ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-400"
+                  : "bg-rose-500/10 border-rose-500/40 text-rose-400"
                   }`}>
                   {summary.correctCount}/{summary.totalBlanks} 정답
                   {summary.grade && ` · ${summary.grade}`}
@@ -632,8 +638,8 @@ export function DiffView({ session, analyzedCode, learningContent, onBack }: Dif
                     onClick={handleSubmit}
                     disabled={!allFilled || isGrading}
                     className={`h-8 px-4 rounded font-space text-xs font-bold flex items-center gap-1.5 transition-colors ${allFilled && !isGrading
-                        ? "bg-emerald-500 hover:bg-emerald-600 text-white"
-                        : "bg-emerald-500/20 text-emerald-500/40 cursor-not-allowed"
+                      ? "bg-emerald-500 hover:bg-emerald-600 text-white"
+                      : "bg-emerald-500/20 text-emerald-500/40 cursor-not-allowed"
                       }`}
                   >
                     {isGrading ? (
