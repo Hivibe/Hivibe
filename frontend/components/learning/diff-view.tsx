@@ -191,7 +191,7 @@ export function DiffView({ session, analyzedCode, learningContent, onBack }: Dif
   // 채점 상태
   const [isGrading, setIsGrading] = useState(false)
   const [results, setResults] = useState<Record<number, BlankResult> | null>(null)
-  
+
   const [summary, setSummary] = useState<{
     correctCount: number
     totalBlanks: number
@@ -210,7 +210,7 @@ export function DiffView({ session, analyzedCode, learningContent, onBack }: Dif
       .catch(e => console.error("유저 이름 불러오기 실패:", e))
   }, [])
 
-// 학습 세션이 바뀌면 상태 초기화 (이전 채점 있으면 복원)
+  // 학습 세션이 바뀌면 상태 초기화 (이전 채점 있으면 복원)
   useEffect(() => {
     const prev = learningContent?.previousSubmission
     if (prev && prev.results.length > 0) {
@@ -287,6 +287,19 @@ export function DiffView({ session, analyzedCode, learningContent, onBack }: Dif
         grade: res.grade,
         overallComment: res.overallComment,
       })
+
+      // 추가 (07.20)
+
+      // 채점 완료 후 일반 뱃지 체크 (ON_FIRE 등) — 백그라운드
+      apiFetch("/api/badges/check", { method: "POST" }).catch(() => { })
+
+      // PERFECT_ANSWER 뱃지 — 100% 정답 시
+      if (res.allCorrect) {
+        apiFetch("/api/badges/check/learning", {
+          method: "POST",
+          body: JSON.stringify({ isPerfect: true }),
+        }).catch(() => { })
+      }
 
       if (res.allCorrect) {
         toast.success("✅ 모두 맞혔어요!", {
@@ -487,11 +500,10 @@ export function DiffView({ session, analyzedCode, learningContent, onBack }: Dif
                 Fill in the blanks ({filledCount}/{blankCount})
               </span>
               {isGraded && summary ? (
-                <span className={`font-space text-[10px] px-2 py-0.5 rounded border ${
-                  summary.correctCount === summary.totalBlanks
+                <span className={`font-space text-[10px] px-2 py-0.5 rounded border ${summary.correctCount === summary.totalBlanks
                     ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-400"
                     : "bg-rose-500/10 border-rose-500/40 text-rose-400"
-                }`}>
+                  }`}>
                   {summary.correctCount}/{summary.totalBlanks} 정답
                   {summary.grade && ` · ${summary.grade}`}
                 </span>
@@ -619,11 +631,10 @@ export function DiffView({ session, analyzedCode, learningContent, onBack }: Dif
                   <button
                     onClick={handleSubmit}
                     disabled={!allFilled || isGrading}
-                    className={`h-8 px-4 rounded font-space text-xs font-bold flex items-center gap-1.5 transition-colors ${
-                      allFilled && !isGrading
+                    className={`h-8 px-4 rounded font-space text-xs font-bold flex items-center gap-1.5 transition-colors ${allFilled && !isGrading
                         ? "bg-emerald-500 hover:bg-emerald-600 text-white"
                         : "bg-emerald-500/20 text-emerald-500/40 cursor-not-allowed"
-                    }`}
+                      }`}
                   >
                     {isGrading ? (
                       <><Loader2 className="h-3.5 w-3.5 animate-spin" /> 채점 중...</>

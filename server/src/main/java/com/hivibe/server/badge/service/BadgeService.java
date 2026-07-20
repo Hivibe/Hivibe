@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -115,7 +116,28 @@ public class BadgeService {
             badgeRepository.saveAll(newBadges);
         }
 
-        return getBadges(lgnId);
+        // 전체 뱃지 목록 조회
+        List<Badge> achievedList = badgeRepository.findByUser_Id(user.getId());
+        Map<String, Badge> achievedMap = achievedList.stream()
+                .collect(Collectors.toMap(Badge::getBadgeKey, b -> b));
+
+        // 방금 획득한 뱃지 키 목록
+        Set<String> newlyAchievedKeys = newBadges.stream()
+                .map(Badge::getBadgeKey)
+                .collect(Collectors.toSet());
+
+        List<BadgeResponseDto> result = new ArrayList<>();
+        for (BadgeType type : BadgeType.values()) {
+            if (newlyAchievedKeys.contains(type.getKey())) {
+                // 방금 획득 — newlyAchieved = true
+                result.add(new BadgeResponseDto(type, true));
+            } else if (achievedMap.containsKey(type.getKey())) {
+                result.add(new BadgeResponseDto(achievedMap.get(type.getKey()), type));
+            } else {
+                result.add(new BadgeResponseDto(type));
+            }
+        }
+        return result;
     }
 
     // ── 학습 뱃지 전용 체크 (팀원 학습 기능에서 직접 호출) ──

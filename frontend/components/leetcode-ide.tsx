@@ -454,10 +454,15 @@ export function LeetCodeIDE() {
       });
     }
   };
-  const handleLoadDiagnosis = (content: string, lang: string, name: string) => {
+  const handleLoadDiagnosis = (content: string, lang: string, name: string, aiResult?: any) => {
     setEditorCode(content)
     setLanguage(lang)
     setFileName(name)
+    if (aiResult) {
+      setAiResult(aiResult)
+      setHasAnalyzed(true)
+    }
+    setLoadDiagOpen(false)
   }
 
   const addTag = () => {

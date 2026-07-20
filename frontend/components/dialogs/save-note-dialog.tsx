@@ -36,17 +36,17 @@ export function SaveNoteDialog({
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div className="space-y-2">
-            <label className="font-space text-[10px] text-zinc-500 uppercase tracking-wider">Title</label>
+            <label className="font-ko text-[10px] text-zinc-500 uppercase tracking-wider">Title</label>
             <Input
               value={noteTitle}
               onChange={e => setNoteTitle(e.target.value)}
               className="bg-zinc-950 border-zinc-800 text-zinc-200 text-sm font-ko" />
           </div>
           <div className="space-y-2">
-            <label className="font-space text-[10px] text-zinc-500 uppercase tracking-wider">Tags</label>
+            <label className="font-ko text-[10px] text-zinc-500 uppercase tracking-wider">Tags</label>
             <div className="flex flex-wrap gap-1.5 mb-2">
               {noteTags.map(tag => (
-                <span key={tag} className="font-space text-[10px] px-2 py-0.5 rounded-full border border-zinc-700 text-zinc-400 flex items-center gap-1">
+                <span key={tag} className="font-ko text-[10px] px-2 py-0.5 rounded-full border border-zinc-700 text-zinc-400 flex items-center gap-1">
                   #{tag}
                   <button onClick={() => removeTag(tag)}>
                     <X className="h-2.5 w-2.5 ml-0.5 hover:text-zinc-100" />
@@ -67,7 +67,7 @@ export function SaveNoteDialog({
             </div>
           </div>
           <div className="space-y-2">
-            <label className="font-space text-[10px] text-zinc-500 uppercase tracking-wider">Memo</label>
+            <label className="font-ko text-[10px] text-zinc-500 uppercase tracking-wider">Memo</label>
             <textarea
               value={noteMemo}
               onChange={e => setNoteMemo(e.target.value)}
