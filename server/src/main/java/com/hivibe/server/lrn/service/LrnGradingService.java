@@ -1,5 +1,6 @@
 package com.hivibe.server.lrn.service;
 
+import com.hivibe.server.badge.service.BadgeService;
 import com.hivibe.server.domain.entity.*;
 import com.hivibe.server.lrn.dto.AiGradeResult;
 import com.hivibe.server.lrn.dto.SubmissionRequestDto;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.hivibe.server.badge.service.BadgeService;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -40,6 +42,7 @@ public class LrnGradingService {
     private final AnswerNormalizer normalizer;
     private final AiGrader aiGrader;
     private final AiSummarizer aiSummarizer;
+    private final BadgeService badgeService; // 뱃지 추가 7.20
 
     @Transactional
     public SubmissionResponseDto submit(Long lrnId, SubmissionRequestDto request, User currentUser) {
@@ -50,7 +53,7 @@ public class LrnGradingService {
 
         // 1. 학습 세션 조회 + 소유권 검증
         Lrn lrn = lrnRepository.findById(lrnId)
-            .orElseThrow(() -> new IllegalArgumentException("학습 세션을 찾을 수 없습니다: " + lrnId));
+                .orElseThrow(() -> new IllegalArgumentException("학습 세션을 찾을 수 없습니다: " + lrnId));
 
         if (!lrn.getUser().getId().equals(currentUser.getId())) {
             throw new IllegalStateException("본인의 학습 세션이 아닙니다.");
@@ -70,11 +73,10 @@ public class LrnGradingService {
         // 3. 누락된 빈칸 검증 (전체 제출 정책)
         for (LrnBlank b : blanks) {
             boolean provided = request.answers().stream()
-                .anyMatch(a -> b.getBlankOrd().equals(a.blankOrd()));
+                    .anyMatch(a -> b.getBlankOrd().equals(a.blankOrd()));
             if (!provided) {
                 throw new IllegalArgumentException(
-                    "모든 빈칸에 답안을 입력해야 합니다. 누락된 빈칸: #" + b.getBlankOrd()
-                );
+                        "모든 빈칸에 답안을 입력해야 합니다. 누락된 빈칸: #" + b.getBlankOrd());
             }
         }
 
@@ -92,43 +94,42 @@ public class LrnGradingService {
             LrnBlank blank = blankByOrd.get(ans.blankOrd());
             if (blank == null) {
                 throw new IllegalArgumentException(
-                    "이 학습 세션에 없는 빈칸입니다: #" + ans.blankOrd()
-                );
+                        "이 학습 세션에 없는 빈칸입니다: #" + ans.blankOrd());
             }
 
             GradeResult graded = gradeOne(lang, blank, ans.userAns(), codeContext);
-            if (graded.correct()) correctCount++;
+            if (graded.correct())
+                correctCount++;
 
             // 제출 이력 저장
             LrnSubm subm = LrnSubm.builder()
-                .lrn(lrn)
-                .blank(blank)
-                .attemptNo(attemptNo)
-                .userAns(ans.userAns() == null ? "" : ans.userAns())
-                .isCorrect(graded.correct() ? "Y" : "N")
-                .grdMethod(graded.method())
-                .hintUsedLv(ans.hintUsedLv() == null ? 0 : ans.hintUsedLv())
-                .diffNote(graded.diffNote())
-                .recommend(graded.recommend())
-                .securityNote(graded.securityNote())
-                .build();
+                    .lrn(lrn)
+                    .blank(blank)
+                    .attemptNo(attemptNo)
+                    .userAns(ans.userAns() == null ? "" : ans.userAns())
+                    .isCorrect(graded.correct() ? "Y" : "N")
+                    .grdMethod(graded.method())
+                    .hintUsedLv(ans.hintUsedLv() == null ? 0 : ans.hintUsedLv())
+                    .diffNote(graded.diffNote())
+                    .recommend(graded.recommend())
+                    .securityNote(graded.securityNote())
+                    .build();
             lrnSubmRepository.save(subm);
 
             Concept concept = blank.getConcept();
 
             results.add(new BlankResultDto(
-                blank.getBlankId(),
-                blank.getBlankOrd(),
-                ans.userAns(),
-                graded.correct(),
-                graded.method(),
-                graded.correct() ? null : blank.getExpAns(),
-                graded.diffNote(),
-                graded.recommend(),
-                graded.securityNote(),
-                concept != null ? concept.getConcTitle() : null,
-                concept != null ? concept.getConcDesc() : null
-            ));
+                    blank.getBlankId(),
+                    blank.getBlankOrd(),
+                    ans.userAns(),
+                    graded.correct(),
+                    graded.method(),
+                    graded.correct() ? null : blank.getExpAns(),
+                    graded.diffNote(),
+                    graded.recommend(),
+                    graded.securityNote(),
+                    concept != null ? concept.getConcTitle() : null,
+                    concept != null ? concept.getConcDesc() : null));
         }
 
         // 6. 진행률/상태 갱신
@@ -145,7 +146,7 @@ public class LrnGradingService {
             if (lrn.getNextReviewAt() == null) {
                 lrn.setNextReviewAt(LocalDateTime.now().plusDays(REVIEW_DAYS_AFTER_COMPLETION));
             }
-        }  else {
+        } else {
             lrn.setStat("IN_PROG");
             lrn.setGrade(null);
             lrn.setNextReviewAt(null);
@@ -157,19 +158,30 @@ public class LrnGradingService {
 
         log.info("채점 완료 lrnId={}, attemptNo={}, {}/{} 정답", lrnId, attemptNo, correctCount, totalBlanks);
 
+        // 7.20 추가
+        try {
+            long lrnCount = lrnRepository.countByUser_Id(currentUser.getId());
+            badgeService.checkLearningBadges(
+                    currentUser.getLgnId(),
+                    lrnCount,
+                    allCorrect);
+            badgeService.checkAndAward(currentUser.getLgnId());
+        } catch (Exception e) {
+            log.warn("뱃지 체크 실패 — 채점 결과에는 영향 없음", e);
+        }
+
         return new SubmissionResponseDto(
-            lrn.getLrnId(),
-            attemptNo,
-            totalBlanks,
-            correctCount,
-            progRt,
-            lrn.getStat(),
-            allCorrect,
-            lrn.getGrade(),
-            lrn.getNextReviewAt(),
-            overallComment,
-            results
-        );
+                lrn.getLrnId(),
+                attemptNo,
+                totalBlanks,
+                correctCount,
+                progRt,
+                lrn.getStat(),
+                allCorrect,
+                lrn.getGrade(),
+                lrn.getNextReviewAt(),
+                overallComment,
+                results);
     }
 
     // ─────────── 내부 ───────────
@@ -189,33 +201,35 @@ public class LrnGradingService {
         AiGradeResult ai = aiGrader.grade(lang, blank.getExpAns(), userAns, codeContext);
 
         return new GradeResult(
-            ai.equivalent(),
-            ai.equivalent() ? "A" : "N",
-            ai.diffNote(),
-            ai.recommend(),
-            ai.securityNote()
-        );
+                ai.equivalent(),
+                ai.equivalent() ? "A" : "N",
+                ai.diffNote(),
+                ai.recommend(),
+                ai.securityNote());
     }
 
     private String computeGrade(List<AnswerItem> answers) {
         double avgHint = answers.stream()
-            .mapToInt(a -> a.hintUsedLv() == null ? 0 : a.hintUsedLv())
-            .average()
-            .orElse(0);
+                .mapToInt(a -> a.hintUsedLv() == null ? 0 : a.hintUsedLv())
+                .average()
+                .orElse(0);
 
-        if (avgHint == 0) return "S";
-        if (avgHint <= 1) return "A";
-        if (avgHint <= 2) return "B";
+        if (avgHint == 0)
+            return "S";
+        if (avgHint <= 1)
+            return "A";
+        if (avgHint <= 2)
+            return "B";
         return "C";
     }
 
     private record GradeResult(
-        boolean correct,
-        String method,
-        String diffNote,
-        String recommend,
-        String securityNote
-    ) {}
+            boolean correct,
+            String method,
+            String diffNote,
+            String recommend,
+            String securityNote) {
+    }
 
     /**
      * 마지막 채점 결과 조회
@@ -225,7 +239,7 @@ public class LrnGradingService {
     @Transactional(readOnly = true)
     public SubmissionResponseDto getLatestSubmission(Long lrnId, User currentUser) {
         Lrn lrn = lrnRepository.findById(lrnId)
-            .orElseThrow(() -> new IllegalArgumentException("학습 세션을 찾을 수 없습니다: " + lrnId));
+                .orElseThrow(() -> new IllegalArgumentException("학습 세션을 찾을 수 없습니다: " + lrnId));
 
         if (!lrn.getUser().getId().equals(currentUser.getId())) {
             throw new IllegalStateException("본인의 학습 세션이 아닙니다.");
@@ -233,12 +247,12 @@ public class LrnGradingService {
 
         int lastAttempt = lrn.getLastAttemptNo();
         if (lastAttempt <= 0) {
-            return null;   // 아직 제출 안 함
+            return null; // 아직 제출 안 함
         }
 
         // 마지막 시도의 제출 이력
         List<LrnSubm> subms = lrnSubmRepository
-            .findByLrn_LrnIdAndAttemptNoOrderByBlank_BlankOrdAsc(lrnId, lastAttempt);
+                .findByLrn_LrnIdAndAttemptNoOrderByBlank_BlankOrdAsc(lrnId, lastAttempt);
 
         if (subms.isEmpty()) {
             return null;
@@ -247,48 +261,48 @@ public class LrnGradingService {
         // 빈칸 개념 정보 (conceptTitle/Desc 채우기 위해)
         List<LrnBlank> blanks = lrnBlankRepository.findByLrnIdWithConcept(lrnId);
         Map<Long, LrnBlank> blankById = new HashMap<>();
-        for (LrnBlank b : blanks) blankById.put(b.getBlankId(), b);
+        for (LrnBlank b : blanks)
+            blankById.put(b.getBlankId(), b);
 
         List<BlankResultDto> results = new ArrayList<>();
         int correctCount = 0;
 
         for (LrnSubm s : subms) {
             boolean correct = "Y".equals(s.getIsCorrect());
-            if (correct) correctCount++;
+            if (correct)
+                correctCount++;
 
             LrnBlank blank = blankById.get(s.getBlank().getBlankId());
             Concept concept = blank != null ? blank.getConcept() : null;
 
             results.add(new BlankResultDto(
-                s.getBlank().getBlankId(),
-                s.getBlank().getBlankOrd(),
-                s.getUserAns(),
-                correct,
-                s.getGrdMethod(),
-                correct ? null : (blank != null ? blank.getExpAns() : null),
-                s.getDiffNote(),
-                s.getRecommend(),
-                s.getSecurityNote(),
-                concept != null ? concept.getConcTitle() : null,
-                concept != null ? concept.getConcDesc() : null
-            ));
+                    s.getBlank().getBlankId(),
+                    s.getBlank().getBlankOrd(),
+                    s.getUserAns(),
+                    correct,
+                    s.getGrdMethod(),
+                    correct ? null : (blank != null ? blank.getExpAns() : null),
+                    s.getDiffNote(),
+                    s.getRecommend(),
+                    s.getSecurityNote(),
+                    concept != null ? concept.getConcTitle() : null,
+                    concept != null ? concept.getConcDesc() : null));
         }
 
         int totalBlanks = blanks.size();
         boolean allCorrect = correctCount == totalBlanks;
 
         return new SubmissionResponseDto(
-            lrn.getLrnId(),
-            lastAttempt,
-            totalBlanks,
-            correctCount,
-            lrn.getProgRt(),
-            lrn.getStat(),
-            allCorrect,
-            lrn.getGrade(),
-            lrn.getNextReviewAt(),
-            lrn.getOverallComment(),
-            results
-        );
+                lrn.getLrnId(),
+                lastAttempt,
+                totalBlanks,
+                correctCount,
+                lrn.getProgRt(),
+                lrn.getStat(),
+                allCorrect,
+                lrn.getGrade(),
+                lrn.getNextReviewAt(),
+                lrn.getOverallComment(),
+                results);
     }
 }

@@ -323,7 +323,7 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
               </div>
 
               {/* 통계 */}
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-4 gap-2">
                 <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
                   <div className="mb-2.5"><FolderOpen className="h-4 w-4" style={{ color: BRAND }} /></div>
                   <p className="font-syne text-2xl font-bold text-zinc-100">{profile.diagnosisCount}</p>
@@ -384,9 +384,9 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
                 <div className="grid grid-cols-4 gap-3">
                   {badges.map(b => (
                     <div key={b.key}
-                      className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex flex-col items-center gap-2 text-center"
+                      className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-2.5 flex flex-col items-center gap-1.5 text-center"
                       style={{ opacity: b.achieved ? 1 : 0.4 }}>
-                      <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl"
+                      <div className="w-9 h-9 rounded-lg flex items-center justify-center text-lg"
                         style={{ background: b.achieved ? `${BRAND}15` : "#27272a" }}>
                         {b.icon}
                       </div>

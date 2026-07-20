@@ -2,7 +2,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 
 const BRAND = "#63C1ED"
@@ -46,6 +46,8 @@ export function BadgeUnlockDialog({ badges, onClose }: BadgeUnlockDialogProps) {
                 className="bg-zinc-900 border-zinc-800 text-zinc-100 sm:max-w-sm text-center overflow-hidden"
                 showCloseButton={false}
             >
+                <DialogTitle className="sr-only">새로운 뱃지 획득</DialogTitle>
+
                 {/* 배경 글로우 */}
                 <div
                     className="absolute inset-0 opacity-20 pointer-events-none"

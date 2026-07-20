@@ -385,7 +385,7 @@ export function LeetCodeIDE() {
     }
   };
 
-const handleNavClick = (id: string) => {
+  const handleNavClick = (id: string) => {
     if (id === "home") {
       router.push("/");
       return;
@@ -454,15 +454,16 @@ const handleNavClick = (id: string) => {
       });
     }
   };
-  const handleLoadDiagnosis = (content: string, lang: string, name: string) => {
+  const handleLoadDiagnosis = (content: string, lang: string, name: string, aiResult?: any) => {
     setEditorCode(content)
     setLanguage(lang)
     setFileName(name)
+    if (aiResult) {
+      setAiResult(aiResult)
+      setHasAnalyzed(true)
+    }
+    setLoadDiagOpen(false)
   }
-  const toggleFav = (id: number) =>
-    setSessions((p) =>
-      p.map((s) => (s.id === id ? { ...s, favorited: !s.favorited } : s)),
-    );
 
   const addTag = () => {
     const t = tagInput.trim();
@@ -476,7 +477,9 @@ const handleNavClick = (id: string) => {
     setNoteTags((p) => p.filter((t) => t !== tag));
 
   const currentSession = useMemo<LearningSession | null>(() => {
-    if (!selSession) return null
+    if (!selSession) return null;
+
+    const currentLearning = learnings.get(selSession);
 
     // 1) 방금 만든 학습 세션이면 그걸로 표시
     if (currentLearning && currentLearning.lrnId === selSession) {
@@ -491,9 +494,20 @@ const handleNavClick = (id: string) => {
       }
     }
 
-    // 2) 아카이브에서 클릭한 경우 (목 데이터)
+    // 2) 아카이브에서 클릭한 경우
     return sessions.find((s) => s.id === selSession) ?? null
-  }, [selSession, currentLearning, sessions, fileName, language, aiResult])
+
+  }, [selSession, learnings, sessions, fileName, language, aiResult])
+
+  const currentLearningContent = useMemo<LearningContent | null>(() => {
+    if (!selSession) return null;
+    return learnings.get(selSession) ?? null;
+  }, [selSession, learnings]);
+
+  const currentAnalyzedCode = useMemo<string>(() => {
+    if (!selSession) return "";
+    return analyzedCodeMap.get(selSession) ?? "";
+  }, [selSession, analyzedCodeMap]);
 
   return (
     <TooltipProvider>
@@ -614,7 +628,7 @@ const handleNavClick = (id: string) => {
                   </button>
                 </div>
               )}
-              
+
               {selSession && !isLoadingDetail && !detailError && currentSession && (
                 <DiffView
                   session={currentSession}
