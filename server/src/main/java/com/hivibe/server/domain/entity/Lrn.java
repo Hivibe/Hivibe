@@ -102,6 +102,13 @@ public class Lrn {
     @Builder.Default
     private Integer reviewCnt = 0;
 
+    // ─────────── [확장] AI 총평 ───────────
+
+    /** 마지막 제출에 대한 AI 총평 */
+    @Lob
+    @Column(name = "OVERALL_COMMENT", columnDefinition = "LONGTEXT")
+    private String overallComment;
+
     /**
      * INSERT 직전 실행
      * createdAt 이 null 이면 현재 시간으로 자동 세팅

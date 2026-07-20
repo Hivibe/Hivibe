@@ -21,8 +21,7 @@ import java.util.Map;
 public class GeminiClient {
 
     private static final String ENDPOINT =
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
-
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent";
     private static final int MAX_RETRIES = 3;
     private static final long INITIAL_BACKOFF_MS = 2000L;
 

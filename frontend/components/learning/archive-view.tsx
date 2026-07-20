@@ -9,9 +9,10 @@ interface ArchiveViewProps {
   sessions: LearningSession[]
   onSelectSession: (id: number) => void
   onToggleFav: (id: number) => void
+  onDeleteSession: (id: number) => void
 }
 
-export function ArchiveView({ sessions, onSelectSession, onToggleFav }: ArchiveViewProps) {
+export function ArchiveView({ sessions, onSelectSession, onToggleFav, onDeleteSession }: ArchiveViewProps) {
   const [langFilter, setLangFilter] = useState("All")
   const [favOnly,    setFavOnly]    = useState(false)
   const [search,     setSearch]     = useState("")
@@ -107,7 +108,8 @@ export function ArchiveView({ sessions, onSelectSession, onToggleFav }: ArchiveV
               {filtered(favSessions).map(s => (
                 <SessionCard key={s.id} s={s} compact
                   onSelect={() => onSelectSession(s.id)}
-                  onFav={() => onToggleFav(s.id)} />
+                  onFav={() => onToggleFav(s.id)}
+                  onDelete={() => onDeleteSession(s.id)} />
               ))}
             </div>
           </div>
@@ -127,7 +129,8 @@ export function ArchiveView({ sessions, onSelectSession, onToggleFav }: ArchiveV
             {filtered(favOnly ? favSessions : recentSessions).map(s => (
               <SessionCard key={s.id} s={s} compact
                 onSelect={() => onSelectSession(s.id)}
-                onFav={() => onToggleFav(s.id)} />
+                onFav={() => onToggleFav(s.id)}
+                onDelete={() => onDeleteSession(s.id)} />
             ))}
           </div>
         </div>

@@ -1,11 +1,16 @@
 package com.hivibe.server.lrn.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivibe.server.lrn.dto.GeminiGradingResultDto;
+import com.hivibe.server.lrn.dto.AiGradeResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+/**
+ * AI 의미 비교 채점기
+ * - AnswerNormalizer 문자열 일치 실패 시에만 호출 (비용 절약)
+ * - 정답이어도 차이점/추천사항을 함께 생성
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -16,21 +21,32 @@ public class AiGrader {
     private final ObjectMapper objectMapper;
 
     /**
-     * AI 의미 비교로 정답 여부 판단.
-     * - Gemini 호출 실패 시 false 반환 (안전한 기본값)
+     * 의미 비교 + 피드백 생성
+     * - AI 호출/파싱 실패 시 오답 처리 (fail-safe)
      */
-    public boolean isEquivalent(String lang, String expectedAnswer, String userAnswer, String templateContext) {
+    public AiGradeResult grade(String lang, String expAns, String userAns, String codeContext) {
+        String rawJson = null;
         try {
-            String prompt = promptBuilder.build(lang, expectedAnswer, userAnswer, templateContext);
-            String rawJson = geminiClient.generateJson(prompt);
+            String prompt = promptBuilder.build(
+                lang == null ? "Java" : lang,
+                expAns,
+                userAns,
+                codeContext
+            );
 
-            GeminiGradingResultDto result = objectMapper.readValue(rawJson, GeminiGradingResultDto.class);
-            log.info("[AI Grading] equivalent={}, reason={}", result.equivalent(), result.reason());
-            return result.equivalent();
+            rawJson = geminiClient.generateJson(prompt);
+            log.info("[AiGrader] Gemini 원본 응답: {}", rawJson);   // ← 추가
+
+            return objectMapper.readValue(rawJson, AiGradeResult.class);
+
         } catch (Exception e) {
-            log.warn("[AI Grading] AI 채점 실패. 오답 처리. expected={}, user={}",
-                expectedAnswer, userAnswer, e);
-            return false;
+            log.error("AI 채점 실패 — 오답 처리. expAns={}, userAns={}, raw={}", expAns, userAns, rawJson, e);
+            return new AiGradeResult(
+                false,
+                "AI 채점에 실패했어요. 모범답안과 직접 비교해 보세요.",
+                null,
+                null
+            );
         }
     }
 }

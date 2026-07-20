@@ -8,6 +8,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -17,6 +20,7 @@ public class LearningSaveService {
     private final LrnRepository lrnRepository;
     private final OptCdRepository optCdRepository;
     private final ConceptRepository conceptRepository;
+    private final LrnBlankRepository lrnBlankRepository;
 
     @Transactional
     public Long save(LearningSaveRequestDto request, User currentUser) {
@@ -39,6 +43,7 @@ public class LearningSaveService {
 
         OrnCd ornCd = anls.getOrnCd();
 
+        // 1. 학습 세션 저장
         Lrn lrn = Lrn.builder()
             .user(currentUser)
             .optCd(optCd)
@@ -48,6 +53,8 @@ public class LearningSaveService {
             .build();
         Lrn savedLrn = lrnRepository.save(lrn);
 
+        // 2. 개념 저장 (인덱스 순서대로 리스트에 보관 → 빈칸 매핑용)
+        List<Concept> savedConcepts = new ArrayList<>();
         if (request.concepts() != null) {
             int idx = 1;
             for (LearningSaveRequestDto.Concept c : request.concepts()) {
@@ -59,11 +66,44 @@ public class LearningSaveService {
                     .refUrl(c.referenceUrl())
                     .sortOrd(c.sortOrder() != null ? c.sortOrder() : idx)
                     .build();
-                conceptRepository.save(concept);
+                savedConcepts.add(conceptRepository.save(concept));
                 idx++;
             }
         }
 
+        // 3. 빈칸 정답 저장 (채점 기준)
+        if (request.blanks() != null && !request.blanks().isEmpty()) {
+            for (LearningSaveRequestDto.Blank b : request.blanks()) {
+                if (b.order() == null || b.answer() == null || b.answer().isBlank()) {
+                    log.warn("빈칸 정답 누락으로 스킵. lrnId={}, order={}", savedLrn.getLrnId(), b.order());
+                    continue;
+                }
+
+                Concept linked = resolveConcept(savedConcepts, b.conceptIndex());
+
+                LrnBlank blank = LrnBlank.builder()
+                    .lrn(savedLrn)
+                    .blankOrd(b.order())
+                    .expAns(b.answer().trim())
+                    .concept(linked)
+                    .build();
+                lrnBlankRepository.save(blank);
+            }
+            log.info("빈칸 {}개 저장 완료. lrnId={}", request.blanks().size(), savedLrn.getLrnId());
+        } else {
+            log.warn("빈칸 정답이 없습니다. 채점 불가 상태. lrnId={}", savedLrn.getLrnId());
+        }
+
         return savedLrn.getLrnId();
+    }
+
+    /** conceptIndex(0-based)로 저장된 Concept 찾기. 범위 밖이면 null */
+    private Concept resolveConcept(List<Concept> savedConcepts, Integer conceptIndex) {
+        if (conceptIndex == null) return null;
+        if (conceptIndex < 0 || conceptIndex >= savedConcepts.size()) {
+            log.warn("conceptIndex 범위 초과: {}, size={}", conceptIndex, savedConcepts.size());
+            return null;
+        }
+        return savedConcepts.get(conceptIndex);
     }
 }
