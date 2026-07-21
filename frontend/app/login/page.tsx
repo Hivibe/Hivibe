@@ -87,7 +87,7 @@ export default function LoginPage() {
             <Button
               variant="outline"
               className="w-full h-11 bg-zinc-900 border-zinc-800 hover:bg-zinc-800 hover:text-zinc-100 flex items-center gap-3 font-ko text-sm"
-              onClick={() => window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/oauth2/authorization/google`}
+              onClick={() => window.location.href = `${process.env.NEXT_PUBLIC_API_URL ?? 'https://hivibe-production.up.railway.app'}/oauth2/authorization/google`}
             >
               <svg
                 viewBox="0 0 24 24"
