@@ -34,3 +34,8 @@ app:
 
 server:
     forward-headers-strategy: framework
+
+logging:
+    level:
+        org.springframework.security: TRACE
+        org.springframework.web.cors: TRACE
