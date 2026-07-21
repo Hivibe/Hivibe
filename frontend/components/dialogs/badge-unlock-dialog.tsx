@@ -55,7 +55,7 @@ export function BadgeUnlockDialog({ badges, onClose }: BadgeUnlockDialogProps) {
                 />
 
                 <div className="relative py-4 space-y-4">
-                    <p className="font-space text-[10px] tracking-widest uppercase" style={{ color: BRAND }}>
+                    <p className="font-ko text-[10px] tracking-widest uppercase" style={{ color: BRAND }}>
             // BADGE UNLOCKED
                     </p>
 
@@ -72,7 +72,7 @@ export function BadgeUnlockDialog({ badges, onClose }: BadgeUnlockDialogProps) {
                     </div>
 
                     {badges.length > 1 && (
-                        <p className="font-space text-[11px] text-zinc-500">
+                        <p className="font-ko text-[11px] text-zinc-500">
                             {index + 1} / {badges.length}
                         </p>
                     )}

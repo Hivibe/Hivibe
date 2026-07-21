@@ -8,6 +8,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.io.IOException;
 
@@ -16,11 +17,13 @@ import java.io.IOException;
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private final JwtTokenProvider jwtTokenProvider;
+    @Value("${app.frontend-url}") // ← 추가
+    private String frontendUrl; // ← 추가
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
-                                        HttpServletResponse response,
-                                        Authentication authentication) throws IOException {
+            HttpServletResponse response,
+            Authentication authentication) throws IOException {
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
 
         String email = (String) oAuth2User.getAttributes().get("email");
@@ -32,9 +35,9 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         String refreshToken = jwtTokenProvider.createRefreshToken(email);
 
         // 프론트로 토큰 전달
-        String redirectUrl = "http://localhost:3000/oauth2/callback"
-            + "?accessToken=" + accessToken
-            + "&refreshToken=" + refreshToken;
+        String redirectUrl = frontendUrl + "/oauth2/callback"
+                + "?accessToken=" + accessToken
+                + "&refreshToken=" + refreshToken;
 
         getRedirectStrategy().sendRedirect(request, response, redirectUrl);
     }
