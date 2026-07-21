@@ -18,29 +18,29 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-    const handleLogin = async () => {
-        setError("");
-        try {
-            const res = await fetch("http://localhost:8080/api/users/login", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ lgnId: email, lgnPwsd: password }),
-            });
+  const handleLogin = async () => {
+    setError("");
+    try {
+      const res = await fetch("http://localhost:8080/api/users/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lgnId: email, lgnPwsd: password }),
+      });
 
-            if (!res.ok) {
-                const msg = await res.text();
-                setError(msg);
-                return;
-            }
+      if (!res.ok) {
+        const msg = await res.text();
+        setError(msg);
+        return;
+      }
 
-            const data = await res.json();
-            localStorage.setItem("accessToken", data.accessToken);
-            localStorage.setItem("refreshToken", data.refreshToken);
-            router.push("/main");
-        } catch (e) {
-            setError("서버 연결에 실패했습니다.");
-        }
-    };
+      const data = await res.json();
+      localStorage.setItem("accessToken", data.accessToken);
+      localStorage.setItem("refreshToken", data.refreshToken);
+      router.push("/main");
+    } catch (e) {
+      setError("서버 연결에 실패했습니다.");
+    }
+  };
 
   return (
     <div className="font-ko min-h-screen bg-zinc-950 text-zinc-100 flex flex-col">
@@ -87,7 +87,7 @@ export default function LoginPage() {
             <Button
               variant="outline"
               className="w-full h-11 bg-zinc-900 border-zinc-800 hover:bg-zinc-800 hover:text-zinc-100 flex items-center gap-3 font-ko text-sm"
-              onClick={() => window.location.href = "http://localhost:8080/oauth2/authorization/google"}
+              onClick={() => window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/oauth2/authorization/google`}
             >
               <svg
                 viewBox="0 0 24 24"
@@ -183,19 +183,19 @@ export default function LoginPage() {
                   </button>
                 </div>
               </div>
-              
+
 
               <Button
                 className="w-full h-11 font-ko font-semibold text-white text-sm mt-2"
                 style={{ background: BRAND }}
                 onClick={handleLogin}
-            >
+              >
                 로그인
-            </Button>
+              </Button>
 
-            {error && (
+              {error && (
                 <p className="font-ko text-xs text-rose-400 text-center mt-2">{error}</p>
-            )}
+              )}
             </div>
           </div>
 
