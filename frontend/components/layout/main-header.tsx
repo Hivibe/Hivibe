@@ -17,8 +17,6 @@ interface MainHeaderProps {
   activeNav: string
   language: string
   setLanguage: (v: string) => void
-  aiCoaching: boolean
-  setAiCoaching: (v: boolean) => void
   editorCode: string
   hasAnalyzed: boolean
   isAnalyzing?: boolean
@@ -51,9 +49,60 @@ const headerIcon: Record<string, any> = {
   mypage: User,
 }
 
+const PACE_OPTIONS: { key: Pace; label: string; dot: number }[] = [
+  { key: "off", label: "Off", dot: 5 },
+  { key: "slow", label: "천천히", dot: 9 },
+  { key: "medium", label: "중간", dot: 12 },
+  { key: "fast", label: "빠르게", dot: 15 },
+]
+
+function PaceRadio({ pace, setPace }: { pace: Pace; setPace: (p: Pace) => void }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="font-space text-[10px] font-bold tracking-wide hidden xl:inline" style={{ color: BRAND }}>
+        LIVE COACHING
+      </span>
+      <div className="flex items-center">
+        {PACE_OPTIONS.map((opt, i) => {
+          const active = pace === opt.key
+          return (
+            <div key={opt.key} className="flex items-center">
+              {/* 원들 사이 연결선 (첫 번째 제외) */}
+              {i > 0 && <span className="w-4 h-px bg-zinc-700" />}
+              <button
+                type="button"
+                onClick={() => setPace(opt.key)}
+                className="flex flex-col items-center gap-1 group px-0.5"
+                title={opt.label}
+              >
+                <span
+                  className="rounded-full border-2 flex items-center justify-center transition-all duration-150"
+                  style={{
+                    width: opt.dot,
+                    height: opt.dot,
+                    borderColor: active ? BRAND : "#52525b",
+                    background: active ? BRAND : "transparent",
+                    boxShadow: active ? `0 0 6px ${BRAND}` : "none",
+                  }}
+                />
+                <span
+                  className="font-space text-[9px] transition-colors leading-none"
+                  style={{ color: active ? BRAND : "#71717a" }}
+                >
+                  {opt.label}
+                </span>
+              </button>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 export function MainHeader({
   activeNav, language, setLanguage,
-  aiCoaching, setAiCoaching,
+  pace, setPace,
   editorCode, hasAnalyzed, isAnalyzing, selSession,
   codeCopied, uploadOpen, setUploadOpen,
   onRunAnalysis, onGoLearning,
@@ -74,15 +123,12 @@ export function MainHeader({
             {headerTitle[activeNav] ?? ""}
           </span>
         </div>
-
         {activeNav !== "notes" && activeNav !== "mypage" && (
           <div className="flex items-center gap-2.5">
             <div className="flex items-center gap-2">
               <Switch
-                checked={aiCoaching}
-                onCheckedChange={setAiCoaching}
                 className="data-[state=checked]:bg-[#63C1ED] scale-90" />
-              <span className="font-ko text-[12px] text-zinc-500 hidden xl:inline">Live AI Coaching</span>
+              <span className="font-space text-[10px] text-zinc-500 hidden xl:inline">Live AI Coaching</span>
             </div>
 
             <div className="h-4 w-px bg-zinc-800" />

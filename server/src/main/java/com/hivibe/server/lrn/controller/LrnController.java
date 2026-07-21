@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import com.hivibe.server.lrn.service.LrnHintService;
 
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,7 @@ public class LrnController {
     private final UserRepository userRepository;
     private final LrnGradingService lrnGradingService;
     private final LearningQueryService learningQueryService;
+    private final LrnHintService lrnHintService;
 
     /** AI 학습 생성 (DB 저장 X, 순수 Gemini 호출) */
     @PostMapping("/api/v1/ai/learning")
@@ -164,4 +166,16 @@ public class LrnController {
         }
         return ResponseEntity.ok(latest);
     }
-}
+
+    @GetMapping("/api/v1/learnings/{lrnId}/blanks/{blankOrd}/hint")
+    public ResponseEntity<HintResponseDto> getHint(
+        @PathVariable("lrnId") Long lrnId,
+        @PathVariable("blankOrd") Integer blankOrd,
+        @RequestParam("level") Integer level,
+        @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        User user = userRepository.findByLgnId(userDetails.getUsername())
+            .orElseThrow(() -> new IllegalStateException("사용자를 찾을 수 없습니다."));
+        return ResponseEntity.ok(lrnHintService.getHint(lrnId, blankOrd, level, user));
+    }
+    }

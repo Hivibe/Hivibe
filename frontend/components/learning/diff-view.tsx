@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useEffect, Fragment } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { TrendingUp, HelpCircle, Check, X, MessageSquare, ExternalLink, Loader2, RotateCcw, Eye, EyeOff, Sparkles } from "lucide-react"
 import {
@@ -11,10 +10,18 @@ import {
   XAxis, YAxis, Tooltip as RechartsTooltip, Legend,
 } from "recharts"
 import type { LearningSession } from "@/types"
-import { apiFetch, submitLearning, type AiLearningResponse, type BlankResult } from "@/lib/api"
+import { apiFetch, submitLearning, fetchHint, type AiLearningResponse, type BlankResult, type SubmissionResponse } from "@/lib/api"
 import { toast } from "sonner"
 
 const BRAND = "#63C1ED"
+
+export type Pace = "off" | "slow" | "medium" | "fast"
+
+export const PACE_INTERVALS_MS: Record<"slow" | "medium" | "fast", number> = {
+  fast: 20000,
+  medium: 40000,
+  slow: 70000,
+}
 
 const complexityComparisonData = [
   { name: "10", original: 100, optimized: 10 },
@@ -42,6 +49,8 @@ interface DiffViewProps {
   analyzedCode: string
   learningContent: LearningContent | null
   onBack: () => void
+  onGraded?: (lrnId: number, res: SubmissionResponse) => void
+  pace: Pace
 }
 
 function highlightLine(text: string) {
@@ -183,7 +192,82 @@ function ResultPopover({ result }: { result: BlankResult }) {
   )
 }
 
-export function DiffView({ session, analyzedCode, learningContent, onBack }: DiffViewProps) {
+/** 계층적 힌트 팝오버 — Lv1(개념명) → Lv2(설명) → Lv3(부분정답), 클릭할 때마다 서버에서 다음 레벨 로드 */
+function HintPopover({
+  hasHintTarget,
+  paceOn,
+  level,
+  contents,
+  loading,
+  etaSec,
+}: {
+  hasHintTarget: boolean
+  paceOn: boolean
+  level: number
+  contents: Record<number, string>
+  loading: boolean
+  etaSec: number | null
+}) {
+  if (!hasHintTarget) {
+    return (
+      <button className="text-zinc-700 cursor-not-allowed" type="button" title="힌트 없음">
+        <HelpCircle className="h-3.5 w-3.5" />
+      </button>
+    )
+  }
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button className="text-zinc-500 hover:text-amber-400 transition-colors" type="button">
+          <HelpCircle className="h-3.5 w-3.5" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent side="top" className="max-w-xs bg-zinc-900 border border-amber-500/30 space-y-2">
+       {!paceOn && (
+          <p className="font-ko text-[11px] text-zinc-500">라이브 코칭이 꺼져 있어요. 위 속도 토글을 켜보세요.</p>
+        )}
+
+        {paceOn && level < 1 && (
+          <p className="font-ko text-[11px] text-zinc-500">
+            {loading ? "힌트를 준비하고 있어요..." : "이 칸에 입력을 시작하면 힌트가 떠요."}
+          </p>
+        )}
+
+        {level >= 1 && (
+          <div>
+            <p className="font-ko font-bold text-xs text-amber-400 mb-1">💡 Lv.1 개념</p>
+            <p className="font-ko text-[11px] text-zinc-300">{contents[1]}</p>
+          </div>
+        )}
+
+        {level >= 2 && (
+          <div className="pt-2 border-t border-zinc-800">
+            <p className="font-ko font-bold text-xs text-amber-400 mb-1">💡 Lv.2 설명</p>
+            <p className="font-ko text-[11px] text-zinc-300 leading-relaxed">{contents[2]}</p>
+          </div>
+        )}
+
+        {level >= 3 && (
+          <div className="pt-2 border-t border-zinc-800">
+            <p className="font-ko font-bold text-xs text-amber-400 mb-1">💡 Lv.3 부분 정답</p>
+            <code className="font-code text-[11px] text-amber-300 block bg-zinc-950 rounded px-2 py-1.5 whitespace-pre-wrap break-all">
+              {contents[3]}
+            </code>
+          </div>
+        )}
+
+        {paceOn && level > 0 && level < 3 && etaSec !== null && (
+          <p className="font-space text-[10px] text-zinc-500 pt-1 border-t border-zinc-800">
+            다음 힌트까지 {etaSec}초
+          </p>
+        )}
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+export function DiffView({ session, analyzedCode, learningContent, onBack, onGraded, pace }: DiffViewProps) {
   const [panelOpen, setPanelOpen] = useState(true)
   const [answers, setAnswers] = useState<Record<number, string>>({})
   const [userName, setUserName] = useState<string>("사용자")
@@ -191,6 +275,15 @@ export function DiffView({ session, analyzedCode, learningContent, onBack }: Dif
   // 채점 상태
   const [isGrading, setIsGrading] = useState(false)
   const [results, setResults] = useState<Record<number, BlankResult> | null>(null)
+  const isGraded = results !== null
+  
+  // 힌트 상태: blankIdx0 → 열람한 최고 레벨(0~3) / 레벨별 캐시된 내용 / 로딩 여부
+  const [hintLevels, setHintLevels] = useState<Record<number, number>>({})
+  const [hintContents, setHintContents] = useState<Record<number, Record<number, string>>>({})
+  const [hintLoading, setHintLoading] = useState<Record<number, boolean>>({})
+  const [hintStartTimes, setHintStartTimes] = useState<Record<number, number>>({})
+  const [nowTick, setNowTick] = useState(() => Date.now())
+
 
   const [summary, setSummary] = useState<{
     correctCount: number
@@ -210,7 +303,7 @@ export function DiffView({ session, analyzedCode, learningContent, onBack }: Dif
       .catch(e => console.error("유저 이름 불러오기 실패:", e))
   }, [])
 
-  // 학습 세션이 바뀌면 상태 초기화 (이전 채점 있으면 복원)
+// 학습 세션이 바뀌면 상태 초기화 (이전 채점 있으면 복원)
   useEffect(() => {
     const prev = learningContent?.previousSubmission
     if (prev && prev.results.length > 0) {
@@ -235,6 +328,10 @@ export function DiffView({ session, analyzedCode, learningContent, onBack }: Dif
       setSummary(null)
     }
     setGradeError(null)
+    setHintLevels({})
+    setHintContents({})
+    setHintLoading({})
+    setHintStartTimes({})
   }, [learningContent?.lrnId])
 
   const blankCode = learningContent?.optimizedCode.blank ?? ""
@@ -258,7 +355,31 @@ export function DiffView({ session, analyzedCode, learningContent, onBack }: Dif
 
   const filledCount = Object.values(answers).filter(v => v?.trim().length > 0).length
   const allFilled = blankCount > 0 && filledCount === blankCount
-  const isGraded = results !== null
+
+  const handleRevealHint = async (idx0: number, nextLevel: number) => {
+    if (!learningContent) return
+
+    const cached = hintContents[idx0]?.[nextLevel]
+    if (cached !== undefined) {
+      setHintLevels(prev => ({ ...prev, [idx0]: nextLevel }))
+      return
+    }
+
+    setHintLoading(prev => ({ ...prev, [idx0]: true }))
+    try {
+      const res = await fetchHint(learningContent.lrnId, idx0 + 1, nextLevel)
+      setHintContents(prev => ({
+        ...prev,
+        [idx0]: { ...(prev[idx0] ?? {}), [nextLevel]: res.content },
+      }))
+      setHintLevels(prev => ({ ...prev, [idx0]: nextLevel }))
+    } catch (e: any) {
+      console.error("힌트 조회 실패:", e)
+      toast.error("힌트를 불러오지 못했어요", { description: e.message })
+    } finally {
+      setHintLoading(prev => ({ ...prev, [idx0]: false }))
+    }
+  }
 
   const handleSubmit = async () => {
     if (!learningContent) return
@@ -272,7 +393,7 @@ export function DiffView({ session, analyzedCode, learningContent, onBack }: Dif
         answers: Object.entries(answers).map(([idx0, userAns]) => ({
           blankOrd: parseInt(idx0, 10) + 1,   // 0-based → 1-based
           userAns,
-          hintUsedLv: 0,                       // 계층적 힌트 붙이면 여기 연결
+          hintUsedLv: hintLevels[parseInt(idx0, 10)] ?? 0,
         })),
       })
 
@@ -287,19 +408,7 @@ export function DiffView({ session, analyzedCode, learningContent, onBack }: Dif
         grade: res.grade,
         overallComment: res.overallComment,
       })
-
-      // 추가 (07.20)
-
-      // 채점 완료 후 일반 뱃지 체크 (ON_FIRE 등) — 백그라운드
-      apiFetch("/api/badges/check", { method: "POST" }).catch(() => { })
-
-      // PERFECT_ANSWER 뱃지 — 100% 정답 시
-      if (res.allCorrect) {
-        apiFetch("/api/badges/check/learning", {
-          method: "POST",
-          body: JSON.stringify({ isPerfect: true }),
-        }).catch(() => { })
-      }
+      onGraded?.(learningContent.lrnId, res)
 
       if (res.allCorrect) {
         toast.success("✅ 모두 맞혔어요!", {
@@ -323,7 +432,7 @@ export function DiffView({ session, analyzedCode, learningContent, onBack }: Dif
     setResults(null)
     setSummary(null)
     setGradeError(null)
-    // answers는 유지 — 틀린 것만 고치면 되게
+    // answers, 힌트 상태는 유지 — 틀린 것만 고치면 되게
   }
 
   /** 빈칸 input 스타일 (채점 상태에 따라) */
@@ -507,9 +616,10 @@ export function DiffView({ session, analyzedCode, learningContent, onBack }: Dif
                   {summary.correctCount}/{summary.totalBlanks} 정답
                   {summary.grade && ` · ${summary.grade}`}
                 </span>
-              ) : blankCount > 0 && (
-                <span className="font-space text-[10px] text-zinc-500">
-                  마우스를 <HelpCircle className="h-3 w-3 inline mx-0.5" />에 올려 힌트 보기
+              ) : blankCount > 0 && pace !== "off" && (
+                <span className="flex items-center gap-1.5 font-space text-[10px] font-bold tracking-wide" style={{ color: BRAND }}>
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: BRAND, boxShadow: `0 0 6px ${BRAND}` }} />
+                  LIVE COACHING ON
                 </span>
               )}
             </div>
@@ -546,36 +656,26 @@ export function DiffView({ session, analyzedCode, learningContent, onBack }: Dif
                           {/* 채점 결과 아이콘 */}
                           {result && <ResultPopover result={result} />}
 
-                          {/* 미채점 상태에서만 힌트 툴팁 */}
-                          {!isGraded && (
-                            concept ? (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <button className="text-zinc-500 hover:text-amber-400 transition-colors" type="button">
-                                    <HelpCircle className="h-3.5 w-3.5" />
-                                  </button>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="max-w-xs bg-zinc-900 border border-amber-500/30">
-                                  <p className="font-ko font-bold text-xs text-amber-400 mb-1">💡 {concept.title}</p>
-                                  <p className="font-ko text-[11px] text-zinc-300 leading-relaxed">{concept.description}</p>
-                                  {concept.referenceUrl && (
-                                    <a
-                                      href={concept.referenceUrl}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="font-ko text-[11px] text-amber-400 hover:text-amber-300 underline mt-2 inline-flex items-center gap-1"
-                                    >
-                                      참고 링크 <ExternalLink className="h-2.5 w-2.5" />
-                                    </a>
-                                  )}
-                                </TooltipContent>
-                              </Tooltip>
-                            ) : (
-                              <button className="text-zinc-700 cursor-not-allowed" type="button" title="힌트 없음">
-                                <HelpCircle className="h-3.5 w-3.5" />
-                              </button>
+                           {/* 미채점 상태에서만 라이브 코칭 힌트 */}
+                          {!isGraded && (() => {
+                            const startTime = hintStartTimes[idx0]
+                            const currentLevel = hintLevels[idx0] ?? 0
+                            let etaSec: number | null = null
+                            if (pace !== "off" && startTime !== undefined && currentLevel < 3) {
+                              const nextThreshold = (currentLevel + 1) * PACE_INTERVALS_MS[pace]
+                              etaSec = Math.max(0, Math.ceil((nextThreshold - (nowTick - startTime)) / 1000))
+                            }
+                            return (
+                              <HintPopover
+                                hasHintTarget={!!concept}
+                                paceOn={pace !== "off"}
+                                level={currentLevel}
+                                contents={hintContents[idx0] ?? {}}
+                                loading={!!hintLoading[idx0]}
+                                etaSec={etaSec}
+                              />
                             )
-                          )}
+                          })()}
                         </span>
                       )
                     })}

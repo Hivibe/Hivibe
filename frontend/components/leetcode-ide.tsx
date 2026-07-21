@@ -32,7 +32,6 @@ import { CodeEditor } from "@/components/diagnosis/code-editor";
 
 // learning
 import { ArchiveView } from "@/components/learning/archive-view";
-import { DiffView } from "@/components/learning/diff-view";
 
 // notes
 import { NotesList } from "@/components/notes/notes-list";
@@ -51,6 +50,8 @@ import type { LearningSession } from "@/types";
 
 //toaster
 import { toast } from "sonner"
+
+import { DiffView, type Pace } from "@/components/learning/diff-view";
 
 
 /* 점수 → 등급 (백엔드와 일치) */
@@ -140,6 +141,8 @@ export function LeetCodeIDE() {
   const [loadDiagOpen, setLoadDiagOpen] = useState(false)
 
   const [sidebarRefreshKey, setSidebarRefreshKey] = useState(0)
+
+  const [pace, setPace] = useState<Pace>("off");
 
   const [unlockedBadges, setUnlockedBadges] = useState<UnlockedBadge[]>([]);
 
@@ -509,6 +512,20 @@ export function LeetCodeIDE() {
     return analyzedCodeMap.get(selSession) ?? "";
   }, [selSession, analyzedCodeMap]);
 
+  /* 채점 완료 → 아카이브 목록의 grade와 캐시된 previousSubmission 동시 갱신 */
+  const handleLearningGraded = useCallback((lrnId: number, res: SubmissionResponse) => {
+    setSessions(prev => prev.map(s =>
+      s.id === lrnId ? { ...s, grade: res.grade ?? s.grade } : s
+    ));
+    setLearnings(prev => {
+      const existing = prev.get(lrnId);
+      if (!existing) return prev;
+      const next = new Map(prev);
+      next.set(lrnId, { ...existing, previousSubmission: res });
+      return next;
+    });
+  }, []);
+
   return (
     <TooltipProvider>
       <style>{`
@@ -531,8 +548,8 @@ export function LeetCodeIDE() {
             activeNav={activeNav}
             language={language}
             setLanguage={setLanguage}
-            aiCoaching={aiCoaching}
-            setAiCoaching={setAiCoaching}
+            pace={pace}
+            setPace={setPace}
             editorCode={editorCode}
             hasAnalyzed={hasAnalyzed}
             selSession={selSession}
@@ -638,6 +655,9 @@ export function LeetCodeIDE() {
                     setSelSession(null);
                     syncUrl("learning", null, "replace");
                   }}
+                  onGraded={handleLearningGraded}
+                  pace={pace}
+                  
                 />
               )}
             </>

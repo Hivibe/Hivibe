@@ -258,3 +258,21 @@ export async function fetchLatestSubmission(lrnId: number): Promise<SubmissionRe
   if (!res.ok) throw new Error("이전 채점 결과를 불러오지 못했어요.")
   return res.json()
 }
+
+export type HintResponse = {
+  level: number
+  content: string
+}
+
+export async function fetchHint(
+  lrnId: number,
+  blankOrd: number,
+  level: number
+): Promise<HintResponse> {
+  const res = await apiFetch(`/api/v1/learnings/${lrnId}/blanks/${blankOrd}/hint?level=${level}`)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: "힌트를 불러오지 못했어요." }))
+    throw new Error(err.message || "힌트를 불러오지 못했어요.")
+  }
+  return res.json()
+}

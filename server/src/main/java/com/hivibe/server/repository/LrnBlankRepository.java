@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface LrnBlankRepository extends JpaRepository<LrnBlank, Long> {
 
@@ -23,4 +24,6 @@ public interface LrnBlankRepository extends JpaRepository<LrnBlank, Long> {
     @Modifying
     @Query("DELETE FROM LrnBlank b WHERE b.lrn.lrnId = :lrnId")
     void deleteByLrnId(@Param("lrnId") Long lrnId);
+
+    Optional<LrnBlank> findByLrn_LrnIdAndBlankOrd(Long lrnId, Integer blankOrd);
 }
