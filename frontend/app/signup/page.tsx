@@ -58,7 +58,27 @@ export default function SignupPage() {
         return;
       }
 
-      router.push("/login");
+      // 회원가입 성공 후 자동 로그인
+      const loginRes = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL ?? 'https://hivibe-production.up.railway.app'}/api/users/login`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            lgnId: email,
+            lgnPwsd: password,
+          }),
+        }
+      )
+
+      if (loginRes.ok) {
+        const loginData = await loginRes.json()
+        localStorage.setItem('accessToken', loginData.accessToken)
+        localStorage.setItem('refreshToken', loginData.refreshToken)
+        router.push('/main')
+      } else {
+        router.push('/login')
+      }
     } catch (e) {
       setError("서버 연결에 실패했습니다.");
     }
