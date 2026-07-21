@@ -1,9 +1,10 @@
 "use client";
 
+import { Suspense } from "react";
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function OAuth2CallbackPage() {
+function OAuth2CallbackContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -24,5 +25,17 @@ export default function OAuth2CallbackPage() {
         <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
             <p className="text-zinc-400 font-ko">로그인 처리 중...</p>
         </div>
+    );
+}
+
+export default function OAuth2CallbackPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+                <p className="text-zinc-400 font-ko">로그인 처리 중...</p>
+            </div>
+        }>
+            <OAuth2CallbackContent />
+        </Suspense>
     );
 }

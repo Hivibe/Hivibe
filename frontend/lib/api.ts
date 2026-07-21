@@ -1,5 +1,7 @@
 // lib/api.ts
-const BASE_URL = "http://localhost:8080"
+const BASE_URL = typeof window === 'undefined'
+  ? 'http://backend:8080'
+  : ''
 
 export async function apiFetch(path: string, options: RequestInit = {}) {
   const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null
