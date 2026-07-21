@@ -21,7 +21,7 @@ export default function LoginPage() {
   const handleLogin = async () => {
     setError("");
     try {
-      const res = await fetch("http://localhost:8080/api/users/login", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ lgnId: email, lgnPwsd: password }),
@@ -117,7 +117,7 @@ export default function LoginPage() {
             <Button
               variant="outline"
               className="w-full h-11 bg-zinc-900 border-zinc-800 hover:bg-zinc-800 hover:text-zinc-100 flex items-center gap-3 font-ko text-sm"
-              onClick={() => window.location.href = "http://localhost:8080/oauth2/authorization/github"}
+              onClick={() => window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/oauth2/authorization/github`}
             >
               <Github className="w-4 h-4 shrink-0" />
               GitHub로 계속하기
