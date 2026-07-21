@@ -33,53 +33,53 @@ export default function SignupPage() {
 
   const [error, setError] = useState("");
 
-    const handleSignup = async () => {
-        setError("");
-        if (!pwMatch) { setError("비밀번호가 일치하지 않습니다."); return; }
-        if (emailDuplicate === null) { setError("이메일 중복확인을 해주세요."); return; }
-        if (emailDuplicate === true) { setError("이미 사용 중인 이메일입니다."); return; }
+  const handleSignup = async () => {
+    setError("");
+    if (!pwMatch) { setError("비밀번호가 일치하지 않습니다."); return; }
+    if (emailDuplicate === null) { setError("이메일 중복확인을 해주세요."); return; }
+    if (emailDuplicate === true) { setError("이미 사용 중인 이메일입니다."); return; }
 
-        try {
-            const res = await fetch("http://localhost:8080/api/users/signup", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    lgnId: email,       // 이메일을 아이디로 사용
-                    lgnPwsd: password,
-                    userNm: name,
-                    userEmail: email,
-                    mktgAgreeYn: false,
-                }),
-            });
+    try {
+      const res = await fetch("http://localhost:8080/api/users/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lgnId: email,       // 이메일을 아이디로 사용
+          lgnPwsd: password,
+          userNm: name,
+          userEmail: email,
+          mktgAgreeYn: false,
+        }),
+      });
 
-            if (!res.ok) {
-                const msg = await res.text();
-                setError(msg);
-                return;
-            }
+      if (!res.ok) {
+        const msg = await res.text();
+        setError(msg);
+        return;
+      }
 
-            router.push("/login");
-        } catch (e) {
-            setError("서버 연결에 실패했습니다.");
-        }
-    };
+      router.push("/login");
+    } catch (e) {
+      setError("서버 연결에 실패했습니다.");
+    }
+  };
 
-    const checkEmail = async () => {
-        if (!email) return;
-        setCheckingEmail(true);
+  const checkEmail = async () => {
+    if (!email) return;
+    setCheckingEmail(true);
 
-        try {
-            const res = await fetch(
-                `http://localhost:8080/api/users/check-email?userEmail=${email}`
-            );
-            const isDuplicate = await res.json();
-            setEmailDuplicate(isDuplicate);
-        } catch {
-            setError("서버 연결에 실패했습니다.");
-        } finally {
-            setCheckingEmail(false);
-        }
-    };
+    try {
+      const res = await fetch(
+        `http://localhost:8080/api/users/check-email?userEmail=${email}`
+      );
+      const isDuplicate = await res.json();
+      setEmailDuplicate(isDuplicate);
+    } catch {
+      setError("서버 연결에 실패했습니다.");
+    } finally {
+      setCheckingEmail(false);
+    }
+  };
 
   return (
     <div className="font-ko min-h-screen bg-zinc-950 text-zinc-100 flex flex-col">
@@ -128,7 +128,7 @@ export default function SignupPage() {
               <Button
                 variant="outline"
                 className="h-11 bg-zinc-900 border-zinc-800 hover:bg-zinc-800 hover:text-zinc-100 flex items-center gap-2 font-ko text-xs"
-                onClick={() => window.location.href = "http://localhost:8080/oauth2/authorization/google"}
+                onClick={() => window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/oauth2/authorization/google`}
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -157,7 +157,7 @@ export default function SignupPage() {
               <Button
                 variant="outline"
                 className="h-11 bg-zinc-900 border-zinc-800 hover:bg-zinc-800 hover:text-zinc-100 flex items-center gap-2 font-ko text-xs"
-                onClick={() => window.location.href = "http://localhost:8080/oauth2/authorization/github"}
+                onClick={() => window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/oauth2/authorization/github`}
               >
                 <Github className="w-3.5 h-3.5 shrink-0" />
                 GitHub
@@ -189,40 +189,40 @@ export default function SignupPage() {
 
               <div className="space-y-1.5">
                 <label className="font-space text-[10px] text-zinc-500 uppercase tracking-wider">
-                    Email
+                  Email
                 </label>
                 <div className="flex gap-2">
-                    <Input
-                        type="email"
-                        placeholder="you@example.com"
-                        value={email}
-                        onChange={(e) => {
-                            setEmail(e.target.value);
-                            setEmailDuplicate(null);
-                        }}
-                        className="h-11 bg-zinc-900/50 border-zinc-800 font-ko text-sm focus-visible:ring-1"
-                        style={{ ["--ring" as string]: BRAND }}
-                    />
-                    <Button
-                        type="button"
-                        onClick={checkEmail}
-                        disabled={!email || checkingEmail}
-                        className="h-11 px-3 text-xs font-ko shrink-0 bg-zinc-800 hover:bg-zinc-700 text-zinc-200"
-                    >
-                        {checkingEmail ? "확인중" : "중복확인"}
-                    </Button>
+                  <Input
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setEmailDuplicate(null);
+                    }}
+                    className="h-11 bg-zinc-900/50 border-zinc-800 font-ko text-sm focus-visible:ring-1"
+                    style={{ ["--ring" as string]: BRAND }}
+                  />
+                  <Button
+                    type="button"
+                    onClick={checkEmail}
+                    disabled={!email || checkingEmail}
+                    className="h-11 px-3 text-xs font-ko shrink-0 bg-zinc-800 hover:bg-zinc-700 text-zinc-200"
+                  >
+                    {checkingEmail ? "확인중" : "중복확인"}
+                  </Button>
                 </div>
                 {emailDuplicate === true && (
-                    <p className="font-space text-[9px] text-rose-400">
-                        이미 사용 중인 이메일입니다
-                    </p>
+                  <p className="font-space text-[9px] text-rose-400">
+                    이미 사용 중인 이메일입니다
+                  </p>
                 )}
                 {emailDuplicate === false && (
-                    <p className="font-space text-[9px] text-emerald-400">
-                        사용 가능한 이메일입니다
-                    </p>
+                  <p className="font-space text-[9px] text-emerald-400">
+                    사용 가능한 이메일입니다
+                  </p>
                 )}
-            </div>
+              </div>
 
               <div className="space-y-1.5">
                 <label className="font-space text-[10px] text-zinc-500 uppercase tracking-wider">
@@ -260,13 +260,12 @@ export default function SignupPage() {
                     placeholder="비밀번호 재입력"
                     value={password2}
                     onChange={(e) => setPassword2(e.target.value)}
-                    className={`h-11 bg-zinc-900/50 border-zinc-800 font-ko text-sm focus-visible:ring-1 pr-10 ${
-                      password2
-                        ? pwMatch
-                          ? "border-emerald-500/50"
-                          : "border-rose-500/50"
-                        : ""
-                    }`}
+                    className={`h-11 bg-zinc-900/50 border-zinc-800 font-ko text-sm focus-visible:ring-1 pr-10 ${password2
+                      ? pwMatch
+                        ? "border-emerald-500/50"
+                        : "border-rose-500/50"
+                      : ""
+                      }`}
                     style={{ ["--ring" as string]: BRAND }}
                   />
                   <button
@@ -305,10 +304,10 @@ export default function SignupPage() {
                       style={
                         selLangs.includes(lang)
                           ? {
-                              background: `${BRAND}15`,
-                              color: BRAND,
-                              borderColor: `${BRAND}40`,
-                            }
+                            background: `${BRAND}15`,
+                            color: BRAND,
+                            borderColor: `${BRAND}40`,
+                          }
                           : { color: "#555", borderColor: "#222" }
                       }
                     >
@@ -318,23 +317,23 @@ export default function SignupPage() {
                 </div>
               </div>
 
-          <Button
-              className="w-full h-11 font-ko font-semibold text-white text-sm mt-2"
-              style={{ background: BRAND }}
-              onClick={handleSignup}
-              disabled={
+              <Button
+                className="w-full h-11 font-ko font-semibold text-white text-sm mt-2"
+                style={{ background: BRAND }}
+                onClick={handleSignup}
+                disabled={
                   emailDuplicate === null ||
                   emailDuplicate === true ||
                   !password ||
                   !pwMatch
-              }
+                }
               >
-              회원가입
-          </Button>
+                회원가입
+              </Button>
 
-{error && (
-    <p className="font-ko text-xs text-rose-400 text-center mt-2">{error}</p>
-)}
+              {error && (
+                <p className="font-ko text-xs text-rose-400 text-center mt-2">{error}</p>
+              )}
             </div>
           </div>
           {/* 푸터 링크 */}
