@@ -12,4 +12,10 @@ public interface LrnRepository extends JpaRepository<Lrn, Long> {
      * - User.id 필드를 참조: Lrn.user.id
      */
     List<Lrn> findByUser_IdOrderByCreatedAtDesc(Long userId);
+
+    // 삭제 추가
+    List<Lrn> findByOptCd_Anls_AnlsId(Long anlsId);
+
+    // 추가 7.20
+    long countByUser_Id(Long userId);
 }

@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-
+import java.util.Map;
 import java.util.List;
 
 @RestController
@@ -31,5 +31,13 @@ public class BadgeController {
     @PostMapping("/check")
     public ResponseEntity<List<BadgeResponseDto>> checkBadges() {
         return ResponseEntity.ok(badgeService.checkAndAward(getCurrentLgnId()));
+    }
+
+    @PostMapping("/check/learning")
+    public ResponseEntity<List<BadgeResponseDto>> checkLearningBadges(
+            @RequestBody Map<String, Object> body) {
+        boolean isPerfect = Boolean.TRUE.equals(body.get("isPerfect"));
+        return ResponseEntity.ok(
+                badgeService.checkAndAwardWithLearning(getCurrentLgnId(), isPerfect));
     }
 }

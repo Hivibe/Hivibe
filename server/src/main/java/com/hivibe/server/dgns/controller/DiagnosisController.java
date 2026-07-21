@@ -42,4 +42,12 @@ public class DiagnosisController {
     public ResponseEntity<DiagnosisDetailDto> getDiagnosisDetail(@PathVariable Long dgnsId) {
         return ResponseEntity.ok(diagnosisService.getDiagnosisDetail(getCurrentLgnId(), dgnsId));
     }
+
+    @DeleteMapping("/{dgnsId}")
+    public ResponseEntity<?> deleteDiagnosis(@PathVariable Long dgnsId) {
+        // 현재 로그인한 유저의 ID(lgnId)를 서비스로 넘겨서, 본인 것인지 검증 후 삭제하도록 합니다.
+        diagnosisService.deleteDiagnosis(getCurrentLgnId(), dgnsId);
+
+        return ResponseEntity.ok().body("삭제되었습니다.");
+    }
 }

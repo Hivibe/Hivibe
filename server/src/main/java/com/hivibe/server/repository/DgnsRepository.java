@@ -3,9 +3,11 @@ package com.hivibe.server.repository;
 import com.hivibe.server.domain.entity.Dgns;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface DgnsRepository extends JpaRepository<Dgns, Long> {
@@ -17,10 +19,14 @@ public interface DgnsRepository extends JpaRepository<Dgns, Long> {
     List<Dgns> findByUser_IdOrderByDgnsDtAsc(Long userId);
 
     // 유저별 진단 목록 (최신순, "이전 분석에서 불러오기"용)
-    List<Dgns> findByUser_IdOrderByDgnsDtDesc(Long userId);
+    @Query("SELECT d FROM Dgns d JOIN FETCH d.anls a JOIN FETCH a.ornCd WHERE d.user.id = :userId ORDER BY d.dgnsDt DESC")
+    List<Dgns> findByUser_IdOrderByDgnsDtDesc(@Param("userId") Long userId);
 
     // 본인 소유 진단 단건 조회 (다른 유저 데이터 접근 방지)
-    java.util.Optional<Dgns> findByDgnsIdAndUser_Id(Long dgnsId, Long userId);
+    @Query("SELECT d FROM Dgns d JOIN FETCH d.anls a JOIN FETCH a.ornCd WHERE d.dgnsId = :dgnsId AND d.user.id = :userId")
+    Optional<Dgns> findByDgnsIdAndUser_Id(@Param("dgnsId") Long dgnsId, @Param("userId") Long userId);
+
+    // ---------------------------------------------------------
 
     // 유저별 사용 언어 DISTINCT (Polyglot 뱃지용)
     @Query("SELECT DISTINCT d.anls.ornCd.lang FROM Dgns d WHERE d.user.id = :userId")
@@ -33,4 +39,8 @@ public interface DgnsRepository extends JpaRepository<Dgns, Long> {
     // 유저별 평균 점수 (마이페이지 평균 등급용)
     @Query("SELECT AVG(d.anls.cdScr) FROM Dgns d WHERE d.user.id = :userId")
     Double findAvgScoreByUserId(Long userId);
+
+    // S등급 달성 여부 (Grade S 뱃지용)
+    @Query("SELECT COUNT(d) > 0 FROM Dgns d WHERE d.user.id = :userId AND d.anls.cdGrd = :grade")
+    boolean existsByUserIdAndGrade(Long userId, String grade);
 }
