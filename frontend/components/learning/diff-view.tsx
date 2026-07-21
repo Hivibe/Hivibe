@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, Fragment } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { TrendingUp, HelpCircle, Check, X, MessageSquare, ExternalLink, Loader2, RotateCcw, Eye, EyeOff, Sparkles } from "lucide-react"
+import { TrendingUp, HelpCircle, Check, X, MessageSquare, ExternalLink, Loader2, RotateCcw, Eye, EyeOff, Sparkles, ChevronLeft, ChevronRight, Play, Pause } from "lucide-react"
 import {
   ResponsiveContainer, AreaChart, Area,
   Line, CartesianGrid,
@@ -192,81 +192,6 @@ function ResultPopover({ result }: { result: BlankResult }) {
   )
 }
 
-/** 계층적 힌트 팝오버 — Lv1(개념명) → Lv2(설명) → Lv3(부분정답), 클릭할 때마다 서버에서 다음 레벨 로드 */
-function HintPopover({
-  hasHintTarget,
-  paceOn,
-  level,
-  contents,
-  loading,
-  etaSec,
-}: {
-  hasHintTarget: boolean
-  paceOn: boolean
-  level: number
-  contents: Record<number, string>
-  loading: boolean
-  etaSec: number | null
-}) {
-  if (!hasHintTarget) {
-    return (
-      <button className="text-zinc-700 cursor-not-allowed" type="button" title="힌트 없음">
-        <HelpCircle className="h-3.5 w-3.5" />
-      </button>
-    )
-  }
-
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button className="text-zinc-500 hover:text-amber-400 transition-colors" type="button">
-          <HelpCircle className="h-3.5 w-3.5" />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent side="top" className="max-w-xs bg-zinc-900 border border-amber-500/30 space-y-2">
-       {!paceOn && (
-          <p className="font-ko text-[11px] text-zinc-500">라이브 코칭이 꺼져 있어요. 위 속도 토글을 켜보세요.</p>
-        )}
-
-        {paceOn && level < 1 && (
-          <p className="font-ko text-[11px] text-zinc-500">
-            {loading ? "힌트를 준비하고 있어요..." : "이 칸에 입력을 시작하면 힌트가 떠요."}
-          </p>
-        )}
-
-        {level >= 1 && (
-          <div>
-            <p className="font-ko font-bold text-xs text-amber-400 mb-1">💡 Lv.1 개념</p>
-            <p className="font-ko text-[11px] text-zinc-300">{contents[1]}</p>
-          </div>
-        )}
-
-        {level >= 2 && (
-          <div className="pt-2 border-t border-zinc-800">
-            <p className="font-ko font-bold text-xs text-amber-400 mb-1">💡 Lv.2 설명</p>
-            <p className="font-ko text-[11px] text-zinc-300 leading-relaxed">{contents[2]}</p>
-          </div>
-        )}
-
-        {level >= 3 && (
-          <div className="pt-2 border-t border-zinc-800">
-            <p className="font-ko font-bold text-xs text-amber-400 mb-1">💡 Lv.3 부분 정답</p>
-            <code className="font-code text-[11px] text-amber-300 block bg-zinc-950 rounded px-2 py-1.5 whitespace-pre-wrap break-all">
-              {contents[3]}
-            </code>
-          </div>
-        )}
-
-        {paceOn && level > 0 && level < 3 && etaSec !== null && (
-          <p className="font-space text-[10px] text-zinc-500 pt-1 border-t border-zinc-800">
-            다음 힌트까지 {etaSec}초
-          </p>
-        )}
-      </PopoverContent>
-    </Popover>
-  )
-}
-
 export function DiffView({ session, analyzedCode, learningContent, onBack, onGraded, pace }: DiffViewProps) {
   const [panelOpen, setPanelOpen] = useState(true)
   const [answers, setAnswers] = useState<Record<number, string>>({})
@@ -281,8 +206,11 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onGra
   const [hintLevels, setHintLevels] = useState<Record<number, number>>({})
   const [hintContents, setHintContents] = useState<Record<number, Record<number, string>>>({})
   const [hintLoading, setHintLoading] = useState<Record<number, boolean>>({})
-  const [hintStartTimes, setHintStartTimes] = useState<Record<number, number>>({})
-  const [nowTick, setNowTick] = useState(() => Date.now())
+  const [hintElapsed, setHintElapsed] = useState<Record<number, number>>({})  // 빈칸별 누적 경과(ms)
+  const [runningBlank, setRunningBlank] = useState<number | null>(null)        // 지금 타이머 도는 빈칸
+  const [, setNowTick] = useState(() => Date.now())                            // 리렌더 트리거용
+  const [focusedBlank, setFocusedBlank] = useState<number | null>(null)
+  const [hintViewLevel, setHintViewLevel] = useState<Record<number, number>>({})
 
 
   const [summary, setSummary] = useState<{
@@ -331,7 +259,10 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onGra
     setHintLevels({})
     setHintContents({})
     setHintLoading({})
-    setHintStartTimes({})
+    setHintElapsed({})
+    setRunningBlank(null)
+    setHintViewLevel({})
+    setFocusedBlank(null)
   }, [learningContent?.lrnId])
 
   const blankCode = learningContent?.optimizedCode.blank ?? ""
@@ -362,23 +293,64 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onGra
     const cached = hintContents[idx0]?.[nextLevel]
     if (cached !== undefined) {
       setHintLevels(prev => ({ ...prev, [idx0]: nextLevel }))
+      setHintViewLevel(prev => ({ ...prev, [idx0]: nextLevel }))
+      setFocusedBlank(null)
       return
     }
 
     setHintLoading(prev => ({ ...prev, [idx0]: true }))
     try {
       const res = await fetchHint(learningContent.lrnId, idx0 + 1, nextLevel)
+      console.log("🟢 힌트 응답:", res, "→ idx0:", idx0, "level:", nextLevel)   // ← 추가
       setHintContents(prev => ({
         ...prev,
         [idx0]: { ...(prev[idx0] ?? {}), [nextLevel]: res.content },
       }))
-      setHintLevels(prev => ({ ...prev, [idx0]: nextLevel }))
+      setHintLevels(prev => {
+        const next = { ...prev, [idx0]: nextLevel }
+        console.log("🟢 레벨 갱신:", next)   // ← 추가
+        return next
+      })
     } catch (e: any) {
       console.error("힌트 조회 실패:", e)
       toast.error("힌트를 불러오지 못했어요", { description: e.message })
     } finally {
       setHintLoading(prev => ({ ...prev, [idx0]: false }))
     }
+  }
+
+  // 라이브 코칭 타이머 — runningBlank 하나만 경과시간 누적, 임계치 넘으면 다음 레벨
+  useEffect(() => {
+    if (pace === "off" || isGraded || runningBlank === null) return
+
+    const intervalMs = PACE_INTERVALS_MS[pace]
+    const timer = setInterval(() => {
+      setNowTick(Date.now())
+      setHintElapsed(prev => {
+        const idx0 = runningBlank
+        const next = (prev[idx0] ?? 0) + 250
+        const currentLevel = hintLevels[idx0] ?? 0
+        const nextLevel = currentLevel + 1
+        if (nextLevel <= 3 && next >= nextLevel * intervalMs && !hintLoading[idx0]) {
+          void handleRevealHint(idx0, nextLevel)
+        }
+        return { ...prev, [idx0]: next }
+      })
+    }, 250)
+
+    return () => clearInterval(timer)
+  }, [pace, isGraded, runningBlank, hintLevels, hintLoading])
+
+  const handleBlankFocus = (idx0: number) => {
+    setFocusedBlank(idx0)
+    if (pace === "off" || isGraded) return
+    // 새 빈칸으로 오면 그 빈칸을 재생 상태로 (이전 빈칸은 자동 일시정지, 경과시간은 보존됨)
+    setHintElapsed(prev => (prev[idx0] === undefined ? { ...prev, [idx0]: 0 } : prev))
+    setRunningBlank(idx0)
+  }
+
+  const togglePlay = (idx0: number) => {
+    setRunningBlank(prev => (prev === idx0 ? null : idx0))
   }
 
   const handleSubmit = async () => {
@@ -448,6 +420,127 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onGra
     if (r.grdMethod === "S") return `${base} border-2 border-emerald-500 text-emerald-300 cursor-default`
     if (r.grdMethod === "A") return `${base} border-2 border-amber-500 text-amber-300 cursor-default`
     return `${base} border-2 border-rose-500 text-rose-300 cursor-default`
+  }
+
+
+  /** 특정 빈칸의 라이브 코칭 힌트 (코드 줄 아래 인라인 표시용) */
+  const renderHintBar = (idx0: number) => {
+    if (isGraded || pace === "off" || focusedBlank !== idx0) return null
+
+    const level = hintLevels[idx0] ?? 0
+    const contents = hintContents[idx0] ?? {}
+    const viewLevel = hintViewLevel[idx0] ?? level
+    const elapsed = hintElapsed[idx0] ?? 0
+    const isRunning = runningBlank === idx0
+    let etaSec: number | null = null
+    if (level < 3) {
+      const nextThreshold = (level + 1) * PACE_INTERVALS_MS[pace]
+      etaSec = Math.max(0, Math.ceil((nextThreshold - elapsed) / 1000))
+    }
+
+    const levelMeta: Record<number, { tag: string; label: string }> = {
+      1: { tag: "Lv.1", label: "개념" },
+      2: { tag: "Lv.2", label: "설명" },
+      3: { tag: "Lv.3", label: "부분 정답" },
+    }
+
+    return (
+      <div
+        className="ml-12 my-2 mr-4 rounded-xl bg-[#161619] border border-white/10 overflow-hidden"
+        style={{ boxShadow: "0 8px 24px rgba(0,0,0,0.45)" }}
+      >
+        {/* 헤더 */}
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/5 bg-white/[0.02]">
+          <div className="flex items-center gap-2">
+            <span className="font-space text-[10px] font-bold tracking-widest" style={{ color: BRAND }}>
+              LIVE COACHING
+            </span>
+            <span className="font-space text-[10px] text-zinc-600">·</span>
+            <span className="font-space text-[10px] text-zinc-500">빈칸 #{idx0 + 1}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {level < 3 && (
+              <button
+                type="button"
+                onClick={() => togglePlay(idx0)}
+                className="flex items-center gap-1 text-zinc-400 hover:text-white transition-colors"
+                title={isRunning ? "일시정지" : "재생"}
+              >
+                {isRunning ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
+                <span className="font-space text-[10px]">
+                  {etaSec !== null && <span className="text-zinc-300 font-bold">{etaSec}s</span>}
+                </span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* 본문 */}
+        <div className="px-4 py-3.5 min-h-[52px] flex items-center">
+          {level === 0 ? (
+            <p className="font-ko text-[11px] text-zinc-500">잠시 후 첫 힌트가 나와요...</p>
+          ) : (
+            <div className="w-full">
+              <div className="flex items-center gap-2 mb-1.5">
+                <span
+                  className="font-space text-[9px] font-bold px-1.5 py-0.5 rounded"
+                  style={{ background: `${BRAND}1a`, color: BRAND }}
+                >
+                  {levelMeta[viewLevel]?.tag}
+                </span>
+                <span className="font-ko text-[10px] text-zinc-500">{levelMeta[viewLevel]?.label}</span>
+              </div>
+              {viewLevel === 3 ? (
+                <code className="font-code text-[12px] text-amber-300 block bg-zinc-950/60 rounded px-2.5 py-1.5 break-all">
+                  {contents[3]}
+                </code>
+              ) : (
+                <p className="font-ko text-[12px] text-zinc-200 leading-relaxed">
+                  {contents[viewLevel]}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* 캐러셀 (레벨 2개 이상일 때만) */}
+        {level >= 1 && (
+          <div className="flex items-center justify-center gap-4 px-4 py-2 border-t border-white/5 bg-white/[0.02]">
+            <button
+              type="button"
+              onClick={() => setHintViewLevel(prev => ({ ...prev, [idx0]: Math.max(1, viewLevel - 1) }))}
+              disabled={viewLevel <= 1}
+              className="text-zinc-500 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+
+            {/* 점 인디케이터 */}
+            <div className="flex items-center gap-1.5">
+              {[1, 2, 3].map(lv => (
+                <span
+                  key={lv}
+                  className="h-1.5 rounded-full transition-all duration-200"
+                  style={{
+                    width: lv === viewLevel ? 14 : 6,
+                    background: lv === viewLevel ? BRAND : lv <= level ? "#52525b" : "#27272a",
+                  }}
+                />
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setHintViewLevel(prev => ({ ...prev, [idx0]: Math.min(level, viewLevel + 1) }))}
+              disabled={viewLevel >= level}
+              className="text-zinc-500 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+      </div>
+    )
   }
 
   return (
@@ -627,61 +720,48 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onGra
             <div className="flex-1 overflow-auto font-code text-[13px] leading-7 py-3">
               {parsedLines.length === 0 || blankCode === "" ? (
                 <p className="px-5 text-zinc-600 text-xs italic">빈칸 코드가 없습니다.</p>
-              ) : parsedLines.map((line, idx) => (
-                <div
-                  key={idx}
-                  className={`flex px-2 ${line.hasBlank ? "bg-emerald-500/10 border-l-2 border-emerald-500/60" : "border-l-2 border-transparent"}`}
-                >
-                  <div className="w-10 text-right pr-4 select-none text-zinc-600">{line.lineNo}</div>
-                  <div className="flex-1 whitespace-pre text-zinc-300 flex items-center flex-wrap">
-                    {line.tokens.map((t, ti) => {
-                      if (t.type === "text") {
-                        return <span key={ti}>{highlightLine(t.value)}</span>
-                      }
-                      const idx0 = t.blankIdx!
-                      const concept = concepts[idx0]
-                      const result = isGraded ? results![idx0] : null
+              )  : parsedLines.map((line, idx) => {
+                // 이 줄에 포커스된 빈칸이 있는지
+                const focusedInLine =
+                  focusedBlank !== null &&
+                  line.tokens.some(t => t.type === "blank" && t.blankIdx === focusedBlank)
 
-                      return (
-                        <span key={ti} className="inline-flex items-center gap-1 mx-0.5 align-middle">
-                          <input
-                            type="text"
-                            value={answers[idx0] ?? ""}
-                            onChange={(e) => setAnswers(prev => ({ ...prev, [idx0]: e.target.value }))}
-                            readOnly={isGraded || isGrading}
-                            placeholder={`#${idx0 + 1}`}
-                            className={inputClass(idx0)}
-                          />
+                return (
+                  <Fragment key={idx}>
+                    <div
+                      className={`flex px-2 ${line.hasBlank ? "bg-emerald-500/10 border-l-2 border-emerald-500/60" : "border-l-2 border-transparent"}`}
+                    >
+                      <div className="w-10 text-right pr-4 select-none text-zinc-600">{line.lineNo}</div>
+                      <div className="flex-1 whitespace-pre text-zinc-300 flex items-center flex-wrap">
+                        {line.tokens.map((t, ti) => {
+                          if (t.type === "text") {
+                            return <span key={ti}>{highlightLine(t.value)}</span>
+                          }
+                          const idx0 = t.blankIdx!
+                          const concept = concepts[idx0]
+                          const result = isGraded ? results![idx0] : null
 
-                          {/* 채점 결과 아이콘 */}
-                          {result && <ResultPopover result={result} />}
-
-                           {/* 미채점 상태에서만 라이브 코칭 힌트 */}
-                          {!isGraded && (() => {
-                            const startTime = hintStartTimes[idx0]
-                            const currentLevel = hintLevels[idx0] ?? 0
-                            let etaSec: number | null = null
-                            if (pace !== "off" && startTime !== undefined && currentLevel < 3) {
-                              const nextThreshold = (currentLevel + 1) * PACE_INTERVALS_MS[pace]
-                              etaSec = Math.max(0, Math.ceil((nextThreshold - (nowTick - startTime)) / 1000))
-                            }
-                            return (
-                              <HintPopover
-                                hasHintTarget={!!concept}
-                                paceOn={pace !== "off"}
-                                level={currentLevel}
-                                contents={hintContents[idx0] ?? {}}
-                                loading={!!hintLoading[idx0]}
-                                etaSec={etaSec}
+                          return (
+                            <span key={ti} className="inline-flex items-center gap-1 mx-0.5 align-middle">
+                              <input
+                                type="text"
+                                value={answers[idx0] ?? ""}
+                                onChange={(e) => setAnswers(prev => ({ ...prev, [idx0]: e.target.value }))}
+                                onFocus={() => handleBlankFocus(idx0)}
+                                readOnly={isGraded || isGrading}
+                                placeholder={`#${idx0 + 1}`}
+                                className={inputClass(idx0)}
                               />
-                            )
-                          })()}
-                        </span>
-                      )
-                    })}
-                  </div>
-                </div>
-              ))}
+                              {result && <ResultPopover result={result} />}
+                            </span>
+                          )
+                        })}
+                      </div>
+                    </div>
+                    {focusedInLine && renderHintBar(focusedBlank!)}
+                  </Fragment>
+                )
+              })}
             </div>
 
             {/* AI 총평 */}

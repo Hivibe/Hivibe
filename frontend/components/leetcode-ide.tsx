@@ -171,6 +171,7 @@ export function LeetCodeIDE() {
         id: it.lrnId,
         title: it.lrnName || "제목 없음",
         date: new Date(it.createdAt).toLocaleDateString("ko-KR"),
+        createdAtIso: it.createdAt,
         grade: it.grade ?? "-",
         tags: it.tag ? it.tag.split(",").map(t => t.trim()).filter(Boolean) : [],
         language: displayLang(it.lang),
