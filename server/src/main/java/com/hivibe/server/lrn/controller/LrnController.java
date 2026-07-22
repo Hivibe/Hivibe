@@ -178,4 +178,20 @@ public class LrnController {
             .orElseThrow(() -> new IllegalStateException("사용자를 찾을 수 없습니다."));
         return ResponseEntity.ok(lrnHintService.getHint(lrnId, blankOrd, level, user));
     }
+
+    /**
+     * 학습 이름 수정
+     * PATCH /api/v1/learnings/{lrnId}/name
+     */
+    @PatchMapping("/api/v1/learnings/{lrnId}/name")
+    public ResponseEntity<Map<String, String>> renameLearning(
+        @PathVariable("lrnId") Long lrnId,
+        @RequestBody Map<String, String> body,
+        @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        User user = currentUser(userDetails);
+        String newName = body.get("name");
+        learningQueryService.rename(lrnId, newName, user);
+        return ResponseEntity.ok(Map.of("name", newName));
     }
+}

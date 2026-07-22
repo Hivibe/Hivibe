@@ -3,14 +3,14 @@
 import { useState, useMemo, useEffect, Fragment } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { TrendingUp, HelpCircle, Check, X, MessageSquare, ExternalLink, Loader2, RotateCcw, Eye, EyeOff, Sparkles, ChevronLeft, ChevronRight, Play, Pause } from "lucide-react"
+import { TrendingUp, HelpCircle, Check, X, MessageSquare, ExternalLink, Loader2, RotateCcw, Eye, EyeOff, Sparkles, ChevronLeft, ChevronRight, Play, Pause, Pencil } from "lucide-react"
 import {
   ResponsiveContainer, AreaChart, Area,
   Line, CartesianGrid,
   XAxis, YAxis, Tooltip as RechartsTooltip, Legend,
 } from "recharts"
 import type { LearningSession } from "@/types"
-import { apiFetch, submitLearning, fetchHint, type AiLearningResponse, type BlankResult, type SubmissionResponse } from "@/lib/api"
+import { apiFetch, submitLearning, fetchHint, renameLearning, type AiLearningResponse, type BlankResult, type SubmissionResponse } from "@/lib/api"
 import { toast } from "sonner"
 
 const BRAND = "#63C1ED"
@@ -51,6 +51,8 @@ interface DiffViewProps {
   onBack: () => void
   onGraded?: (lrnId: number, res: SubmissionResponse) => void
   pace: Pace
+  onBadgesUnlocked?: (badges: any[]) => void
+  onRename?: (lrnId: number, newName: string) => void
 }
 
 function highlightLine(text: string) {
@@ -192,11 +194,16 @@ function ResultPopover({ result }: { result: BlankResult }) {
   )
 }
 
-export function DiffView({ session, analyzedCode, learningContent, onBack, onGraded, pace }: DiffViewProps) {
+export function DiffView({ session, analyzedCode, learningContent, onBack, onBadgesUnlocked, onGraded, pace, onRename }: DiffViewProps) {
   const [panelOpen, setPanelOpen] = useState(true)
   const [answers, setAnswers] = useState<Record<number, string>>({})
   const [userName, setUserName] = useState<string>("사용자")
 
+  // 제목 인라인 편집
+  const [editingTitle, setEditingTitle] = useState(false)
+  const [titleDraft, setTitleDraft] = useState(session.title)
+  const [savingTitle, setSavingTitle] = useState(false)
+  
   // 채점 상태
   const [isGrading, setIsGrading] = useState(false)
   const [results, setResults] = useState<Record<number, BlankResult> | null>(null)
@@ -212,6 +219,8 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onGra
   const [focusedBlank, setFocusedBlank] = useState<number | null>(null)
   const [hintViewLevel, setHintViewLevel] = useState<Record<number, number>>({})
 
+  const [displayTitle, setDisplayTitle] = useState(session.title)
+
 
   const [summary, setSummary] = useState<{
     correctCount: number
@@ -221,6 +230,41 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onGra
   } | null>(null)
 
   const [gradeError, setGradeError] = useState<string | null>(null)
+
+  const handleTitleSave = async () => {
+      const trimmed = titleDraft.trim()
+      if (!trimmed) {
+        setTitleDraft(displayTitle)   // 빈 값이면 원래대로
+        setEditingTitle(false)
+        return
+      }
+      if (trimmed === displayTitle) {
+        setEditingTitle(false)
+        return
+      }
+      if (!learningContent) return
+
+      setSavingTitle(true)
+      try {
+        await renameLearning(learningContent.lrnId, trimmed)
+        setDisplayTitle(trimmed) 
+        onRename?.(learningContent.lrnId, trimmed)
+        setEditingTitle(false)
+        toast.success("이름을 변경했어요")
+      } catch (e: any) {
+        console.error("이름 변경 실패:", e)
+        toast.error("이름을 변경하지 못했어요", { description: e.message })
+        setTitleDraft(session.title)   // 실패 시 원복
+      } finally {
+        setSavingTitle(false)
+      }
+    }
+
+  useEffect(() => {
+    setTitleDraft(session.title)
+    setDisplayTitle(session.title)
+    setEditingTitle(false)
+  }, [session.title, learningContent?.lrnId])
 
   useEffect(() => {
     apiFetch("/api/mypage/me")
@@ -381,6 +425,7 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onGra
         grade: res.grade,
         overallComment: res.overallComment,
       })
+      onGraded?.(learningContent.lrnId, res)
 
       // 추가 (07.20)
 
@@ -574,7 +619,29 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onGra
 
             <div>
               <p className="font-space text-[10px] tracking-widest mb-1.5" style={{ color: BRAND }}>// LEARNING</p>
-              <h2 className="font-syne text-2xl font-bold text-white leading-tight">{session.title}</h2>
+              {editingTitle ? (
+              <input
+                autoFocus
+                value={titleDraft}
+                onChange={e => setTitleDraft(e.target.value)}
+                onBlur={handleTitleSave}
+                onKeyDown={e => {
+                  if (e.key === "Enter") { e.preventDefault(); handleTitleSave() }
+                  if (e.key === "Escape") { e.preventDefault(); setTitleDraft(displayTitle); setEditingTitle(false) }
+                }}
+                disabled={savingTitle}
+                className="font-syne text-2xl font-bold text-white leading-tight bg-transparent border-b border-white/20 focus:border-[#63C1ED] outline-none w-full"
+              />
+            ) : (
+              <h2
+                className="font-syne text-2xl font-bold text-white leading-tight group flex items-center gap-2 cursor-text"
+                onClick={() => setEditingTitle(true)}
+                title="클릭해서 이름 변경"
+              >
+                {displayTitle}
+                <Pencil className="h-3.5 w-3.5 text-zinc-600 group-hover:text-zinc-400 transition-colors shrink-0" />
+              </h2>
+            )}
               <div className="flex items-center gap-2 mt-2">
                 <span className="font-space text-[11px] text-zinc-500">{session.date}</span>
                 <span className="font-space text-[10px] px-2 py-0.5 rounded bg-white/5 border border-white/10 text-zinc-300">{session.grade}</span>

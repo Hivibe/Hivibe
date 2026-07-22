@@ -20,6 +20,7 @@ public record LearningDetailResponseDto(
     String tag,
     String overallComment,
     String originalCode,
+    Long optCdId,
     OptimizedCodeDto optimizedCode,
     List<ConceptDto> concepts
 ) {

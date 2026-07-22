@@ -10,6 +10,7 @@ import {
   fetchLearningDetail,
   toggleBookmark as apiToggleBookmark,
   deleteLearning,
+  saveNote,
   fetchLatestSubmission,
   type SubmissionResponse,
   type AiLearningResponse,
@@ -52,7 +53,9 @@ import type { LearningSession } from "@/types";
 import { toast } from "sonner"
 
 import { DiffView, type Pace } from "@/components/learning/diff-view";
+import { Loader2 } from "lucide-react"
 
+import { SuccessDialog } from "@/components/dialogs/success-dialog";
 
 /* 점수 → 등급 (백엔드와 일치) */
 function getGradeFromScore(score: number): string {
@@ -66,6 +69,7 @@ function getGradeFromScore(score: number): string {
 /* 학습 세션 콘텐츠 (DiffView가 쓰는 형태) */
 type LearningContent = {
   lrnId: number
+  optCdId?: number
   optimizedCode: AiLearningResponse["optimizedCode"]
   concepts: AiLearningResponse["concepts"]
   previousSubmission?: SubmissionResponse | null
@@ -139,13 +143,22 @@ export function LeetCodeIDE() {
   const [tagInput, setTagInput] = useState("");
   const [noteMemo, setNoteMemo] = useState("");
   const [loadDiagOpen, setLoadDiagOpen] = useState(false)
-  const abortControllerRef = useRef<AbortController | null>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)        // 진단용 (이미 있음)
+  const learningAbortRef = useRef<AbortController | null>(null)          // 학습용
 
   const [sidebarRefreshKey, setSidebarRefreshKey] = useState(0)
 
   const [pace, setPace] = useState<Pace>("off");
 
   const [unlockedBadges, setUnlockedBadges] = useState<UnlockedBadge[]>([]);
+  const [successModal, setSuccessModal] = useState<{
+  title: string
+  message?: string
+  actionText?: string
+  onAction?: () => void
+} | null>(null)
+  
+  
 
   /* URL 쿼리 동기화
    * - push: 히스토리 쌓음 (뒤로가기로 돌아올 수 있게)
@@ -197,6 +210,7 @@ export function LeetCodeIDE() {
 
       setLearnings(prev => new Map(prev).set(lrnId, {
         lrnId: detail.lrnId,
+        optCdId: detail.optCdId,
         optimizedCode: detail.optimizedCode,
         concepts: detail.concepts.map(c => ({
           type: c.type,
@@ -263,6 +277,7 @@ export function LeetCodeIDE() {
     setHasAnalyzed(false)
     setDiagPanelOpen(true)
     setSavedDgnsId(null)
+    setFileName("")
 
     try {
       const response = await apiFetch("/api/ai/ask", {
@@ -320,82 +335,96 @@ export function LeetCodeIDE() {
     };
   };
 
-  const handleGoLearning = async () => {
-    if (!hasAnalyzed || !aiResult) {
-      toast.warning("먼저 코드 분석을 완료해 주세요");
-      return;
-    }
-    if (isAnalyzing || isStartingLearning) return;
+const handleGoLearning = async () => {
+  if (!hasAnalyzed || !aiResult) {
+    toast.warning("먼저 코드 분석을 완료해 주세요");
+    return;
+  }
+  if (isAnalyzing || isStartingLearning) return;
 
-    setIsStartingLearning(true);
+  // 기존 학습 요청 취소
+  learningAbortRef.current?.abort()
+  const controller = new AbortController()
+  learningAbortRef.current = controller
 
-    try {
-      // 1. 진단 자동 저장
-      let dgnsId = savedDgnsId;
-      if (!dgnsId) {
-        const saveRes = await saveDiagnosis(buildSaveRequest());
-        dgnsId = saveRes.dgnsId;
-        setSavedDgnsId(dgnsId);
+  setIsStartingLearning(true);
 
-        // ↓ 여기에 추가
-        try {
-          const badgeRes = await apiFetch("/api/badges/check", { method: "POST" })
-          if (badgeRes.ok) {
-            const allBadges = await badgeRes.json()
-            const newBadges = allBadges.filter((b: any) => b.newlyAchieved)
-            if (newBadges.length > 0) setUnlockedBadges(newBadges)
-          }
-        } catch (badgeErr) {
-          console.warn("뱃지 체크 실패", badgeErr)
+  try {
+    // 1. 진단 자동 저장
+    let dgnsId = savedDgnsId;
+    if (!dgnsId) {
+      const saveRes = await saveDiagnosis(buildSaveRequest(), controller.signal)
+      dgnsId = saveRes.dgnsId;
+      setSavedDgnsId(dgnsId);
+
+      // 뱃지 체크
+      try {
+        const badgeRes = await apiFetch("/api/badges/check", { method: "POST" })
+        if (badgeRes.ok) {
+          const allBadges = await badgeRes.json()
+          const newBadges = allBadges.filter((b: any) => b.newlyAchieved)
+          if (newBadges.length > 0) setUnlockedBadges(newBadges)
         }
+      } catch (badgeErr) {
+        console.warn("뱃지 체크 실패", badgeErr)
       }
-
-
-      // 2. AI 학습 생성
-      const aiLearn = await generateAiLearning({ diagnosisId: dgnsId });
-
-      // 3. 학습 세션 저장
-      const lrnRes = await saveLearning({
-        diagnosisId: dgnsId,
-        name: fileName || `학습 ${new Date().toLocaleString("ko-KR")}`,
-        tags: "",
-        optimizedCode: aiLearn.optimizedCode,
-        concepts: aiLearn.concepts.map((c, i) => ({
-          type: c.type,
-          title: c.title,
-          description: c.description,
-          referenceUrl: c.referenceUrl,
-          sortOrder: i + 1,
-        })),
-        blanks: aiLearn.blanks,
-      });
-
-      const lrnId = lrnRes.id;
-
-      // 4. 캐시
-      setLearnings(prev => new Map(prev).set(lrnId, {
-        lrnId,
-        optimizedCode: aiLearn.optimizedCode,
-        concepts: aiLearn.concepts,
-      }));
-      setAnalyzedCodeMap(prev => new Map(prev).set(lrnId, editorCode));
-
-      // 5. 아카이브 목록 갱신
-      await loadSessions();
-
-      // 6. 학습 화면으로
-      setActiveNav("learning");
-      setSelSession(lrnId);
-      syncUrl("learning", lrnId);      // ← URL 갱신
-    } catch (error: any) {
-      console.error("학습 시작 실패:", error);
-      toast.error("학습 세션을 시작하지 못했어요", {
-        description: error.message,
-      });
-    } finally {
-      setIsStartingLearning(false);
     }
-  };
+
+    // 중단됐으면 여기서 멈춤
+    if (controller.signal.aborted) return
+
+    // 2. AI 학습 생성
+    const aiLearn = await generateAiLearning({ diagnosisId: dgnsId }, controller.signal)
+
+    if (controller.signal.aborted) return
+
+    // 3. 학습 세션 저장
+    const lrnRes = await saveLearning({
+      diagnosisId: dgnsId,
+      name: fileName || `학습 ${new Date().toLocaleString("ko-KR")}`,
+      tags: "",
+      optimizedCode: aiLearn.optimizedCode,
+      concepts: aiLearn.concepts.map((c, i) => ({
+        type: c.type,
+        title: c.title,
+        description: c.description,
+        referenceUrl: c.referenceUrl,
+        sortOrder: i + 1,
+      })),
+      blanks: aiLearn.blanks,
+    }, controller.signal);
+
+    const lrnId = lrnRes.id;
+
+    setLearnings(prev => new Map(prev).set(lrnId, {
+      lrnId,
+      optimizedCode: aiLearn.optimizedCode,
+      concepts: aiLearn.concepts,
+    }));
+    setAnalyzedCodeMap(prev => new Map(prev).set(lrnId, editorCode));
+
+    await loadSessions();
+
+    setActiveNav("learning");
+    setSelSession(lrnId);
+    syncUrl("learning", lrnId);
+  } catch (error: any) {
+    if (error.name === "AbortError") {
+      toast.info("학습 시작을 취소했어요")
+      return
+    }
+    console.error("학습 시작 실패:", error);
+    toast.error("학습 세션을 시작하지 못했어요");
+  } finally {
+    setIsStartingLearning(false);
+    learningAbortRef.current = null
+  }
+};
+
+// 학습 취소 핸들러
+const handleCancelLearning = () => {
+  learningAbortRef.current?.abort()
+}
 
   /* 아카이브에서 학습 클릭 → 캐시에 없으면 서버에서 조회 */
   const handleSelectSession = async (lrnId: number) => {
@@ -439,6 +468,11 @@ export function LeetCodeIDE() {
     r.onload = (ev) => setEditorCode((ev.target?.result as string) ?? "");
     r.readAsText(f);
     e.target.value = "";
+
+    // 새 파일 = 새 코드 → 이전 분석 무효화
+    setHasAnalyzed(false);
+    setAiResult(null);
+    setSavedDgnsId(null);
   };
 
   /* 즐겨찾기 — 낙관적 업데이트 후 실패 시 롤백 */
@@ -479,7 +513,7 @@ export function LeetCodeIDE() {
 
       await loadSessions();
 
-      toast.success("✅ 학습을 삭제했어요", {
+      toast.success("학습을 삭제했어요", {
         description: target?.title,
       });
     } catch (e: any) {
@@ -500,6 +534,34 @@ export function LeetCodeIDE() {
     setLoadDiagOpen(false)
   }
 
+  const handleSaveNote = async () => {
+  if (!selSession) return
+  const content = learnings.get(selSession)
+
+  try {
+    await saveNote({
+      optCdId: content?.optCdId ?? null,
+      noteName: noteTitle,
+      noteMemo: noteMemo,
+      tag: noteTags.join(","),
+      lang: currentSession?.language ?? language,
+    })
+    setSaveNoteOpen(false)
+    setSuccessModal({
+      title: "저장되었습니다",
+      message: "노트가 저장되었어요.",
+      actionText: "노트로 이동하기",
+      onAction: () => {
+        setSuccessModal(null)
+        handleNavClick("notes")
+      },
+    })
+  } catch (e: any) {
+    console.error("노트 저장 실패:", e)
+    toast.error("노트를 저장하지 못했어요", { description: e.message })
+  }
+}
+
   const addTag = () => {
     const t = tagInput.trim();
     if (t && !noteTags.includes(t)) {
@@ -512,28 +574,30 @@ export function LeetCodeIDE() {
     setNoteTags((p) => p.filter((t) => t !== tag));
 
   const currentSession = useMemo<LearningSession | null>(() => {
-    if (!selSession) return null;
+  if (!selSession) return null;
 
-    const currentLearning = learnings.get(selSession);
+  // 1) 아카이브 목록에 있으면 그걸 우선 사용 (실제 저장된 이름)
+  const fromArchive = sessions.find((s) => s.id === selSession)
+  if (fromArchive) return fromArchive
 
-    // 1) 방금 만든 학습 세션이면 그걸로 표시
-    if (currentLearning && currentLearning.lrnId === selSession) {
-      return {
-        id: currentLearning.lrnId,
-        title: fileName || "학습 세션",
-        date: new Date().toLocaleDateString("ko-KR"),
-        createdAtIso: new Date().toISOString(),
-        grade: aiResult?.grade || getGradeFromScore(aiResult?.totalScore ?? 0),
-        tags: [],
-        language: language.charAt(0).toUpperCase() + language.slice(1),
-        favorited: false,
-      }
+  // 2) 방금 만든 학습 (아직 목록에 없을 때만 fileName 기반 폴백)
+  const currentLearning = learnings.get(selSession);
+  if (currentLearning && currentLearning.lrnId === selSession) {
+    return {
+      id: currentLearning.lrnId,
+      title: fileName || "학습 세션",
+      date: new Date().toLocaleDateString("ko-KR"),
+      createdAtIso: new Date().toISOString(),
+      grade: aiResult?.grade || getGradeFromScore(aiResult?.totalScore ?? 0),
+      tags: [],
+      language: language.charAt(0).toUpperCase() + language.slice(1),
+      favorited: false,
     }
+  }
 
-    // 2) 아카이브에서 클릭한 경우
-    return sessions.find((s) => s.id === selSession) ?? null
+  return null
+}, [selSession, learnings, sessions, fileName, language, aiResult])
 
-  }, [selSession, learnings, sessions, fileName, language, aiResult])
 
   const currentLearningContent = useMemo<LearningContent | null>(() => {
     if (!selSession) return null;
@@ -559,6 +623,13 @@ export function LeetCodeIDE() {
     });
   }, []);
 
+  const handleLearningRenamed = useCallback((lrnId: number, newName: string) => {
+    // 아카이브 목록 갱신
+    setSessions(prev => prev.map(s =>
+      s.id === lrnId ? { ...s, title: newName } : s
+    ))
+  }, [])
+
   return (
     <TooltipProvider>
       <style>{`
@@ -568,6 +639,25 @@ export function LeetCodeIDE() {
       `}</style>
 
       <div className="h-screen w-full bg-zinc-950 flex overflow-hidden">
+        {isStartingLearning && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-4 bg-[#17171b] border border-white/10 rounded-2xl px-10 py-8 shadow-2xl">
+              <Loader2 className="h-8 w-8 animate-spin" style={{ color: "#63C1ED" }} />
+              <div className="text-center">
+                <p className="font-ko text-sm font-semibold text-zinc-200">학습을 준비하고 있어요...</p>
+                <p className="font-ko text-[13px] text-zinc-500 mt-1.5 leading-relaxed">
+                  AI가 학습 문제를 만드는 중이에요. 잠시만 기다려 주세요!
+                </p>
+              </div>
+              <button
+                onClick={handleCancelLearning}
+                className="mt-1 font-ko text-xs text-zinc-500 hover:text-zinc-300 border border-zinc-800 hover:border-zinc-600 px-4 py-1.5 rounded-lg transition-colors"
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        )}
         <Sidebar
           activeNav={activeNav}
           sidebarExp={sidebarExp}
@@ -642,6 +732,13 @@ export function LeetCodeIDE() {
                   setEditorCode={setEditorCode}
                   hasAnalyzed={hasAnalyzed}
                   aiCoaching={aiCoaching}
+                  onUserEdit={() => {
+                    if (hasAnalyzed) {
+                      setHasAnalyzed(false)   // 코드 바뀌면 이전 분석 무효 → Learning 비활성화
+                      setAiResult(null)       // 진단 결과도 무효
+                      setSavedDgnsId(null)    // 저장된 진단 id도 무효 (새 코드니까)
+                    }
+                  }}
                 />
               </div>
             </div>
@@ -692,6 +789,7 @@ export function LeetCodeIDE() {
                   onBadgesUnlocked={setUnlockedBadges}
                   onGraded={handleLearningGraded}
                   pace={pace}
+                  onRename={handleLearningRenamed}
                   
                 />
               )}
@@ -743,6 +841,16 @@ export function LeetCodeIDE() {
           editorCode={editorCode}
           aiResult={aiResult}
           onBadgesUnlocked={setUnlockedBadges}
+          onSaved={() => setSuccessModal({ title: "저장되었습니다", message: "진단 결과가 저장되었어요." })}
+        />
+
+        <SuccessDialog
+          open={successModal !== null}
+          title={successModal?.title ?? "저장되었습니다"}
+          message={successModal?.message}
+          actionText={successModal?.actionText}
+          onAction={successModal?.onAction}
+          onClose={() => setSuccessModal(null)}
         />
 
         <LoadDiagnosisDialog
@@ -768,6 +876,7 @@ export function LeetCodeIDE() {
           setNoteMemo={setNoteMemo}
           addTag={addTag}
           removeTag={removeTag}
+          onSave={handleSaveNote}
         />
       </div>
     </TooltipProvider>

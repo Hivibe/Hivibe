@@ -2,8 +2,6 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import type { Pace } from "@/components/learning/diff-view"
 
@@ -135,17 +133,6 @@ export function MainHeader({
                 <div className="h-4 w-px bg-zinc-800" />
               </>
             )}
-
-            <Select value={language} onValueChange={setLanguage}>   
-              <SelectTrigger className="h-8 w-[120px] bg-zinc-900 border-zinc-800 text-xs text-zinc-300">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800">
-                {[["java", "Java"], ["python", "Python"], ["javascript", "JavaScript"], ["typescript", "TypeScript"], ["cpp", "C++"], ["c", "C"]].map(([v, l]) => (
-                  <SelectItem key={v} value={v} className="text-xs">{l}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
 
             {activeNav === "diagnosis" && (
               <Button size="sm" disabled={!editorCode.trim() || isAnalyzing}

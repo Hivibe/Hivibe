@@ -17,6 +17,7 @@ interface SaveNoteDialogProps {
   setNoteMemo: (v: string) => void
   addTag: () => void
   removeTag: (tag: string) => void
+  onSave: () => void
 }
 
 export function SaveNoteDialog({
@@ -25,6 +26,7 @@ export function SaveNoteDialog({
   noteTags, tagInput, setTagInput,
   noteMemo, setNoteMemo,
   addTag, removeTag,
+  onSave,
 }: SaveNoteDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -80,8 +82,8 @@ export function SaveNoteDialog({
             <Button variant="outline" size="sm" className="border-zinc-800 text-zinc-400 font-ko text-xs">취소</Button>
           </DialogClose>
           <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-ko"
-            onClick={() => onOpenChange(false)}>
-            저장 & 3일 후 복습 알림
+            onClick={onSave}>
+            저장
           </Button>
         </DialogFooter>
       </DialogContent>

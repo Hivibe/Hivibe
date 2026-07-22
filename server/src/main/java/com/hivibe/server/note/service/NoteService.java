@@ -25,6 +25,7 @@ public class NoteService {
     private final OptCdRepository  optCdRepository;
 
     // 전체 노트 목록
+    @Transactional(readOnly = true)
     public List<NoteResponseDto> getAllNotes(String lgnId) {
         User user = getUser(lgnId);
         return noteRepository.findByUser_IdOrderByCreatedAtDesc(user.getId())
@@ -32,6 +33,7 @@ public class NoteService {
     }
 
     // Learning 노트만
+    @Transactional(readOnly = true)
     public List<NoteResponseDto> getLearningNotes(String lgnId) {
         User user = getUser(lgnId);
         return noteRepository.findByUser_IdAndOptCdIsNotNullOrderByCreatedAtDesc(user.getId())
@@ -39,6 +41,7 @@ public class NoteService {
     }
 
     // 자유 노트만
+    @Transactional(readOnly = true)
     public List<NoteResponseDto> getManualNotes(String lgnId) {
         User user = getUser(lgnId);
         return noteRepository.findByUser_IdAndOptCdIsNullOrderByCreatedAtDesc(user.getId())
@@ -46,6 +49,7 @@ public class NoteService {
     }
 
     // 즐겨찾기 노트
+    @Transactional(readOnly = true)
     public List<NoteResponseDto> getBookmarkedNotes(String lgnId) {
         User user = getUser(lgnId);
         return noteRepository.findByUser_IdAndBkmkYnOrderByCreatedAtDesc(user.getId(), "Y")
@@ -53,6 +57,7 @@ public class NoteService {
     }
 
     // 노트 단건 조회
+    @Transactional(readOnly = true)
     public NoteResponseDto getNote(String lgnId, Long noteId) {
         User user = getUser(lgnId);
         Note note = noteRepository.findByNoteIdAndUser_Id(noteId, user.getId())

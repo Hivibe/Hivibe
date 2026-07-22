@@ -23,6 +23,8 @@ const langMap: Record<string, any> = {
   typescript: "typescript", cpp: "cpp", c: "c",
 }
 
+
+
 const templates: Record<string, string> = {
   java:
     `import java.util.*;
@@ -86,11 +88,12 @@ interface CodeEditorProps {
   setEditorCode: (v: string) => void
   hasAnalyzed: boolean
   aiCoaching: boolean
+  onUserEdit?: () => void
 }
 
 export function CodeEditor({
   language, fileName, setFileName, editorCode,
-  setEditorCode, hasAnalyzed, aiCoaching,
+  setEditorCode, hasAnalyzed, aiCoaching, onUserEdit,
 }: CodeEditorProps) {
   const ext = extMap[language] ?? "txt"
   const prismLang = langMap[language] ?? "javascript"
@@ -151,6 +154,7 @@ export function CodeEditor({
       const end = ta.selectionEnd
       const newVal = editorCode.substring(0, start) + "  " + editorCode.substring(end)
       setEditorCode(newVal)
+      onUserEdit?.()
       requestAnimationFrame(() => {
         ta.selectionStart = ta.selectionEnd = start + 2
       })
@@ -245,11 +249,10 @@ export function CodeEditor({
               </Highlight>
             </div>
 
-            {/* textarea 레이어 (앞, 투명) */}
             <textarea
               ref={textareaRef}
               value={editorCode}
-              onChange={e => setEditorCode(e.target.value)}
+              onChange={e => { setEditorCode(e.target.value); onUserEdit?.() }}
               onKeyDown={handleKeyDown}
               spellCheck={false}
               autoCorrect="off"

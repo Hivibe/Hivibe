@@ -17,10 +17,11 @@ interface SaveDiagnosisDialogProps {
   editorCode: string
   aiResult: any
   onBadgesUnlocked?: (badges: { key: string; icon: string; name: string; desc: string }[]) => void
+  onSaved?: () => void
 }
 
 export function SaveDiagnosisDialog({
-  open, onOpenChange, fileName, setFileName, language, editorCode, aiResult, onBadgesUnlocked
+  open, onOpenChange, fileName, setFileName, language, editorCode, aiResult, onBadgesUnlocked, onSaved
 }: SaveDiagnosisDialogProps) {
 
   const [isSaving, setIsSaving] = useState(false)
@@ -78,13 +79,13 @@ export function SaveDiagnosisDialog({
           // 뱃지 체크가 실패해도 진단 저장 자체는 이미 성공했으니 무시하고 진행
         }
 
-        if (newlyUnlocked.length > 0 && onBadgesUnlocked) {
-          onBadgesUnlocked(newlyUnlocked)   // 뱃지 팝업이 저장 성공 피드백을 대신함
-        } else {
-          alert("저장되었습니다!")
-        }
-
         onOpenChange(false)
+
+        if (newlyUnlocked.length > 0 && onBadgesUnlocked) {
+          onBadgesUnlocked(newlyUnlocked)   // 뱃지 팝업이 우선
+        } else {
+          onSaved?.()                        // 성공 모달
+        }
       } else {
         alert("저장 실패. 다시 시도해 주세요.")
       }

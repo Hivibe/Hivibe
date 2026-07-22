@@ -4,6 +4,7 @@ export interface LearningSession {
   id: number;
   title: string;
   date: string;
+  createdAtIso: string;
   grade: string;
   tags: string[];
   language: string;

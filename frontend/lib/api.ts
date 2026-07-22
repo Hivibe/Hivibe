@@ -50,10 +50,14 @@ export interface DiagnosisSaveResponse {
   dgnsId: number
 }
 
-export async function saveDiagnosis(body: DiagnosisSaveRequest): Promise<DiagnosisSaveResponse> {
+export async function saveDiagnosis(
+  body: DiagnosisSaveRequest,
+  signal?: AbortSignal
+): Promise<DiagnosisSaveResponse> {
   const res = await apiFetch("/api/v1/diagnoses", {
     method: "POST",
     body: JSON.stringify(body),
+    signal,
   })
   if (!res.ok) {
     const txt = await res.text()
@@ -87,10 +91,14 @@ export type AiLearningResponse = {
   }[]
 }
 
-export async function generateAiLearning(req: AiLearningRequest): Promise<AiLearningResponse> {
+export async function generateAiLearning(
+  req: AiLearningRequest,
+  signal?: AbortSignal
+): Promise<AiLearningResponse> {
   const res = await apiFetch("/api/v1/ai/learning", {
     method: "POST",
     body: JSON.stringify(req),
+    signal,
   })
   if (!res.ok) throw new Error(`AI 학습 생성 실패: ${await res.text()}`)
   return res.json()
@@ -122,11 +130,13 @@ export type LearningSaveRequest = {
 }
 
 export async function saveLearning(
-  req: LearningSaveRequest
+  req: LearningSaveRequest,
+  signal?: AbortSignal
 ): Promise<{ message: string; id: number }> {
   const res = await apiFetch("/api/v1/learnings", {
     method: "POST",
     body: JSON.stringify(req),
+    signal,
   })
   if (!res.ok) throw new Error(`학습 저장 실패: ${await res.text()}`)
   return res.json()
@@ -209,6 +219,7 @@ export type LearningDetail = {
   tag: string | null
   overallComment: string | null
   originalCode: string
+  optCdId: number
   optimizedCode: {
     lang: string
     content: string
@@ -222,6 +233,28 @@ export type LearningDetail = {
     referenceUrl: string
     sortOrder: number
   }[]
+}
+
+export type NoteSaveRequest = {
+  optCdId?: number | null
+  noteName: string
+  noteMemo?: string
+  noteCn?: string
+  tag?: string
+  category?: string
+  lang?: string
+}
+
+export async function saveNote(body: NoteSaveRequest): Promise<{ noteId: number }> {
+  const res = await apiFetch("/api/notes", {
+    method: "POST",
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) {
+    const txt = await res.text()
+    throw new Error(`노트 저장 실패: ${txt}`)
+  }
+  return res.json()
 }
 
 export async function fetchLearnings(): Promise<LearningListItem[]> {
@@ -274,4 +307,15 @@ export async function fetchHint(
     throw new Error(err.message || "힌트를 불러오지 못했어요.")
   }
   return res.json()
+}
+
+export async function renameLearning(lrnId: number, name: string): Promise<void> {
+  const res = await apiFetch(`/api/v1/learnings/${lrnId}/name`, {
+    method: "PATCH",
+    body: JSON.stringify({ name }),
+  })
+  if (!res.ok) {
+    const txt = await res.text()
+    throw new Error(`이름 수정 실패: ${txt}`)
+  }
 }

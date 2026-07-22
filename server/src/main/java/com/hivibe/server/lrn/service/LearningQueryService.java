@@ -19,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-/**
+/**f
  * 학습 조회 서비스
  * - 아카이브 목록 / 학습 상세
  * - AI 호출 없음
@@ -119,6 +119,7 @@ public class LearningQueryService {
             lrn.getTag(),
             lrn.getOverallComment(),
             ornCd.getCdCn(),
+            optCd.getOptCdId(),
             new LearningDetailResponseDto.OptimizedCodeDto(
                 optCd.getLang(),
                 optCd.getCdCn(),
@@ -167,5 +168,25 @@ public class LearningQueryService {
         lrnRepository.delete(lrn);
 
         log.info("학습 세션 삭제 완료. lrnId={}", lrnId);
+    }
+
+    /**
+     * 학습 이름 수정
+     */
+    @Transactional
+    public void rename(Long lrnId, String newName, User currentUser) {
+        Lrn lrn = lrnRepository.findById(lrnId)
+            .orElseThrow(() -> new IllegalArgumentException("학습 세션을 찾을 수 없습니다: " + lrnId));
+
+        if (!lrn.getUser().getId().equals(currentUser.getId())) {
+            throw new IllegalStateException("본인의 학습 세션이 아닙니다.");
+        }
+
+        String trimmed = newName == null ? "" : newName.trim();
+        if (trimmed.isEmpty()) {
+            throw new IllegalArgumentException("학습 이름은 비워둘 수 없습니다.");
+        }
+        lrn.setLrnName(trimmed);
+        lrnRepository.save(lrn);   // ← 명시적 저장 추가
     }
 }
