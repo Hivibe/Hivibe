@@ -11,6 +11,17 @@ import "prismjs/components/prism-cpp"
 import "prismjs/components/prism-python"
 import "prismjs/components/prism-typescript"
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+
 const BRAND = "#63C1ED"
 
 const extMap: Record<string, string> = {
@@ -78,6 +89,7 @@ int main() {
 }`,
 }
 
+
 interface CodeEditorProps {
   language: string
   fileName: string
@@ -87,15 +99,18 @@ interface CodeEditorProps {
   hasAnalyzed: boolean
   aiCoaching: boolean
   onLanguageDetected?: (lang: string) => void   // ← 추가
+  setLanguage: (v: string) => void
 }
 
 export function CodeEditor({
   language, fileName, setFileName, editorCode,
-  setEditorCode, hasAnalyzed, aiCoaching, onLanguageDetected,
+  setEditorCode, hasAnalyzed, aiCoaching, onLanguageDetected, setLanguage,
 }: CodeEditorProps) {
   const ext = extMap[language] ?? "txt"
   const prismLang = langMap[language] ?? "javascript"
   const prevLang = useRef(language)
+  const [langConfirmOpen, setLangConfirmOpen] = useState(false)
+  const pendingLangRef = useRef<string | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // 탭 이름 인라인 편집 — 타이핑할 때마다 전역 fileName에 직접 반영 (탭/모달 항상 동일한 값)
@@ -126,20 +141,17 @@ export function CodeEditor({
     }
   }, [language])
 
-  // 언어 변경 시
   useEffect(() => {
     if (prevLang.current !== language) {
-      if (editorCode.trim()) {
-        const confirmed = window.confirm(
-          "언어를 변경하면 현재 코드가 초기화돼요. 변경할까요?"
-        )
-        if (confirmed) {
-          setEditorCode(templates[language] ?? "")
-        }
+      if (editorCode.trim() && editorCode.trim() !== (templates[prevLang.current] ?? "").trim()) {
+        // 코드가 있으면 다이얼로그 띄우고 언어 일단 되돌리기
+        pendingLangRef.current = language
+        setLanguage(prevLang.current)   // 일단 이전 언어로 복구
+        setLangConfirmOpen(true)
       } else {
         setEditorCode(templates[language] ?? "")
+        prevLang.current = language
       }
-      prevLang.current = language
     }
   }, [language])
 
@@ -310,6 +322,43 @@ export function CodeEditor({
         <span className="font-space text-[10px] text-zinc-600">{editorCode.length} chars</span>
         <span className="font-space text-[10px] text-zinc-600 ml-auto">{language.toUpperCase()}</span>
       </div>
+
+      <AlertDialog open={langConfirmOpen} onOpenChange={setLangConfirmOpen}>
+        <AlertDialogContent className="bg-[#17171b] border-white/10">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-syne text-white">
+              언어를 변경할까요?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="font-ko text-zinc-400 leading-relaxed">
+              언어를 변경하면 현재 작성한 코드가 초기화돼요.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              className="bg-transparent border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100 font-ko text-xs"
+              onClick={() => {
+                pendingLangRef.current = null
+                setLangConfirmOpen(false)
+              }}>
+              취소
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="font-ko text-xs text-white"
+              style={{ background: "#63C1ED" }}
+              onClick={() => {
+                if (pendingLangRef.current) {
+                  setLanguage(pendingLangRef.current)
+                  setEditorCode(templates[pendingLangRef.current] ?? "")
+                  prevLang.current = pendingLangRef.current
+                  pendingLangRef.current = null
+                }
+                setLangConfirmOpen(false)
+              }}>
+              변경
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

@@ -625,6 +625,7 @@ export function LeetCodeIDE() {
                   hasAnalyzed={hasAnalyzed}
                   aiCoaching={aiCoaching}
                   onLanguageDetected={(lang) => setLanguage(lang)}
+                  setLanguage={setLanguage}
                 />
               </div>
             </div>

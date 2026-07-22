@@ -21,7 +21,7 @@ export default function LoginPage() {
   const handleLogin = async () => {
     setError("");
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/login`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'}/api/users/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ lgnId: email, lgnPwsd: password }),
