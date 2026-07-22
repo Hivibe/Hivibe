@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: hivibe-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root1234
+      MYSQL_DATABASE: hivibe
+      MYSQL_USER: seongha
+      MYSQL_PASSWORD: rhdiddlrkwlrnfmfrngksek04!
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 10s
+      retries: 5
+
+  backend:
+    build: ./server
+    container_name: hivibe-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/hivibe?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8
+      SPRING_DATASOURCE_USERNAME: seongha
+      SPRING_DATASOURCE_PASSWORD: rhdiddlrkwlrnfmfrngksek04!
+      JWT_SECRET: hivibesecretkey1234567890abcdefgh
+      GEMINI_API_KEY: AQ.Ab8RN6Il3rBAIAlUS6SiA1s_JRGHlo1NDRmbBg-C7NWFr6A7RQ
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    container_name: hivibe-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://backend:8080
+    depends_on:
+      - backend
+
+volumes:
+  mysql-data:

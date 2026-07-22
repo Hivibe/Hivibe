@@ -34,11 +34,10 @@ public class BadgeController {
     }
 
     @PostMapping("/check/learning")
-    public ResponseEntity<Void> checkLearningBadges(
+    public ResponseEntity<List<BadgeResponseDto>> checkLearningBadges(
             @RequestBody Map<String, Object> body) {
         boolean isPerfect = Boolean.TRUE.equals(body.get("isPerfect"));
-        // TODO: LRN 횟수는 추후 연동 — 지금은 isPerfect만 처리
-        badgeService.checkLearningBadges(getCurrentLgnId(), 0, isPerfect);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(
+                badgeService.checkAndAwardWithLearning(getCurrentLgnId(), isPerfect));
     }
 }

@@ -29,9 +29,10 @@ interface DiagnosisPanelProps {
   hasAnalyzed: boolean
   isAnalyzing?: boolean
   aiResult?: any
+  onCancel?: () => void   // ← 추가
 }
 
-export function DiagnosisPanel({ hasAnalyzed, isAnalyzing, aiResult }: DiagnosisPanelProps) {
+export function DiagnosisPanel({ hasAnalyzed, isAnalyzing, aiResult, onCancel }: DiagnosisPanelProps) {
 
   const data = aiResult || {
     summary: "결과를 불러오지 못했습니다.",
@@ -63,6 +64,13 @@ export function DiagnosisPanel({ hasAnalyzed, isAnalyzing, aiResult }: Diagnosis
             <p className="font-ko text-sm font-semibold text-zinc-300">AI가 코드를 분석 중입니다...</p>
             <p className="font-ko text-[13px] text-zinc-500 mt-1.5 leading-relaxed">잠시만 기다려 주세요!</p>
           </div>
+          {onCancel && (
+            <button
+              onClick={onCancel}
+              className="mt-2 font-ko text-xs text-zinc-500 hover:text-zinc-300 border border-zinc-800 hover:border-zinc-600 px-4 py-1.5 rounded-lg transition-colors">
+              취소
+            </button>
+          )}
         </div>
       ) : !hasAnalyzed ? (
         <div className="flex flex-col items-center justify-center h-[56vh] gap-4 text-center px-6">

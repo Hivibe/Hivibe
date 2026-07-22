@@ -139,6 +139,7 @@ export function LeetCodeIDE() {
   const [tagInput, setTagInput] = useState("");
   const [noteMemo, setNoteMemo] = useState("");
   const [loadDiagOpen, setLoadDiagOpen] = useState(false)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   const [sidebarRefreshKey, setSidebarRefreshKey] = useState(0)
 
@@ -245,17 +246,23 @@ export function LeetCodeIDE() {
 
   /* ── 핸들러 ── */
 
+  // handleRunAnalysis 전체 교체
   const handleRunAnalysis = async () => {
     if (!editorCode.trim()) {
-      toast.warning("코드를 입력해 주세요");
-      return;
+      toast.warning("코드를 입력해 주세요")
+      return
     }
 
-    setIsAnalyzing(true);
-    setAiResult(null);
-    setHasAnalyzed(false);
-    setDiagPanelOpen(true);
-    setSavedDgnsId(null);
+    // 기존 요청 취소
+    abortControllerRef.current?.abort()
+    const controller = new AbortController()
+    abortControllerRef.current = controller
+
+    setIsAnalyzing(true)
+    setAiResult(null)
+    setHasAnalyzed(false)
+    setDiagPanelOpen(true)
+    setSavedDgnsId(null)
 
     try {
       const response = await apiFetch("/api/ai/ask", {
@@ -263,18 +270,29 @@ export function LeetCodeIDE() {
         body: JSON.stringify({
           prompt: `다음 코드를 분석하고, 문제점과 개선 방안을 상세히 진단해 줘:\n\n${editorCode}`,
         }),
-      });
-      const data = await response.json();
-      setAiResult(data);
-      setHasAnalyzed(true);
-    } catch (error) {
-      console.error("백엔드 통신 실패:", error);
-      setAiResult("서버와 연결할 수 없습니다. 8080 포트가 켜져 있는지 확인해 주세요.");
-      setHasAnalyzed(true);
+        signal: controller.signal,   // ← 추가
+      })
+      const data = await response.json()
+      setAiResult(data)
+      setHasAnalyzed(true)
+    } catch (error: any) {
+      if (error.name === "AbortError") {
+        toast.info("분석을 취소했어요")
+        return
+      }
+      console.error("백엔드 통신 실패:", error)
+      setAiResult("서버와 연결할 수 없습니다. 8080 포트가 켜져 있는지 확인해 주세요.")
+      setHasAnalyzed(true)
     } finally {
-      setIsAnalyzing(false);
+      setIsAnalyzing(false)
+      abortControllerRef.current = null
     }
-  };
+  }
+
+  // 취소 핸들러 추가
+  const handleCancelAnalysis = () => {
+    abortControllerRef.current?.abort()
+  }
 
   const buildSaveRequest = () => {
     if (!aiResult || typeof aiResult !== "object") {
@@ -318,7 +336,20 @@ export function LeetCodeIDE() {
         const saveRes = await saveDiagnosis(buildSaveRequest());
         dgnsId = saveRes.dgnsId;
         setSavedDgnsId(dgnsId);
+
+        // ↓ 여기에 추가
+        try {
+          const badgeRes = await apiFetch("/api/badges/check", { method: "POST" })
+          if (badgeRes.ok) {
+            const allBadges = await badgeRes.json()
+            const newBadges = allBadges.filter((b: any) => b.newlyAchieved)
+            if (newBadges.length > 0) setUnlockedBadges(newBadges)
+          }
+        } catch (badgeErr) {
+          console.warn("뱃지 체크 실패", badgeErr)
+        }
       }
+
 
       // 2. AI 학습 생성
       const aiLearn = await generateAiLearning({ diagnosisId: dgnsId });
@@ -588,6 +619,7 @@ export function LeetCodeIDE() {
                       hasAnalyzed={hasAnalyzed}
                       isAnalyzing={isAnalyzing}
                       aiResult={aiResult}
+                      onCancel={handleCancelAnalysis}
                     />
                   </ScrollArea>
                 </div>
@@ -657,6 +689,7 @@ export function LeetCodeIDE() {
                     setSelSession(null);
                     syncUrl("learning", null, "replace");
                   }}
+                  onBadgesUnlocked={setUnlockedBadges}
                   onGraded={handleLearningGraded}
                   pace={pace}
                   

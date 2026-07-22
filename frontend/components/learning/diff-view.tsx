@@ -250,6 +250,7 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onGra
         grade: prev.grade,
         overallComment: prev.overallComment,
       })
+
     } else {
       setAnswers({})
       setResults(null)
@@ -380,7 +381,23 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onGra
         grade: res.grade,
         overallComment: res.overallComment,
       })
-      onGraded?.(learningContent.lrnId, res)
+
+      // 추가 (07.20)
+
+      // 채점 완료 후 일반 뱃지 체크 (ON_FIRE 등) — 백그라운드
+      try {
+        const badgeRes = await apiFetch("/api/badges/check/learning", {
+          method: "POST",
+          body: JSON.stringify({ isPerfect: res.allCorrect }),
+        })
+        if (badgeRes.ok) {
+          const allBadges = await badgeRes.json()
+          const newBadges = allBadges.filter((b: any) => b.newlyAchieved)
+          if (newBadges.length > 0) onBadgesUnlocked?.(newBadges)
+        }
+      } catch (badgeErr) {
+        console.warn("뱃지 체크 실패", badgeErr)
+      }
 
       if (res.allCorrect) {
         toast.success("✅ 모두 맞혔어요!", {
@@ -703,8 +720,8 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onGra
               </span>
               {isGraded && summary ? (
                 <span className={`font-space text-[10px] px-2 py-0.5 rounded border ${summary.correctCount === summary.totalBlanks
-                    ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-400"
-                    : "bg-rose-500/10 border-rose-500/40 text-rose-400"
+                  ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-400"
+                  : "bg-rose-500/10 border-rose-500/40 text-rose-400"
                   }`}>
                   {summary.correctCount}/{summary.totalBlanks} 정답
                   {summary.grade && ` · ${summary.grade}`}
@@ -812,8 +829,8 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onGra
                     onClick={handleSubmit}
                     disabled={!allFilled || isGrading}
                     className={`h-8 px-4 rounded font-space text-xs font-bold flex items-center gap-1.5 transition-colors ${allFilled && !isGrading
-                        ? "bg-emerald-500 hover:bg-emerald-600 text-white"
-                        : "bg-emerald-500/20 text-emerald-500/40 cursor-not-allowed"
+                      ? "bg-emerald-500 hover:bg-emerald-600 text-white"
+                      : "bg-emerald-500/20 text-emerald-500/40 cursor-not-allowed"
                       }`}
                   >
                     {isGrading ? (
