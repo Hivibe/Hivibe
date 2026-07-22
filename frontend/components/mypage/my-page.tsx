@@ -97,7 +97,8 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
   const fetchBadges = async () => {
     try {
       const res = await apiFetch("/api/badges")
-      setBadges(await res.json())
+      const data = await res.json()
+      setBadges(Array.isArray(data) ? data : [])   // ← 수정
     } catch (e) {
       console.error("뱃지 불러오기 실패:", e)
     }
@@ -106,7 +107,8 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
   const fetchNotes = async () => {
     try {
       const res = await apiFetch("/api/notes")
-      setNotes(await res.json())
+      const data = await res.json()
+      setNotes(Array.isArray(data) ? data : [])    // ← 수정
     } catch (e) {
       console.error("노트 불러오기 실패:", e)
     }
