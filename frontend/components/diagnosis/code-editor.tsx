@@ -109,6 +109,7 @@ export function CodeEditor({
   const ext = extMap[language] ?? "txt"
   const prismLang = langMap[language] ?? "javascript"
   const prevLang = useRef(language)
+  const isAutoDetectRef = useRef(false)
   const [langConfirmOpen, setLangConfirmOpen] = useState(false)
   const pendingLangRef = useRef<string | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -143,10 +144,14 @@ export function CodeEditor({
 
   useEffect(() => {
     if (prevLang.current !== language) {
-      if (editorCode.trim() && editorCode.trim() !== (templates[prevLang.current] ?? "").trim()) {
-        // 코드가 있으면 다이얼로그 띄우고 언어 일단 되돌리기
+      if (isAutoDetectRef.current) {
+        // 자동 감지로 바꾼 거면 그냥 언어만 변경
+        isAutoDetectRef.current = false
+        prevLang.current = language
+      } else if (editorCode.trim() && editorCode.trim() !== (templates[prevLang.current] ?? "").trim()) {
+        // 사용자가 직접 바꾼 거면 팝업
         pendingLangRef.current = language
-        setLanguage(prevLang.current)   // 일단 이전 언어로 복구
+        setLanguage(prevLang.current)
         setLangConfirmOpen(true)
       } else {
         setEditorCode(templates[language] ?? "")
@@ -280,6 +285,7 @@ export function CodeEditor({
                 if (newCode.length - editorCode.length > 10) {
                   const detected = detectLanguage(newCode)
                   if (detected && detected !== language) {
+                    isAutoDetectRef.current = true   // 자동 감지 플래그
                     onLanguageDetected?.(detected)
                   }
                 }
