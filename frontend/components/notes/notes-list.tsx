@@ -30,7 +30,7 @@ export function NotesList({ selNote, setSelNote, refreshKey }: NotesListProps) {
     try {
       const res = await apiFetch(`/api/notes`)
       const data = await res.json()
-      setNotes(data)
+      setNotes(Array.isArray(data) ? data : [])
     } catch (e) {
       console.error("노트 불러오기 실패:", e)
     } finally {
