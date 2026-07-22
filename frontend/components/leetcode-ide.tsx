@@ -28,7 +28,7 @@ import { MainHeader } from "@/components/layout/main-header";
 
 // diagnosis
 import { DiagnosisPanel } from "@/components/diagnosis/diagnosis-panel";
-import { CodeEditor } from "@/components/diagnosis/code-editor";
+import { CodeEditor, templates } from "@/components/diagnosis/code-editor"
 
 // learning
 import { ArchiveView } from "@/components/learning/archive-view";
@@ -51,6 +51,7 @@ import type { LearningSession } from "@/types";
 
 //toaster
 import { toast } from "sonner"
+
 
 
 /* 점수 → 등급 (백엔드와 일치) */
@@ -88,18 +89,27 @@ export function LeetCodeIDE() {
   const initialLrn = searchParams.get("lrn");
 
   // global
-  const [language, setLanguage] = useState("java");
+  const [language, setLanguage] = useState(() =>
+    localStorage.getItem("hivibe_lang") ?? "java"
+  )
   const [activeNav, setActiveNav] = useState(initialNav);
   const [sidebarExp, setSidebarExp] = useState(true);
   const [aiCoaching, setAiCoaching] = useState(true);
 
   // diagnosis
-  const [editorCode, setEditorCode] = useState("");
-  const [hasAnalyzed, setHasAnalyzed] = useState(false);
+  const [editorCode, setEditorCode] = useState(() =>
+    localStorage.getItem("hivibe_code") ?? ""
+  )
+  const [hasAnalyzed, setHasAnalyzed] = useState(() =>
+    localStorage.getItem("hivibe_analyzed") === "true"
+  )
 
   // AI
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [aiResult, setAiResult] = useState<any>(null);
+  const [aiResult, setAiResult] = useState<any>(() => {
+    const saved = localStorage.getItem("hivibe_airesult")
+    return saved ? JSON.parse(saved) : null
+  })
 
   const [savedDgnsId, setSavedDgnsId] = useState<number | null>(null);
 
@@ -117,7 +127,9 @@ export function LeetCodeIDE() {
   const [detailError, setDetailError] = useState<string | null>(null);
 
   // files
-  const [fileName, setFileName] = useState("");
+  const [fileName, setFileName] = useState(() =>
+    localStorage.getItem("hivibe_filename") ?? ""
+  )
   const [uploadOpen, setUploadOpen] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -215,6 +227,15 @@ export function LeetCodeIDE() {
   useEffect(() => {
     loadSessions();
   }, [loadSessions]);
+
+  useEffect(() => { localStorage.setItem("hivibe_code", editorCode) }, [editorCode])
+  useEffect(() => { localStorage.setItem("hivibe_lang", language) }, [language])
+  useEffect(() => { localStorage.setItem("hivibe_filename", fileName) }, [fileName])
+  useEffect(() => { localStorage.setItem("hivibe_analyzed", String(hasAnalyzed)) }, [hasAnalyzed])
+  useEffect(() => {
+    if (aiResult) localStorage.setItem("hivibe_airesult", JSON.stringify(aiResult))
+    else localStorage.removeItem("hivibe_airesult")
+  }, [aiResult])
 
   /* URL ↔ state 동기화 (마운트 + 뒤로가기/앞으로가기 모두 커버) */
   useEffect(() => {
@@ -623,6 +644,8 @@ export function LeetCodeIDE() {
                   setEditorCode={setEditorCode}
                   hasAnalyzed={hasAnalyzed}
                   aiCoaching={aiCoaching}
+                  onLanguageDetected={(lang) => setLanguage(lang)}
+                  setLanguage={setLanguage}
                 />
               </div>
             </div>
@@ -700,6 +723,7 @@ export function LeetCodeIDE() {
                 <NoteDetail
                   noteId={selNote}
                   onDeleted={() => setNotesRefreshKey(k => k + 1)}
+                  onUpdated={() => setNotesRefreshKey(k => k + 1)}
                 />
               </div>
             </div>
@@ -727,6 +751,14 @@ export function LeetCodeIDE() {
           open={loadDiagOpen}
           onOpenChange={setLoadDiagOpen}
           onSelect={handleLoadDiagnosis}
+          onDeleted={() => {           // ← 추가
+            setEditorCode(templates[language] ?? "")
+            setFileName("")
+            setAiResult(null)
+            setHasAnalyzed(false)
+            setSavedDgnsId(null)
+            setDiagPanelOpen(false)
+          }}
         />
 
         <BadgeUnlockDialog

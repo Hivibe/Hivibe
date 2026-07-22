@@ -87,7 +87,7 @@ export function MainHeader({
 
             <div className="h-4 w-px bg-zinc-800" />
 
-            <Select value={language} onValueChange={setLanguage}>
+            <Select value={language} onValueChange={setLanguage} disabled={activeNav === "learning"}>
               <SelectTrigger className="h-8 w-[120px] bg-zinc-900 border-zinc-800 text-xs text-zinc-300">
                 <SelectValue />
               </SelectTrigger>
@@ -111,8 +111,8 @@ export function MainHeader({
               <Button size="sm" disabled={!hasAnalyzed || isStartingLearning}
                 onClick={onGoLearning}
                 className={`h-8 text-xs px-4 font-medium text-white ${hasAnalyzed && !isStartingLearning
-                    ? "bg-amber-400 hover:bg-amber-500"
-                    : "bg-amber-400/25 cursor-not-allowed"
+                  ? "bg-amber-400 hover:bg-amber-500"
+                  : "bg-amber-400/25 cursor-not-allowed"
                   }`}>
                 <GraduationCap className="h-3.5 w-3.5 mr-1.5 shrink-0" />
                 <span className="hidden lg:inline">

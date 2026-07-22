@@ -179,11 +179,18 @@ const STEPS = [
 
 export default function HomePage() {
   const [visible, setVisible] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken")
+    if (token) setIsLoggedIn(true)
+  }, [])
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 100);
     return () => clearTimeout(t);
   }, []);
+
 
   return (
     <>
@@ -253,18 +260,11 @@ export default function HomePage() {
               >
                 How it works
               </Link>
-              <Link
-                href="/login"
-                className="font-ko text-sm text-zinc-400 hover:text-zinc-200 transition-colors"
-              >
-                Log in
+              <Link href={isLoggedIn ? "/main" : "/login"} className="font-ko text-sm text-zinc-400 hover:text-zinc-200 transition-colors">
+                {isLoggedIn ? "Dashboard" : "Log in"}
               </Link>
-              <Link
-                href="/login"
-                className="font-ko text-sm px-4 py-1.5 rounded-full text-white font-semibold transition-all hover:opacity-90"
-                style={{ background: BRAND }}
-              >
-                Get Started
+              <Link href={isLoggedIn ? "/main" : "/login"} className="font-ko text-sm px-4 py-1.5 rounded-full text-white font-semibold transition-all hover:opacity-90" style={{ background: BRAND }}>
+                {isLoggedIn ? "Run Analysis" : "Get Started"}
               </Link>
             </div>
           </div>
@@ -333,11 +333,11 @@ export default function HomePage() {
                 className={`flex flex-col sm:flex-row items-center gap-3 justify-center lg:justify-start ${visible ? "anim-3" : "opacity-0"}`}
               >
                 <Link
-                  href="/login"
+                  href={isLoggedIn ? "/main" : "/login"}
                   className="glow-btn flex items-center gap-2 px-6 py-3 rounded-full text-white font-ko font-semibold text-sm transition-all hover:scale-105"
                   style={{ background: BRAND }}
                 >
-                  지금 분석 시작하기
+                  {isLoggedIn ? "분석 시작하기" : "지금 분석 시작하기"}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
@@ -648,11 +648,11 @@ export default function HomePage() {
                 <br />
               </p>
               <Link
-                href="/login"
+                href={isLoggedIn ? "/main" : "/login"}
                 className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full font-ko font-semibold text-white text-sm transition-all hover:scale-105 hover:opacity-95"
                 style={{ background: BRAND }}
               >
-                무료로 시작하기
+                {isLoggedIn ? "분석 시작하기" : "무료로 시작하기"}
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
