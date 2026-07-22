@@ -2,10 +2,13 @@ package com.hivibe.server.repository;
 
 import com.hivibe.server.domain.entity.Note;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+
+import jakarta.validation.constraints.NotNull;
 
 @Repository
 public interface NoteRepository extends JpaRepository<Note, Long> {
@@ -27,4 +30,10 @@ public interface NoteRepository extends JpaRepository<Note, Long> {
 
     // 유저의 노트 총 개수 (뱃지용)
     long countByUser_Id(Long userId);
+
+    @Query("SELECT n FROM Note n LEFT JOIN FETCH n.optCd o LEFT JOIN FETCH o.anls WHERE n.noteId = :noteId AND n.user.id = :userId")
+    Optional<Note> findByNoteIdAndUser_IdWithOptCd(@NotNull Long noteId, @NotNull Long userId);
+
+    @Query("SELECT n FROM Note n LEFT JOIN FETCH n.optCd o LEFT JOIN FETCH o.anls WHERE n.user.id = :userId ORDER BY n.createdAt DESC")
+    List<Note> findByUser_IdWithOptCdOrderByCreatedAtDesc(Long userId);
 }

@@ -12,6 +12,7 @@ import {
   Edit2, Check, X, Bell, Shield, Smartphone, Camera,
 } from "lucide-react"
 import type { Note } from "@/types"
+import { useRouter } from "next/navigation"
 
 const BRAND = "#63C1ED"
 
@@ -71,6 +72,14 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
   const [reviewAlarm, setReviewAlarm] = useState(true)
   const [savingSettings, setSavingSettings] = useState(false)
 
+  const router = useRouter()
+
+  const handleLogout = () => {
+    localStorage.removeItem("accessToken")
+    localStorage.removeItem("refreshToken")
+    router.push("/login")
+  }
+
   /* ── 데이터 불러오기 ── */
   const fetchProfile = async () => {
     try {
@@ -88,7 +97,8 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
   const fetchBadges = async () => {
     try {
       const res = await apiFetch("/api/badges")
-      setBadges(await res.json())
+      const data = await res.json()
+      setBadges(Array.isArray(data) ? data : [])   // ← 수정
     } catch (e) {
       console.error("뱃지 불러오기 실패:", e)
     }
@@ -97,7 +107,8 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
   const fetchNotes = async () => {
     try {
       const res = await apiFetch("/api/notes")
-      setNotes(await res.json())
+      const data = await res.json()
+      setNotes(Array.isArray(data) ? data : [])    // ← 수정
     } catch (e) {
       console.error("노트 불러오기 실패:", e)
     }
@@ -195,6 +206,8 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
       setSavingSettings(false)
     }
   }
+
+
 
   const formatPhone = (p: string) =>
     p.replace(/(\d{3})(\d{4})(\d{4})/, "$1-$2-$3")
@@ -543,7 +556,7 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
                   <div>
                     <p className="font-ko text-sm text-zinc-200">복습 알림</p>
                     <p className="font-ko text-xs text-zinc-400 mt-1 leading-relaxed">
-                      저장한 노트의 복습 시기가 되면 알림을 보내드려요.
+                      저장한 노트의 복습 시기가 되면 알림을 보내 드려요.
                     </p>
                   </div>
                   <Switch checked={reviewAlarm} onCheckedChange={setReviewAlarm}
@@ -579,7 +592,7 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
                         이벤트, 프로모션 문자를 받아요. 휴대폰 번호 등록 필요.
                       </p>
                       {!phoneVerified && (
-                        <p className="font-ko text-xs text-zinc-500 mt-1">휴대폰 번호를 먼저 등록해주세요.</p>
+                        <p className="font-ko text-xs text-zinc-500 mt-1">휴대폰 번호를 먼저 등록해 주세요.</p>
                       )}
                     </div>
                     <Switch checked={marketingSms}
@@ -595,6 +608,13 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
                 className="w-full h-11 font-ko font-semibold text-white text-sm"
                 style={{ background: BRAND }}>
                 {savingSettings ? "저장 중..." : "설정 저장"}
+              </Button>
+
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                className="w-full h-10 font-ko font-semibold text-sm border-rose-900/50 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 hover:text-rose-300">
+                로그아웃
               </Button>
             </div>
           )}

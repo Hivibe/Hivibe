@@ -1,5 +1,5 @@
 // lib/api.ts
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://hivibe-production.up.railway.app'
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 export async function apiFetch(path: string, options: RequestInit = {}) {
   const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null
   const isFormData = options.body instanceof FormData

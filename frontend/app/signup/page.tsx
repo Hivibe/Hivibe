@@ -40,7 +40,7 @@ export default function SignupPage() {
     if (emailDuplicate === true) { setError("이미 사용 중인 이메일입니다."); return; }
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'https://hivibe-production.up.railway.app'}/api/users/signup`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'}/api/users/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -75,7 +75,7 @@ export default function SignupPage() {
         const loginData = await loginRes.json()
         localStorage.setItem('accessToken', loginData.accessToken)
         localStorage.setItem('refreshToken', loginData.refreshToken)
-        router.push('/main')
+        router.replace("/main")
       } else {
         router.push('/login')
       }
