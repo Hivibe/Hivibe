@@ -48,9 +48,10 @@ interface LoadDiagnosisDialogProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     onSelect: (content: string, lang: string, name: string, aiResult?: any) => void
+    onDeleted?: () => void
 }
 
-export function LoadDiagnosisDialog({ open, onOpenChange, onSelect }: LoadDiagnosisDialogProps) {
+export function LoadDiagnosisDialog({ open, onOpenChange, onSelect, onDeleted }: LoadDiagnosisDialogProps) {
     const [items, setItems] = useState<DiagnosisListItem[]>([])
     const [loading, setLoading] = useState(false)
     const [loadingId, setLoadingId] = useState<number | null>(null)
@@ -109,6 +110,8 @@ export function LoadDiagnosisDialog({ open, onOpenChange, onSelect }: LoadDiagno
             if (res.ok) {
                 setItems(prev => prev.filter(item => item.dgnsId !== deleteTarget.dgnsId))
                 toast.success("진단 기록을 삭제했어요!")
+                onDeleted?.()        // 추가
+                onOpenChange(false)  // 추가 (다이얼로그 닫기)
             } else {
                 toast.error("삭제에 실패했어요.")
             }

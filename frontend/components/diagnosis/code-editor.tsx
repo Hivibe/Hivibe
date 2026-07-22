@@ -23,7 +23,7 @@ const langMap: Record<string, any> = {
   typescript: "typescript", cpp: "cpp", c: "c",
 }
 
-const templates: Record<string, string> = {
+export const templates: Record<string, string> = {
   java:
     `import java.util.*;
 
@@ -86,11 +86,12 @@ interface CodeEditorProps {
   setEditorCode: (v: string) => void
   hasAnalyzed: boolean
   aiCoaching: boolean
+  onLanguageDetected?: (lang: string) => void   // ← 추가
 }
 
 export function CodeEditor({
   language, fileName, setFileName, editorCode,
-  setEditorCode, hasAnalyzed, aiCoaching,
+  setEditorCode, hasAnalyzed, aiCoaching, onLanguageDetected,
 }: CodeEditorProps) {
   const ext = extMap[language] ?? "txt"
   const prismLang = langMap[language] ?? "javascript"
@@ -155,6 +156,18 @@ export function CodeEditor({
         ta.selectionStart = ta.selectionEnd = start + 2
       })
     }
+  }
+
+  const detectLanguage = (code: string): string | null => {
+    if (/#include\s*</.test(code)) {
+      if (/cout|cin|std::|vector<|nullptr/.test(code)) return "cpp"
+      return "c"
+    }
+    if (/import\s+java\.|public\s+class|System\.out\.print/.test(code)) return "java"
+    if (/def\s+\w+\(|import\s+\w+|print\(/.test(code)) return "python"
+    if (/:\s*(string|number|boolean)/.test(code) && /const|let|=>/.test(code)) return "typescript"
+    if (/const\s+\w+\s*=|let\s+\w+\s*=|require\(/.test(code)) return "javascript"
+    return null
   }
 
   const lineCount = Math.max(20, editorCode.split("\n").length)
@@ -249,7 +262,17 @@ export function CodeEditor({
             <textarea
               ref={textareaRef}
               value={editorCode}
-              onChange={e => setEditorCode(e.target.value)}
+              onChange={e => {
+                const newCode = e.target.value
+                // 붙여넣기 감지 — 코드가 갑자기 많이 늘어났을 때
+                if (newCode.length - editorCode.length > 10) {
+                  const detected = detectLanguage(newCode)
+                  if (detected && detected !== language) {
+                    onLanguageDetected?.(detected)
+                  }
+                }
+                setEditorCode(newCode)
+              }}
               onKeyDown={handleKeyDown}
               spellCheck={false}
               autoCorrect="off"

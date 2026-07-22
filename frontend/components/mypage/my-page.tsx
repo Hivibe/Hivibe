@@ -543,7 +543,7 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
                   <div>
                     <p className="font-ko text-sm text-zinc-200">복습 알림</p>
                     <p className="font-ko text-xs text-zinc-400 mt-1 leading-relaxed">
-                      저장한 노트의 복습 시기가 되면 알림을 보내드려요.
+                      저장한 노트의 복습 시기가 되면 알림을 보내 드려요.
                     </p>
                   </div>
                   <Switch checked={reviewAlarm} onCheckedChange={setReviewAlarm}
@@ -579,7 +579,7 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
                         이벤트, 프로모션 문자를 받아요. 휴대폰 번호 등록 필요.
                       </p>
                       {!phoneVerified && (
-                        <p className="font-ko text-xs text-zinc-500 mt-1">휴대폰 번호를 먼저 등록해주세요.</p>
+                        <p className="font-ko text-xs text-zinc-500 mt-1">휴대폰 번호를 먼저 등록해 주세요.</p>
                       )}
                     </div>
                     <Switch checked={marketingSms}

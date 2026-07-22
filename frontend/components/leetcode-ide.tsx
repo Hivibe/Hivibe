@@ -28,7 +28,7 @@ import { MainHeader } from "@/components/layout/main-header";
 
 // diagnosis
 import { DiagnosisPanel } from "@/components/diagnosis/diagnosis-panel";
-import { CodeEditor } from "@/components/diagnosis/code-editor";
+import { CodeEditor, templates } from "@/components/diagnosis/code-editor"
 
 // learning
 import { ArchiveView } from "@/components/learning/archive-view";
@@ -51,6 +51,7 @@ import type { LearningSession } from "@/types";
 
 //toaster
 import { toast } from "sonner"
+
 
 
 /* 점수 → 등급 (백엔드와 일치) */
@@ -623,6 +624,7 @@ export function LeetCodeIDE() {
                   setEditorCode={setEditorCode}
                   hasAnalyzed={hasAnalyzed}
                   aiCoaching={aiCoaching}
+                  onLanguageDetected={(lang) => setLanguage(lang)}
                 />
               </div>
             </div>
@@ -727,6 +729,14 @@ export function LeetCodeIDE() {
           open={loadDiagOpen}
           onOpenChange={setLoadDiagOpen}
           onSelect={handleLoadDiagnosis}
+          onDeleted={() => {           // ← 추가
+            setEditorCode(templates[language] ?? "")
+            setFileName("")
+            setAiResult(null)
+            setHasAnalyzed(false)
+            setSavedDgnsId(null)
+            setDiagPanelOpen(false)
+          }}
         />
 
         <BadgeUnlockDialog
