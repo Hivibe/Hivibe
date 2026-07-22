@@ -33,4 +33,7 @@ public interface NoteRepository extends JpaRepository<Note, Long> {
 
     @Query("SELECT n FROM Note n LEFT JOIN FETCH n.optCd o LEFT JOIN FETCH o.anls WHERE n.noteId = :noteId AND n.user.id = :userId")
     Optional<Note> findByNoteIdAndUser_IdWithOptCd(@NotNull Long noteId, @NotNull Long userId);
+
+    @Query("SELECT n FROM Note n LEFT JOIN FETCH n.optCd o LEFT JOIN FETCH o.anls WHERE n.user.id = :userId ORDER BY n.createdAt DESC")
+    List<Note> findByUser_IdWithOptCdOrderByCreatedAtDesc(Long userId);
 }

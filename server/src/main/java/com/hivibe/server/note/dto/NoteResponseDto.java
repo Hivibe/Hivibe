@@ -2,7 +2,7 @@ package com.hivibe.server.note.dto;
 
 import com.hivibe.server.domain.entity.Note;
 import com.hivibe.server.domain.entity.OptCd;
-import com.hivibe.server.domain.entity.Anls; 
+import com.hivibe.server.domain.entity.Anls;
 import lombok.Getter;
 import java.time.LocalDateTime;
 
@@ -18,7 +18,7 @@ public class NoteResponseDto {
     private String category;
     private String lang;
     private LocalDateTime createdAt;
-    private String noteType;     // "LEARNING" | "MANUAL"
+    private String noteType; // "LEARNING" | "MANUAL"
 
     // 연결된 최적화 코드 정보 (Learning 노트일 때)
     private Long optCdId;
@@ -26,23 +26,24 @@ public class NoteResponseDto {
     private String aiSummary;
 
     public NoteResponseDto(Note note) {
-        this.noteId    = note.getNoteId();
-        this.noteName  = note.getNoteName();
-        this.noteMemo  = note.getNoteMemo();
-        this.noteCn    = note.getNoteCn();
-        this.bkmkYn    = note.getBkmkYn();
-        this.tag       = note.getTag();
-        this.category  = note.getCategory();
-        this.lang      = note.getLang();
+        this.noteId = note.getNoteId();
+        this.noteName = note.getNoteName();
+        this.noteMemo = note.getNoteMemo();
+        this.noteCn = note.getNoteCn();
+        this.bkmkYn = note.getBkmkYn();
+        this.tag = note.getTag();
+        this.category = note.getCategory();
+        this.lang = note.getLang();
         this.createdAt = note.getCreatedAt();
 
         if (note.getOptCd() != null) {
-            this.noteType      = "LEARNING";
-            this.optCdId       = note.getOptCd().getOptCdId();
-            this.optCdContent  = note.getOptCd().getCdCn();
-            this.aiSummary     = note.getOptCd().getAnls().getAiSummry();
-        } else {
-            this.noteType = "MANUAL";
+            this.noteType = "LEARNING";
+            this.optCdId = note.getOptCd().getOptCdId();
+            this.optCdContent = note.getOptCd().getCdCn();
+            // anls가 null일 수 있으므로 null 체크 추가
+            this.aiSummary = note.getOptCd().getAnls() != null
+                    ? note.getOptCd().getAnls().getAiSummry()
+                    : null;
         }
     }
 }

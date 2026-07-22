@@ -27,7 +27,7 @@ public class NoteService {
     // 전체 노트 목록
     public List<NoteResponseDto> getAllNotes(String lgnId) {
         User user = getUser(lgnId);
-        return noteRepository.findByUser_IdOrderByCreatedAtDesc(user.getId())
+        return noteRepository.findByUser_IdWithOptCdOrderByCreatedAtDesc(user.getId())
                 .stream().map(NoteResponseDto::new).collect(Collectors.toList());
     }
 
