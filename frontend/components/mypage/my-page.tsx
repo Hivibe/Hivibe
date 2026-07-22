@@ -12,6 +12,7 @@ import {
   Edit2, Check, X, Bell, Shield, Smartphone, Camera,
 } from "lucide-react"
 import type { Note } from "@/types"
+import { useRouter } from "next/navigation"
 
 const BRAND = "#63C1ED"
 
@@ -70,6 +71,14 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
   const [marketingSms, setMarketingSms] = useState(false)
   const [reviewAlarm, setReviewAlarm] = useState(true)
   const [savingSettings, setSavingSettings] = useState(false)
+
+  const router = useRouter()
+
+  const handleLogout = () => {
+    localStorage.removeItem("accessToken")
+    localStorage.removeItem("refreshToken")
+    router.push("/login")
+  }
 
   /* ── 데이터 불러오기 ── */
   const fetchProfile = async () => {
@@ -195,6 +204,8 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
       setSavingSettings(false)
     }
   }
+
+
 
   const formatPhone = (p: string) =>
     p.replace(/(\d{3})(\d{4})(\d{4})/, "$1-$2-$3")
@@ -595,6 +606,13 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
                 className="w-full h-11 font-ko font-semibold text-white text-sm"
                 style={{ background: BRAND }}>
                 {savingSettings ? "저장 중..." : "설정 저장"}
+              </Button>
+
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                className="w-full h-10 font-ko font-semibold text-sm border-rose-900/50 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 hover:text-rose-300">
+                로그아웃
               </Button>
             </div>
           )}
