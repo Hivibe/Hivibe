@@ -8,6 +8,8 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
+import jakarta.validation.constraints.NotNull;
+
 @Repository
 public interface NoteRepository extends JpaRepository<Note, Long> {
 
