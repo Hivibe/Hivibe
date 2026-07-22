@@ -78,8 +78,6 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
   const [editCode, setEditCode] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
-  const [shareOpen, setShareOpen] = useState(false)
-  const shareUrl = typeof window !== 'undefined' ? window.location.href : ''
 
   useEffect(() => {
     if (!noteId) return
@@ -246,7 +244,16 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
                   size="sm"
                   variant="outline"
                   className="h-9 border-zinc-700 bg-zinc-900 text-zinc-300 text-sm gap-1.5 px-4"
-                  onClick={() => setShareOpen(true)}
+                  onClick={async () => {
+                    if (navigator.share) {
+                      try {
+                        await navigator.share({ title: note?.noteName ?? "HiVibe 노트", url: window.location.href })
+                      } catch { }
+                    } else {
+                      navigator.clipboard.writeText(window.location.href)
+                      toast.success("링크가 복사됐어요!")
+                    }
+                  }}
                 >
                   <Share2 className="h-3.5 w-3.5" />
                   Share
@@ -476,6 +483,6 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
           </Card>
         )}
       </div>
-    </ScrollArea>
+    </ScrollArea>   // ← 기존 코드
   );
 }

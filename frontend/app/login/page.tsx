@@ -36,7 +36,7 @@ export default function LoginPage() {
       const data = await res.json();
       localStorage.setItem("accessToken", data.accessToken);
       localStorage.setItem("refreshToken", data.refreshToken);
-      router.push("/main");
+      router.replace("/main")
     } catch (e) {
       setError("서버 연결에 실패했습니다.");
     }

@@ -15,7 +15,7 @@ function OAuth2CallbackContent() {
         if (accessToken && refreshToken) {
             localStorage.setItem("accessToken", accessToken);
             localStorage.setItem("refreshToken", refreshToken);
-            router.push("/main");
+            router.replace("/main")
         } else {
             router.push("/login");
         }

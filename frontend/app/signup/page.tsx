@@ -75,7 +75,7 @@ export default function SignupPage() {
         const loginData = await loginRes.json()
         localStorage.setItem('accessToken', loginData.accessToken)
         localStorage.setItem('refreshToken', loginData.refreshToken)
-        router.push('/main')
+        router.replace("/main")
       } else {
         router.push('/login')
       }
