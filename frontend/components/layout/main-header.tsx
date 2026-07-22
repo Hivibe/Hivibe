@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import type { Pace } from "@/components/learning/diff-view"
+
 import {
   Play, Copy, Bookmark, Save,
   Share2, Upload, Monitor, HardDrive,
@@ -33,6 +35,8 @@ interface MainHeaderProps {
   onFileUpload: () => void
   onLoadPrevious: () => void
   isStartingLearning?: boolean
+  pace: Pace
+  setPace: (p: Pace) => void
 }
 
 const headerTitle: Record<string, string> = {
@@ -50,10 +54,10 @@ const headerIcon: Record<string, any> = {
 }
 
 const PACE_OPTIONS: { key: Pace; label: string; dot: number }[] = [
-  { key: "off", label: "Off", dot: 5 },
+  { key: "off", label: "Off", dot: 9 },
   { key: "slow", label: "천천히", dot: 9 },
-  { key: "medium", label: "중간", dot: 12 },
-  { key: "fast", label: "빠르게", dot: 15 },
+  { key: "medium", label: "중간", dot: 9 },
+  { key: "fast", label: "빠르게", dot: 9 },
 ]
 
 function PaceRadio({ pace, setPace }: { pace: Pace; setPace: (p: Pace) => void }) {
@@ -117,23 +121,22 @@ export function MainHeader({
 
       {/* Row 1 */}
       <div className="h-14 flex items-center justify-between px-5">
-        <div className="flex items-center gap-2">
-          <IconComp className="h-4 w-4" style={{ color: BRAND }} />
-          <span className="font-ko text-sm font-semibold text-zinc-100">
+        <div className="flex items-center gap-2 shrink-0">
+          <IconComp className="h-4 w-4 shrink-0" style={{ color: BRAND }} />
+          <span className="font-ko text-sm font-semibold text-zinc-100 whitespace-nowrap">
             {headerTitle[activeNav] ?? ""}
           </span>
         </div>
         {activeNav !== "notes" && activeNav !== "mypage" && (
           <div className="flex items-center gap-2.5">
-            <div className="flex items-center gap-2">
-              <Switch
-                className="data-[state=checked]:bg-[#63C1ED] scale-90" />
-              <span className="font-space text-[10px] text-zinc-500 hidden xl:inline">Live AI Coaching</span>
-            </div>
+            {activeNav === "learning" && selSession && (
+              <>
+                <PaceRadio pace={pace} setPace={setPace} />
+                <div className="h-4 w-px bg-zinc-800" />
+              </>
+            )}
 
-            <div className="h-4 w-px bg-zinc-800" />
-
-            <Select value={language} onValueChange={setLanguage}>
+            <Select value={language} onValueChange={setLanguage}>   
               <SelectTrigger className="h-8 w-[120px] bg-zinc-900 border-zinc-800 text-xs text-zinc-300">
                 <SelectValue />
               </SelectTrigger>

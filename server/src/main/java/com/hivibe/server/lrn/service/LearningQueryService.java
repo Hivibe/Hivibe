@@ -33,28 +33,7 @@ public class LearningQueryService {
     private final ConceptRepository conceptRepository;
     private final LrnBlankRepository lrnBlankRepository;
     private final LrnSubmRepository lrnSubmRepository;
-    
 
-    /**
-     * 학습 등급 결정
-     * - 진단 등급(OPT_CD → ANLS.cdGrd)을 우선 사용
-     * - 값이 없으면 Lrn.grade(채점 등급) 폴백
-     */
-    private String resolveGrade(Lrn lrn) {
-        try {
-            OptCd optCd = lrn.getOptCd();
-            if (optCd != null && optCd.getAnls() != null) {
-                String dgnsGrade = optCd.getAnls().getCdGrd();
-                if (dgnsGrade != null && !dgnsGrade.isBlank()) {
-                    return dgnsGrade;
-                }
-            }
-        } catch (Exception e) {
-            log.warn("진단 등급 조회 실패 lrnId={}: {}", lrn.getLrnId(), e.getMessage());
-        }
-        return lrn.getGrade();  // 폴백
-    }
-    
     /**
      * 아카이브 목록 (최신순)
      */
@@ -78,6 +57,26 @@ public class LearningQueryService {
                 );
             })
             .toList();
+    }
+
+    /**
+     * 학습 등급 결정
+     * - 진단 등급(OPT_CD → ANLS.cdGrd)을 우선 사용
+     * - 값이 없으면 Lrn.grade(채점 등급) 폴백
+     */
+    private String resolveGrade(Lrn lrn) {
+        try {
+            OptCd optCd = lrn.getOptCd();
+            if (optCd != null && optCd.getAnls() != null) {
+                String dgnsGrade = optCd.getAnls().getCdGrd();
+                if (dgnsGrade != null && !dgnsGrade.isBlank()) {
+                    return dgnsGrade;
+                }
+            }
+        } catch (Exception e) {
+            log.warn("진단 등급 조회 실패 lrnId={}: {}", lrn.getLrnId(), e.getMessage());
+        }
+        return lrn.getGrade();  // 폴백
     }
 
     /**

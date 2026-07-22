@@ -491,6 +491,7 @@ export function LeetCodeIDE() {
         id: currentLearning.lrnId,
         title: fileName || "학습 세션",
         date: new Date().toLocaleDateString("ko-KR"),
+        createdAtIso: new Date().toISOString(),
         grade: aiResult?.grade || getGradeFromScore(aiResult?.totalScore ?? 0),
         tags: [],
         language: language.charAt(0).toUpperCase() + language.slice(1),
