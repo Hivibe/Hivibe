@@ -144,3 +144,8 @@ server/src/main/resources/application.yaml
 
 # 혹시 모르니 키 파일도 제외
 *.key
+
+# 환경변수
+.env
+.env.local
+.env.production
