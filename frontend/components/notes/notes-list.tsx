@@ -81,7 +81,7 @@ export function NotesList({ selNote, setSelNote, refreshKey }: NotesListProps) {
 
       {/* 헤더 */}
       <div className="flex items-center justify-between mb-1">
-        <p className="font-space text-[10px] tracking-widest" style={{ color: BRAND }}>// NOTES</p>
+        <p className="font-ko text-[10px] tracking-widest" style={{ color: BRAND }}>// NOTES</p>
         <Button size="sm"
           onClick={() => setNewNoteOpen(true)}
           className="h-7 px-3 text-white font-ko text-xs"
@@ -96,14 +96,14 @@ export function NotesList({ selNote, setSelNote, refreshKey }: NotesListProps) {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
         <Input value={search} onChange={e => setSearch(e.target.value)}
           placeholder="Search by keywords or tags..."
-          className="pl-9 bg-zinc-900 border-zinc-800 text-zinc-200 text-sm h-9 font-space" />
+          className="pl-9 bg-zinc-900 border-zinc-800 text-zinc-200 text-sm h-9 font-ko" />
       </div>
 
       {/* 언어 필터 */}
       <div className="flex gap-1.5 mb-4 flex-wrap">
         {["All", "Java", "Python", "JavaScript", "C++"].map(l => (
           <button key={l} onClick={() => setLangFilter(l)}
-            className="font-space text-[10px] px-2.5 py-1 rounded-full border transition-all"
+            className="font-ko text-[10px] px-2.5 py-1 rounded-full border transition-all"
             style={langFilter === l
               ? { background: `${BRAND}15`, color: BRAND, borderColor: `${BRAND}44` }
               : { color: "#a1a1aa", borderColor: "#3f3f46" }}>
@@ -126,7 +126,7 @@ export function NotesList({ selNote, setSelNote, refreshKey }: NotesListProps) {
                 <div className="flex items-center gap-2 mb-2 px-0.5">
                   <Star className="h-3 w-3 text-amber-400 fill-amber-400" />
                   <span className="font-ko text-[11px] text-zinc-400">즐겨찾기</span>
-                  <span className="font-space text-[9px] px-1.5 py-0.5 rounded-full bg-amber-400/10 text-amber-400 border border-amber-400/20">
+                  <span className="font-ko text-[9px] px-1.5 py-0.5 rounded-full bg-amber-400/10 text-amber-400 border border-amber-400/20">
                     {filtered(favNotes).length}
                   </span>
                 </div>
@@ -145,7 +145,7 @@ export function NotesList({ selNote, setSelNote, refreshKey }: NotesListProps) {
               <>
                 <div className="flex items-center gap-2 mb-2 px-0.5">
                   <span className="font-ko text-[11px] text-zinc-500">전체</span>
-                  <span className="font-space text-[9px] px-1.5 py-0.5 rounded-full border border-zinc-800 text-zinc-600">
+                  <span className="font-ko text-[9px] px-1.5 py-0.5 rounded-full border border-zinc-800 text-zinc-600">
                     {filtered(recentNotes).length}
                   </span>
                 </div>
@@ -206,6 +206,19 @@ export function NotesList({ selNote, setSelNote, refreshKey }: NotesListProps) {
 }
 
 /* ── 새 노트 폼 ── */
+
+const detectLanguage = (code: string): string => {
+  if (/#include\s*</.test(code)) {
+    if (/cout|cin|std::|vector</.test(code)) return "C++"
+    return "C"
+  }
+  if (/import\s+java\.|public\s+class|System\.out\.print/.test(code)) return "Java"
+  if (/def\s+\w+\(|import\s+\w+|print\(/.test(code)) return "Python"
+  if (/:\s*(string|number|boolean)/.test(code) && /const|let|=>/.test(code)) return "TypeScript"
+  if (/const\s+\w+\s*=|let\s+\w+\s*=|require\(/.test(code)) return "JavaScript"
+  return "기타"
+}
+
 function NewNoteForm({ onSave, onCancel }: {
   onSave: (dto: any) => void
   onCancel: () => void
@@ -232,18 +245,18 @@ function NewNoteForm({ onSave, onCancel }: {
   return (
     <div className="space-y-4 py-2">
       <div className="space-y-1.5">
-        <label className="font-ko text-[10px] text-zinc-500 uppercase tracking-wider">제목</label>
+        <label className="font-ko text-[12px] text-zinc-500 uppercase tracking-wider">제목</label>
         <Input value={noteName} onChange={e => setNoteName(e.target.value)}
           placeholder="노트 제목을 입력하세요"
           className="h-9 bg-zinc-950 border-zinc-800 text-zinc-200 text-sm font-ko" />
       </div>
 
       <div className="space-y-1.5">
-        <label className="font-ko text-[10px] text-zinc-500 uppercase tracking-wider">언어</label>
+        <label className="font-ko text-[12px] text-zinc-500 uppercase tracking-wider">언어</label>
         <div className="flex gap-2 flex-wrap">
-          {["Java", "Python", "JavaScript", "TypeScript", "C++", "C"].map(l => (
+          {["Java", "Python", "JavaScript", "TypeScript", "C++", "C", "기타"].map(l => (
             <button key={l} onClick={() => setLang(l)}
-              className="font-space text-[10px] px-3 py-1 rounded-full border transition-all"
+              className="font-ko text-[10px] px-3 py-1 rounded-full border transition-all"
               style={lang === l
                 ? { background: `#63C1ED15`, color: "#63C1ED", borderColor: `#63C1ED44` }
                 : { color: "#a1a1aa", borderColor: "#3f3f46" }}>
@@ -254,25 +267,33 @@ function NewNoteForm({ onSave, onCancel }: {
       </div>
 
       <div className="space-y-1.5">
-        <label className="font-ko text-[10px] text-zinc-500 uppercase tracking-wider">코드 (선택)</label>
-        <textarea value={noteCn} onChange={e => setNoteCn(e.target.value)}
+        <label className="font-ko text-[12px] text-zinc-500 uppercase tracking-wider">코드 (선택)</label>
+        <textarea
+          value={noteCn}
+          onChange={e => setNoteCn(e.target.value)}
+          onPaste={e => {
+            const pastedText = e.clipboardData.getData("text");
+            const detected = detectLanguage(pastedText);
+            setLang(detected);
+          }}
           placeholder="코드를 입력하세요"
-          className="font-code placeholder-ko w-full h-28 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 text-sm p-3 resize-none outline-none" />
+          className="font-code placeholder-ko w-full h-28 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 text-sm p-3 resize-none outline-none"
+        />
       </div>
 
       <div className="space-y-1.5">
-        <label className="font-ko text-[10px] text-zinc-500 uppercase tracking-wider">메모 (선택)</label>
+        <label className="font-ko text-[12px] text-zinc-500 uppercase tracking-wider">메모 (선택)</label>
         <textarea value={noteMemo} onChange={e => setNoteMemo(e.target.value)}
           placeholder="메모를 입력하세요"
           className="font-ko w-full h-20 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 text-sm p-3 resize-none outline-none" />
       </div>
 
       <div className="space-y-1.5">
-        <label className="font-ko text-[10px] text-zinc-500 uppercase tracking-wider">태그 (선택)</label>
+        <label className="font-ko text-[12px] text-zinc-500 uppercase tracking-wider">태그 (선택)</label>
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-2">
             {tags.map(tag => (
-              <span key={tag} className="font-space text-[10px] px-2 py-0.5 rounded-full border border-zinc-700 text-zinc-400 flex items-center gap-1">
+              <span key={tag} className="font-ko text-[10px] px-2 py-0.5 rounded-full border border-zinc-700 text-zinc-400 flex items-center gap-1">
                 #{tag}
                 <button onClick={() => removeTag(tag)}>
                   <X className="h-2.5 w-2.5 ml-0.5 hover:text-zinc-100" />

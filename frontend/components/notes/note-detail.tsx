@@ -1,6 +1,7 @@
 "use client";
 
 import { CodeHighlight } from "@/components/shared/code-highlight"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { apiFetch } from "@/lib/api"
 import { useState, useEffect } from "react";
 import { toast } from "sonner"
@@ -34,6 +35,31 @@ import type { Note } from "@/types";
 
 const BRAND = "#63C1ED";
 
+const detectLanguage = (code: string): string => {
+  if (/#include\s*</.test(code)) {
+    if (/cout|cin|std::|vector</.test(code)) return "C++"
+    return "C"
+  }
+  if (/import\s+java\.|public\s+class|System\.out\.print/.test(code)) return "Java"
+  if (/def\s+\w+\(|import\s+\w+|print\(/.test(code)) return "Python"
+  if (/:\s*(string|number|boolean)/.test(code) && /const|let|=>/.test(code)) return "TypeScript"
+  if (/const\s+\w+\s*=|let\s+\w+\s*=|require\(/.test(code)) return "JavaScript"
+  return "기타"
+}
+
+const getFileExtension = (lang: string): string => {
+  const extMap: Record<string, string> = {
+    "C": "c",
+    "C++": "cpp",
+    "Java": "java",
+    "Python": "py",
+    "TypeScript": "ts",
+    "JavaScript": "js",
+    "기타": "txt"
+  };
+  return extMap[lang] || "txt"; // 매칭 안 되면 기본값 .txt
+}
+
 interface NoteDetailProps {
   noteId: number | null;
   onDeleted?: () => void;
@@ -51,6 +77,9 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
   const [editTag, setEditTag] = useState("");
   const [editCode, setEditCode] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+
+  const [shareOpen, setShareOpen] = useState(false)
+  const shareUrl = typeof window !== 'undefined' ? window.location.href : ''
 
   useEffect(() => {
     if (!noteId) return
@@ -82,7 +111,7 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
   const saveEditing = async () => {
     if (!noteId) return
     if (!editName.trim()) {
-      alert("제목을 입력해 주세요.")
+      toast.error("제목을 입력해 주세요.")
       return
     }
     setIsSaving(true)
@@ -98,16 +127,17 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
         }),
       })
       if (!res.ok) {
-        alert("수정 실패했어요. 다시 시도해 주세요.")
+        toast.error("수정 실패했어요. 다시 시도해 주세요.")
         return
       }
       const updated = await res.json()
       setNote(updated)
       setIsEditing(false)
+      toast.success("노트를 수정했어요!")  // ← 추가
       onUpdated?.()   // 목록(NotesList)에도 변경사항 반영되도록 알림
     } catch (e) {
       console.error("노트 수정 실패:", e)
-      alert("서버와 연결할 수 없습니다.")
+      toast.error("서버와 연결할 수 없습니다.")
     } finally {
       setIsSaving(false)
     }
@@ -147,6 +177,7 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
     );
 
   const code = note.noteType === "LEARNING" ? note.optCdContent : note.noteCn;
+  const detectedLang = code ? detectLanguage(code) : (note.lang ?? "Java")  // ← 추가
 
   return (
     <ScrollArea className="h-full">
@@ -215,6 +246,7 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
                   size="sm"
                   variant="outline"
                   className="h-9 border-zinc-700 bg-zinc-900 text-zinc-300 text-sm gap-1.5 px-4"
+                  onClick={() => setShareOpen(true)}
                 >
                   <Share2 className="h-3.5 w-3.5" />
                   Share
@@ -341,6 +373,22 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
               <textarea
                 value={editCode}
                 onChange={e => setEditCode(e.target.value)}
+                onPaste={e => {
+                  // 1. 복붙한 텍스트 낚아채기
+                  const pastedText = e.clipboardData.getData("text");
+
+                  // 2. 어떤 언어인지 감지
+                  const detected = detectLanguage(pastedText);
+
+                  // 3. 기존 태그창(editTag)에 해당 언어가 없으면 뒤에 추가해 주기
+                  setEditTag(prev => {
+                    const hasTag = prev.toLowerCase().includes(`#${detected.toLowerCase()}`);
+                    if (!hasTag) {
+                      return prev ? `${prev} #${detected}` : `#${detected}`;
+                    }
+                    return prev;
+                  });
+                }}
                 placeholder="코드를 입력하세요"
                 className="font-code placeholder-ko w-full h-48 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 text-sm p-3.5 resize-none outline-none"
               />
@@ -357,7 +405,7 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
                 Code Snapshot
               </CardTitle>
               <span className="font-ko text-xs px-2.5 py-1 rounded border border-zinc-700 text-zinc-300">
-                {note.lang}
+                {detectedLang}
               </span>
             </CardHeader>
             <CardContent className="px-0 pb-0 pt-4">
@@ -368,8 +416,8 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
                 >
                   <FileCode className="h-3.5 w-3.5 text-zinc-500" />
                   <span className="font-code text-xs text-zinc-300">
-                    {note.noteName?.toLowerCase().replace(/ /g, "_")}.
-                    {note.lang === "Python" ? "py" : "java"}
+                    {note.noteName?.toLowerCase().replace(/ /g, "_") || "untitled"}.
+                    {getFileExtension(detectedLang)}
                   </span>
                 </div>
                 <div className="ml-auto flex items-center gap-3 px-4">
@@ -400,17 +448,26 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
                     </div>
                   </div>
                   <div className="flex-1 px-4 py-4 overflow-x-auto">
-                    <CodeHighlight code={code} language={note.lang ?? undefined} />
+                    <CodeHighlight code={code} language={detectedLang ?? undefined} />
                   </div>
                 </div>
               </div>
               <div className="h-7 bg-[#1a1a1a] border-t border-zinc-800/60 flex items-center px-4 gap-4">
                 <span className="font-ko text-xs text-zinc-500">
-                  {note.lang}
+                  {detectedLang}
                 </span>
                 <span className="font-ko text-xs text-zinc-500">
                   UTF-8
                 </span>
+
+                {/* 여기에 저장 시간(년.월.일 시간) 추가 */}
+                <span className="font-ko text-xs text-zinc-500">
+                  {new Date(note.createdAt).toLocaleString("ko-KR", {
+                    year: '2-digit', month: '2-digit', day: '2-digit',
+                    hour: '2-digit', minute: '2-digit'
+                  })}
+                </span>
+
                 <span className="font-ko text-xs text-zinc-500 ml-auto">
                   {code.length} chars
                 </span>

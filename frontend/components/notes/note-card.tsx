@@ -8,7 +8,7 @@ const BRAND = "#63C1ED";
 
 interface NoteCardProps {
   n: Note;
-  selNote: number;
+  selNote: number | null;
   setSelNote: (id: number) => void;
   toggleNoteFav: (id: number) => void;
 }

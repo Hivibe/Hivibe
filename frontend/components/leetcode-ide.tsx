@@ -703,6 +703,7 @@ export function LeetCodeIDE() {
                 <NoteDetail
                   noteId={selNote}
                   onDeleted={() => setNotesRefreshKey(k => k + 1)}
+                  onUpdated={() => setNotesRefreshKey(k => k + 1)}
                 />
               </div>
             </div>
