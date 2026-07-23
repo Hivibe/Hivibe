@@ -707,7 +707,11 @@ const handleCancelLearning = () => {
             onCopyCode={handleCopyCode}
             onShare={handleShare}
             onSaveDiag={() => setSaveDiagOpen(true)}
-            onSaveNote={() => setSaveNoteOpen(true)}
+            onSaveNote={() => {
+              setNoteTitle(currentSession?.title || fileName || "학습 노트")
+              setNoteTags(currentSession?.tags?.length ? currentSession.tags : [currentSession?.language ?? language])
+              setSaveNoteOpen(true)
+            }}
             onFileUpload={() => fileRef.current?.click()}
             onLoadPrevious={() => setLoadDiagOpen(true)}
           />

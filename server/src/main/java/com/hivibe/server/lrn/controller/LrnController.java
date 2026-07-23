@@ -5,6 +5,7 @@ import com.hivibe.server.lrn.dto.*;
 import com.hivibe.server.lrn.service.AiLearningService;
 import com.hivibe.server.lrn.service.LearningQueryService;
 import com.hivibe.server.lrn.service.LearningSaveService;
+import com.hivibe.server.lrn.service.LrnDraftService;
 import com.hivibe.server.lrn.service.LrnGradingService;
 import com.hivibe.server.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class LrnController {
     private final LrnGradingService lrnGradingService;
     private final LearningQueryService learningQueryService;
     private final LrnHintService lrnHintService;
+    private final LrnDraftService lrnDraftService;
 
     /** AI 학습 생성 (DB 저장 X, 순수 Gemini 호출) */
     @PostMapping("/api/v1/ai/learning")
@@ -193,5 +195,39 @@ public class LrnController {
         String newName = body.get("name");
         learningQueryService.rename(lrnId, newName, user);
         return ResponseEntity.ok(Map.of("name", newName));
+    }
+
+    /**
+     * 임시 답안 저장 (자동저장)
+     * PUT /api/v1/learnings/{lrnId}/draft
+     * - 전체 덮어쓰기 방식 (부분 업데이트 아님)
+     */
+    @PutMapping("/api/v1/learnings/{lrnId}/draft")
+    public ResponseEntity<Void> saveDraft(
+        @PathVariable("lrnId") Long lrnId,
+        @RequestBody DraftSaveRequestDto request,
+        @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        User user = currentUser(userDetails);
+        lrnDraftService.save(lrnId, request, user);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * 임시 답안 조회
+     * GET /api/v1/learnings/{lrnId}/draft
+     * - 저장된 draft 없으면 204 No Content
+     */
+    @GetMapping("/api/v1/learnings/{lrnId}/draft")
+    public ResponseEntity<DraftResponseDto> getDraft(
+        @PathVariable("lrnId") Long lrnId,
+        @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        User user = currentUser(userDetails);
+        DraftResponseDto draft = lrnDraftService.find(lrnId, user);
+        if (draft == null) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(draft);
     }
 }

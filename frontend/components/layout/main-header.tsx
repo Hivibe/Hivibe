@@ -2,11 +2,10 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import type { Pace } from "@/components/learning/diff-view"
 
 import {
-  Play, Copy, Bookmark, Save,
+  Play, Copy, Save,
   Share2, Upload, Monitor, HardDrive,
   Activity as ActivityIcon, GraduationCap, Book, Check, User,
 } from "lucide-react"
@@ -157,17 +156,19 @@ export function MainHeader({
               </Button>
             )}
 
-            <Button size="sm"
-              disabled={activeNav === "diagnosis" && !hasAnalyzed}
-              className={`h-8 text-xs px-4 font-medium ${activeNav === "diagnosis" && !hasAnalyzed
-                ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
-                : "text-white"
-                }`}
-              style={activeNav === "diagnosis" && !hasAnalyzed ? {} : { background: BRAND }}
-              onClick={onSaveDiag}>
-              <Save className="h-3.5 w-3.5 mr-1.5 shrink-0" />
-              <span className="hidden lg:inline">Save</span>
-            </Button>
+            {(activeNav === "diagnosis" || (activeNav === "learning" && selSession)) && (
+              <Button size="sm"
+                disabled={activeNav === "diagnosis" && !hasAnalyzed}
+                className={`h-8 text-xs px-4 font-medium ${activeNav === "diagnosis" && !hasAnalyzed
+                  ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
+                  : "text-white"
+                  }`}
+                style={activeNav === "diagnosis" && !hasAnalyzed ? {} : { background: BRAND }}
+                onClick={activeNav === "learning" ? onSaveNote : onSaveDiag}>
+                <Save className="h-3.5 w-3.5 mr-1.5 shrink-0" />
+                <span className="hidden lg:inline">Save</span>
+              </Button>
+            )}
           </div>
         )}
       </div>
@@ -175,23 +176,7 @@ export function MainHeader({
       {/* Row 2 — 파일명 입력란 제거, 탭에서 더블클릭으로 이름 변경하는 방식으로 통합 */}
       {(activeNav === "diagnosis" || (activeNav === "learning" && selSession)) && (
         <div className="h-9 flex items-center justify-between px-5 border-t border-zinc-800/40">
-          <div className="flex items-center gap-2">
-            {activeNav === "learning" && selSession && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={onSaveNote}
-                    className="h-5 w-5 flex items-center justify-center rounded text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800 transition-colors">
-                    <Bookmark className="h-3.5 w-3.5" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  노트에 저장
-                </TooltipContent>
-              </Tooltip>
-            )}
-          </div>
-
+          <div className="flex items-center gap-2" />
           <div className="flex items-center gap-1.5">
             <div className="relative">
               <button

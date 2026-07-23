@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect, Fragment } from "react"
+import { useState, useMemo, useEffect, useRef, Fragment } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { TrendingUp, HelpCircle, Check, X, MessageSquare, ExternalLink, Loader2, RotateCcw, Eye, EyeOff, Sparkles, ChevronLeft, ChevronRight, Play, Pause, Pencil } from "lucide-react"
@@ -10,7 +10,7 @@ import {
   XAxis, YAxis, Tooltip as RechartsTooltip, Legend,
 } from "recharts"
 import type { LearningSession } from "@/types"
-import { apiFetch, submitLearning, fetchHint, renameLearning, type AiLearningResponse, type BlankResult, type SubmissionResponse } from "@/lib/api"
+import { apiFetch, submitLearning, fetchHint, renameLearning, saveDraft, fetchDraft, type AiLearningResponse, type BlankResult, type SubmissionResponse } from "@/lib/api"
 import { toast } from "sonner"
 
 const BRAND = "#63C1ED"
@@ -21,6 +21,15 @@ export const PACE_INTERVALS_MS: Record<"slow" | "medium" | "fast", number> = {
   fast: 20000,
   medium: 40000,
   slow: 70000,
+}
+
+const hintStorageKey = (lrnId: number) => `hivibe_hint_${lrnId}`
+
+type PersistedHint = {
+  levels: Record<number, number>
+  contents: Record<number, Record<number, string>>
+  elapsed: Record<number, number>
+  viewLevel: Record<number, number>
 }
 
 const complexityComparisonData = [
@@ -231,6 +240,12 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
 
   const [gradeError, setGradeError] = useState<string | null>(null)
 
+  // draft 자동저장
+  const draftTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const draftLoadedRef = useRef(false)   // 복원 완료 전엔 저장 안 함 (빈 답안 덮어쓰기 방지)
+  const [draftSaving, setDraftSaving] = useState(false)
+  const [draftSavedAt, setDraftSavedAt] = useState<Date | null>(null)
+
   const handleTitleSave = async () => {
       const trimmed = titleDraft.trim()
       if (!trimmed) {
@@ -276,10 +291,15 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
   }, [])
 
 // 학습 세션이 바뀌면 상태 초기화 (이전 채점 있으면 복원)
+  // 학습 세션이 바뀌면 상태 초기화 (이전 채점 있으면 복원, 없으면 draft 복원)
   useEffect(() => {
+    const lrnId = learningContent?.lrnId
+    draftLoadedRef.current = false
+    setDraftSavedAt(null)
+
     const prev = learningContent?.previousSubmission
     if (prev && prev.results.length > 0) {
-      // 답 복원
+      // 채점 이력이 있으면 그걸 우선 복원 (draft보다 우선)
       const restoredAnswers: Record<number, string> = {}
       const restoredResults: Record<number, BlankResult> = {}
       for (const r of prev.results) {
@@ -294,21 +314,101 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
         grade: prev.grade,
         overallComment: prev.overallComment,
       })
-
+      draftLoadedRef.current = true
     } else {
       setAnswers({})
       setResults(null)
       setSummary(null)
+
+      // 채점 이력 없을 때만 draft 복원
+      if (lrnId) {
+        fetchDraft(lrnId)
+          .then(draft => {
+            if (draft?.answers) {
+              const restored: Record<number, string> = {}
+              for (const [ord, val] of Object.entries(draft.answers)) {
+                restored[parseInt(ord, 10) - 1] = val   // 1-based → 0-based
+              }
+              setAnswers(restored)
+              if (Object.keys(restored).length > 0) {
+                toast.info("입력하던 답안을 불러왔어요")
+              }
+            }
+          })
+          .catch(e => console.warn("draft 불러오기 실패:", e))
+          .finally(() => { draftLoadedRef.current = true })
+      } else {
+        draftLoadedRef.current = true
+      }
     }
+
     setGradeError(null)
-    setHintLevels({})
-    setHintContents({})
+
+    // 힌트 상태 복원 (새로고침 대비, sessionStorage)
+    let restoredHint: PersistedHint | null = null
+    if (lrnId) {
+      try {
+        const raw = sessionStorage.getItem(hintStorageKey(lrnId))
+        if (raw) restoredHint = JSON.parse(raw)
+      } catch (e) {
+        console.warn("힌트 상태 복원 실패:", e)
+      }
+    }
+
+    setHintLevels(restoredHint?.levels ?? {})
+    setHintContents(restoredHint?.contents ?? {})
+    setHintElapsed(restoredHint?.elapsed ?? {})
+    setHintViewLevel(restoredHint?.viewLevel ?? {})
     setHintLoading({})
-    setHintElapsed({})
     setRunningBlank(null)
-    setHintViewLevel({})
     setFocusedBlank(null)
   }, [learningContent?.lrnId])
+  
+
+  // 답안 변경 시 1.5초 디바운스로 서버 자동저장
+  useEffect(() => {
+    const lrnId = learningContent?.lrnId
+    if (!lrnId) return
+    if (!draftLoadedRef.current) return   // 복원 전엔 저장 안 함
+    if (isGraded) return                  // 채점 완료 상태는 저장 안 함
+
+    if (draftTimerRef.current) clearTimeout(draftTimerRef.current)
+    draftTimerRef.current = setTimeout(() => {
+      // 0-based → 1-based(blankOrd)로 변환해서 전송
+      const payload: Record<string, string> = {}
+      for (const [idx0, val] of Object.entries(answers)) {
+        if (val?.trim()) payload[String(parseInt(idx0, 10) + 1)] = val
+      }
+      setDraftSaving(true)
+      saveDraft(lrnId, payload)
+        .then(() => setDraftSavedAt(new Date()))
+        .catch(e => console.warn("draft 저장 실패:", e))
+        .finally(() => setDraftSaving(false))
+    }, 1500)
+
+    return () => {
+      if (draftTimerRef.current) clearTimeout(draftTimerRef.current)
+    }
+  }, [answers, learningContent?.lrnId, isGraded])
+
+  // 힌트 상태를 sessionStorage에 저장 (새로고침 시 복원용)
+  useEffect(() => {
+    const lrnId = learningContent?.lrnId
+    if (!lrnId) return
+    if (Object.keys(hintLevels).length === 0) return   // 아직 힌트 안 봤으면 저장 안 함
+
+    try {
+      const payload: PersistedHint = {
+        levels: hintLevels,
+        contents: hintContents,
+        elapsed: hintElapsed,
+        viewLevel: hintViewLevel,
+      }
+      sessionStorage.setItem(hintStorageKey(lrnId), JSON.stringify(payload))
+    } catch (e) {
+      console.warn("힌트 상태 저장 실패:", e)   // 용량 초과 등
+    }
+  }, [hintLevels, hintContents, hintElapsed, hintViewLevel, learningContent?.lrnId])
 
   const blankCode = learningContent?.optimizedCode.blank ?? ""
   const concepts = learningContent?.concepts ?? []
@@ -427,7 +527,10 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
       })
       onGraded?.(learningContent.lrnId, res)
 
-      // 추가 (07.20)
+      // 채점 완료 → 힌트 상태 정리
+      try {
+        sessionStorage.removeItem(hintStorageKey(learningContent.lrnId))
+      } catch {}
 
       // 채점 완료 후 일반 뱃지 체크 (ON_FIRE 등) — 백그라운드
       try {
@@ -782,9 +885,30 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
 
           <div className="flex-1 flex flex-col">
             <div className="px-5 py-3 border-b border-zinc-800/50 bg-[#0a0a0c] flex items-center justify-between">
-              <span className="font-space text-xs font-bold" style={{ color: BRAND }}>
-                Fill in the blanks ({filledCount}/{blankCount})
-              </span>
+              <div className="flex items-center gap-2.5">
+                <span className="font-space text-xs font-bold" style={{ color: BRAND }}>
+                  Fill in the blanks ({filledCount}/{blankCount})
+                </span>
+                {!isGraded && (draftSaving || draftSavedAt) && (
+                  <span className="flex items-center gap-1 font-space text-[10px] text-zinc-600">
+                    {draftSaving ? (
+                      <>
+                        <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                        저장 중...
+                      </>
+                    ) : (
+                      <>
+                        <Check className="h-2.5 w-2.5 text-emerald-500/70" />
+                        {draftSavedAt!.toLocaleTimeString("ko-KR", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          second: "2-digit",
+                        })} 저장됨
+                      </>
+                    )}
+                  </span>
+                )}
+              </div>
               {isGraded && summary ? (
                 <span className={`font-space text-[10px] px-2 py-0.5 rounded border ${summary.correctCount === summary.totalBlanks
                   ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-400"

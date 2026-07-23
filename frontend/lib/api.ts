@@ -319,3 +319,30 @@ export async function renameLearning(lrnId: number, name: string): Promise<void>
     throw new Error(`이름 수정 실패: ${txt}`)
   }
 }
+
+export interface DraftResponse {
+  answers: Record<string, string>
+  updatedAt: string
+}
+
+/** 임시 답안 저장 (자동저장) */
+export async function saveDraft(
+  lrnId: number,
+  answers: Record<string, string>,
+  signal?: AbortSignal
+): Promise<void> {
+  const res = await apiFetch(`/api/v1/learnings/${lrnId}/draft`, {
+    method: "PUT",
+    body: JSON.stringify({ answers }),
+    signal,
+  })
+  if (!res.ok) throw new Error(await res.text())
+}
+
+/** 임시 답안 조회 — 없으면 null */
+export async function fetchDraft(lrnId: number): Promise<DraftResponse | null> {
+  const res = await apiFetch(`/api/v1/learnings/${lrnId}/draft`)
+  if (res.status === 204) return null
+  if (!res.ok) throw new Error(await res.text())
+  return res.json()
+}
