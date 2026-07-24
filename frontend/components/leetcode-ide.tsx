@@ -162,6 +162,7 @@ export function LeetCodeIDE() {
 
   const [sidebarRefreshKey, setSidebarRefreshKey] = useState(0)
   const [tierUp, setTierUp] = useState<TierUp | null>(null)
+  const [pendingTierUp, setPendingTierUp] = useState<TierUp | null>(null)
 
   const [pace, setPace] = useState<Pace>("off");
 
@@ -282,6 +283,13 @@ export function LeetCodeIDE() {
     }
   }, []);
 
+  useEffect(() => {
+    if (pendingTierUp && unlockedBadges.length === 0) {
+      setTierUp(pendingTierUp)
+      setPendingTierUp(null)
+    }
+  }, [pendingTierUp, unlockedBadges])
+
   /* ── 핸들러 ── */
 
   // handleRunAnalysis 전체 교체
@@ -381,7 +389,7 @@ const handleGoLearning = async () => {
       dgnsId = saveRes.dgnsId;
       setSavedDgnsId(dgnsId);
 
-      if (saveRes.tierUp) setTierUp(saveRes.tierUp)
+    if (saveRes.tierUp) handleTierUp(saveRes.tierUp) 
 
       // 뱃지 체크
       try {
@@ -420,7 +428,7 @@ const handleGoLearning = async () => {
       blanks: aiLearn.blanks,
     }, controller.signal);
 
-    if (lrnRes.tierUp) setTierUp(lrnRes.tierUp)
+    if (lrnRes.tierUp) handleTierUp(lrnRes.tierUp)
 
     const lrnId = lrnRes.id;
 
@@ -658,6 +666,20 @@ const handleCancelLearning = () => {
     ))
   }, [])
 
+  /* 승급 처리 — 뱃지가 떠 있으면 대기시켰다가 뱃지 닫힌 후 표시 */
+  const handleTierUp = useCallback((tier: TierUp) => {
+    setPendingTierUp(tier)
+  }, [])
+
+  /* 뱃지 다이얼로그 닫힘 → 대기 중인 승급 표시 */
+  const handleBadgeDialogClose = useCallback(() => {
+    setUnlockedBadges([])
+    if (pendingTierUp) {
+      setTierUp(pendingTierUp)
+      setPendingTierUp(null)
+    }
+  }, [pendingTierUp])
+
   return (
     <TooltipProvider>
       <style>{`
@@ -876,6 +898,7 @@ const handleCancelLearning = () => {
           editorCode={editorCode}
           aiResult={aiResult}
           onBadgesUnlocked={setUnlockedBadges}
+          onTierUp={handleTierUp}
           onSaved={() => setSuccessModal({ title: "저장되었습니다", message: "진단 결과가 저장되었어요." })}
         />
 
@@ -904,24 +927,27 @@ const handleCancelLearning = () => {
 
         <BadgeUnlockDialog
           badges={unlockedBadges}
-          onClose={() => setUnlockedBadges([])}
+          onClose={handleBadgeDialogClose}
         />
 
         <TierUpDialog tier={tierUp} onClose={() => setTierUp(null)} />
 
-        <SaveDiagnosisDialog
-          open={saveDiagOpen}
-          onOpenChange={setSaveDiagOpen}
-          fileName={fileName}
-          setFileName={setFileName}
-          language={language}
-          editorCode={editorCode}
-          aiResult={aiResult}
-          onBadgesUnlocked={setUnlockedBadges}
-          onTierUp={setTierUp}
-          onSaved={() => setSuccessModal({ title: "저장되었습니다", message: "진단 결과가 저장되었어요." })}
+        <SaveNoteDialog
+          open={saveNoteOpen}
+          onOpenChange={setSaveNoteOpen}
+          noteTitle={noteTitle}
+          setNoteTitle={setNoteTitle}
+          noteTags={noteTags}
+          tagInput={tagInput}
+          setTagInput={setTagInput}
+          noteMemo={noteMemo}
+          setNoteMemo={setNoteMemo}
+          addTag={addTag}
+          removeTag={removeTag}
+          onSave={handleSaveNote}
         />
       </div>
     </TooltipProvider>
+    
   );
 }

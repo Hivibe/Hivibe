@@ -68,6 +68,9 @@ export function SaveDiagnosisDialog({
       })
 
       if (response.ok) {
+        const saveData = await response.json()          
+        if (saveData.tierUp) onTierUp?.(saveData.tierUp)
+          
         // 뱃지 체크 — 새로 딴 뱃지(isNew=true)만 골라서 부모에 전달
         let newlyUnlocked: any[] = []
         try {

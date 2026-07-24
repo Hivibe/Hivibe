@@ -332,7 +332,7 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
                 </div>
 
                 <div className="flex flex-col items-end gap-1 shrink-0">
-                  <span className="font-ko text-[10px] text-zinc-500 tracking-widest uppercase">// TIER</span>
+                  <span className="font-ko text-[12px] text-zinc-500 tracking-widest uppercase">TIER</span>
                   <span className="font-syne text-2xl font-bold" style={{ color: BRAND }}>
                     {profile.userGrd || "BASIC"}
                   </span>
