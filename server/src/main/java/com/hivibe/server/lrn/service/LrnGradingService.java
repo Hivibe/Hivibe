@@ -15,8 +15,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.hivibe.server.badge.service.BadgeService;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -42,7 +40,6 @@ public class LrnGradingService {
     private final AnswerNormalizer normalizer;
     private final AiGrader aiGrader;
     private final AiSummarizer aiSummarizer;
-    private final BadgeService badgeService; // 뱃지 추가 7.20
 
     @Transactional
     public SubmissionResponseDto submit(Long lrnId, SubmissionRequestDto request, User currentUser) {

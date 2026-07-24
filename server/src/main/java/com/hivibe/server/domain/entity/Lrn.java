@@ -102,7 +102,7 @@ public class Lrn {
     @Builder.Default
     private Integer reviewCnt = 0;
 
-    // ─────────── [확장] AI 총평 ───────────
+    // ─────────── [확장] AI 총평 a───────────
 
     /** 마지막 제출에 대한 AI 총평 */
     @Lob
@@ -116,5 +116,11 @@ public class Lrn {
     @PrePersist
     protected void onCreate() {
         if (createdAt == null) createdAt = LocalDateTime.now();
+    }
+
+    /** RvwSched 기준으로 캐시 필드 동기화 */
+    public void syncReviewCache(LocalDateTime nextDue, int completedCnt) {
+        this.nextReviewAt = nextDue;
+        this.reviewCnt = completedCnt;
     }
 }

@@ -57,6 +57,8 @@ import { Loader2 } from "lucide-react"
 
 import { SuccessDialog } from "@/components/dialogs/success-dialog";
 
+import { TierUpDialog, type TierUp } from "@/components/dialogs/tier-up-dialog"
+
 
 /* 점수 → 등급 (백엔드와 일치) */
 function getGradeFromScore(score: number): string {
@@ -159,6 +161,23 @@ export function LeetCodeIDE() {
   const learningAbortRef = useRef<AbortController | null>(null)          // 학습용
 
   const [sidebarRefreshKey, setSidebarRefreshKey] = useState(0)
+  const [tierUp, setTierUp] = useState<TierUp | null>(null)
+
+  /* 승급 처리 — 뱃지가 떠 있으면 대기시켰다가 뱃지 닫힌 후 표시 */
+  const handleTierUp = useCallback((tier: TierUp) => {
+    setPendingTierUp(tier)
+  }, [])
+
+  const [pendingTierUp, setPendingTierUp] = useState<TierUp | null>(null)
+
+  /* 뱃지 다이얼로그 닫힘 → 대기 중인 승급 표시 */
+  const handleBadgeDialogClose = useCallback(() => {
+    setUnlockedBadges([])
+    if (pendingTierUp) {
+      setTierUp(pendingTierUp)
+      setPendingTierUp(null)
+    }
+  }, [pendingTierUp])
 
   const [pace, setPace] = useState<Pace>("off");
 
@@ -169,8 +188,6 @@ export function LeetCodeIDE() {
     actionText?: string
     onAction?: () => void
   } | null>(null)
-
-
 
   /* URL 쿼리 동기화
    * - push: 히스토리 쌓음 (뒤로가기로 돌아올 수 있게)
@@ -279,6 +296,13 @@ export function LeetCodeIDE() {
     }
   }, []);
 
+  useEffect(() => {
+    if (pendingTierUp && unlockedBadges.length === 0) {
+      setTierUp(pendingTierUp)
+      setPendingTierUp(null)
+    }
+  }, [pendingTierUp, unlockedBadges])
+
   /* ── 핸들러 ── */
 
   // handleRunAnalysis 전체 교체
@@ -378,6 +402,8 @@ export function LeetCodeIDE() {
         dgnsId = saveRes.dgnsId;
         setSavedDgnsId(dgnsId);
 
+        if (saveRes.tierUp) handleTierUp(saveRes.tierUp)
+
         // 뱃지 체크
         try {
           const badgeRes = await apiFetch("/api/badges/check", { method: "POST" })
@@ -415,6 +441,7 @@ export function LeetCodeIDE() {
         blanks: aiLearn.blanks,
       }, controller.signal);
 
+
       const lrnId = lrnRes.id;
 
       setLearnings(prev => new Map(prev).set(lrnId, {
@@ -442,7 +469,6 @@ export function LeetCodeIDE() {
     }
   };
 
-  // 학습 취소 핸들러
   const handleCancelLearning = () => {
     learningAbortRef.current?.abort()
   }
@@ -869,6 +895,7 @@ export function LeetCodeIDE() {
           editorCode={editorCode}
           aiResult={aiResult}
           onBadgesUnlocked={setUnlockedBadges}
+          onTierUp={handleTierUp}
           onSaved={() => setSuccessModal({ title: "저장되었습니다", message: "진단 결과가 저장되었어요." })}
         />
 
@@ -897,8 +924,10 @@ export function LeetCodeIDE() {
 
         <BadgeUnlockDialog
           badges={unlockedBadges}
-          onClose={() => setUnlockedBadges([])}
+          onClose={handleBadgeDialogClose}
         />
+
+        <TierUpDialog tier={tierUp} onClose={() => setTierUp(null)} />
 
         <SaveNoteDialog
           open={saveNoteOpen}
@@ -916,5 +945,6 @@ export function LeetCodeIDE() {
         />
       </div>
     </TooltipProvider>
+
   );
 }

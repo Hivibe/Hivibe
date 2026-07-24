@@ -326,9 +326,9 @@ export function CodeEditor({
 
       {/* 상태바 */}
       <div className="h-6 bg-[#1a1a1a] border-t border-zinc-800/60 flex items-center px-4 gap-4 shrink-0">
-        <span className="font-space text-[10px] text-zinc-600">{editorCode.split("\n").length} lines</span>
-        <span className="font-space text-[10px] text-zinc-600">{editorCode.length} chars</span>
-        <span className="font-space text-[10px] text-zinc-600 ml-auto">{language.toUpperCase()}</span>
+        <span className="font-ko text-[10px] text-zinc-600">{editorCode.split("\n").length} lines</span>
+        <span className="font-ko text-[10px] text-zinc-600">{editorCode.length} chars</span>
+        <span className="font-ko text-[10px] text-zinc-600 ml-auto">{language.toUpperCase()}</span>
       </div>
 
       <AlertDialog open={langConfirmOpen} onOpenChange={setLangConfirmOpen}>
