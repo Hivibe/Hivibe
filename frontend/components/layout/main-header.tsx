@@ -51,16 +51,16 @@ const headerIcon: Record<string, any> = {
 }
 
 const PACE_OPTIONS: { key: Pace; label: string; dot: number }[] = [
-  { key: "off", label: "Off", dot: 9 },
-  { key: "slow", label: "천천히", dot: 9 },
-  { key: "medium", label: "중간", dot: 9 },
-  { key: "fast", label: "빠르게", dot: 9 },
+  { key: "off", label: "Off", dot: 10 },
+  { key: "slow", label: "천천히", dot: 10 },
+  { key: "medium", label: "중간", dot: 10 },
+  { key: "fast", label: "빠르게", dot: 10 },
 ]
 
 function PaceRadio({ pace, setPace }: { pace: Pace; setPace: (p: Pace) => void }) {
   return (
-    <div className="flex items-center gap-2">
-      <span className="font-space text-[10px] font-bold tracking-wide hidden xl:inline" style={{ color: BRAND }}>
+    <div className="flex items-center gap-3">
+      <span className="font-ko text-[10px] font-bold tracking-wide hidden xl:inline" style={{ color: BRAND }}>
         LIVE COACHING
       </span>
       <div className="flex items-center">
@@ -73,7 +73,7 @@ function PaceRadio({ pace, setPace }: { pace: Pace; setPace: (p: Pace) => void }
               <button
                 type="button"
                 onClick={() => setPace(opt.key)}
-                className="flex flex-col items-center gap-1 group px-0.5"
+                className="flex flex-col items-center gap-1 group px-1.5"
                 title={opt.label}
               >
                 <span
@@ -87,7 +87,7 @@ function PaceRadio({ pace, setPace }: { pace: Pace; setPace: (p: Pace) => void }
                   }}
                 />
                 <span
-                  className="font-space text-[9px] transition-colors leading-none"
+                  className="font-ko text-[11px] transition-colors leading-none"
                   style={{ color: active ? BRAND : "#71717a" }}
                 >
                   {opt.label}
@@ -146,8 +146,8 @@ export function MainHeader({
               <Button size="sm" disabled={!hasAnalyzed || isStartingLearning}
                 onClick={onGoLearning}
                 className={`h-8 text-xs px-4 font-medium text-white ${hasAnalyzed && !isStartingLearning
-                    ? "bg-amber-400 hover:bg-amber-500"
-                    : "bg-amber-400/25 cursor-not-allowed"
+                  ? "bg-amber-400 hover:bg-amber-500"
+                  : "bg-amber-400/25 cursor-not-allowed"
                   }`}>
                 <GraduationCap className="h-3.5 w-3.5 mr-1.5 shrink-0" />
                 <span className="hidden lg:inline">

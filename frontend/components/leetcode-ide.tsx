@@ -140,7 +140,7 @@ export function LeetCodeIDE() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   // notes
-  const [selNote, setSelNote] = useState(1);
+  const [selNote, setSelNote] = useState<number | null>(null)
   const [notesRefreshKey, setNotesRefreshKey] = useState(0);
 
   // panel collapse
@@ -164,13 +164,13 @@ export function LeetCodeIDE() {
 
   const [unlockedBadges, setUnlockedBadges] = useState<UnlockedBadge[]>([]);
   const [successModal, setSuccessModal] = useState<{
-  title: string
-  message?: string
-  actionText?: string
-  onAction?: () => void
-} | null>(null)
-  
-  
+    title: string
+    message?: string
+    actionText?: string
+    onAction?: () => void
+  } | null>(null)
+
+
 
   /* URL 쿼리 동기화
    * - push: 히스토리 쌓음 (뒤로가기로 돌아올 수 있게)
@@ -356,96 +356,96 @@ export function LeetCodeIDE() {
     };
   };
 
-const handleGoLearning = async () => {
-  if (!hasAnalyzed || !aiResult) {
-    toast.warning("먼저 코드 분석을 완료해 주세요");
-    return;
-  }
-  if (isAnalyzing || isStartingLearning) return;
+  const handleGoLearning = async () => {
+    if (!hasAnalyzed || !aiResult) {
+      toast.warning("먼저 코드 분석을 완료해 주세요");
+      return;
+    }
+    if (isAnalyzing || isStartingLearning) return;
 
-  // 기존 학습 요청 취소
-  learningAbortRef.current?.abort()
-  const controller = new AbortController()
-  learningAbortRef.current = controller
+    // 기존 학습 요청 취소
+    learningAbortRef.current?.abort()
+    const controller = new AbortController()
+    learningAbortRef.current = controller
 
-  setIsStartingLearning(true);
+    setIsStartingLearning(true);
 
-  try {
-    // 1. 진단 자동 저장
-    let dgnsId = savedDgnsId;
-    if (!dgnsId) {
-      const saveRes = await saveDiagnosis(buildSaveRequest(), controller.signal)
-      dgnsId = saveRes.dgnsId;
-      setSavedDgnsId(dgnsId);
+    try {
+      // 1. 진단 자동 저장
+      let dgnsId = savedDgnsId;
+      if (!dgnsId) {
+        const saveRes = await saveDiagnosis(buildSaveRequest(), controller.signal)
+        dgnsId = saveRes.dgnsId;
+        setSavedDgnsId(dgnsId);
 
-      // 뱃지 체크
-      try {
-        const badgeRes = await apiFetch("/api/badges/check", { method: "POST" })
-        if (badgeRes.ok) {
-          const allBadges = await badgeRes.json()
-          const newBadges = allBadges.filter((b: any) => b.newlyAchieved)
-          if (newBadges.length > 0) setUnlockedBadges(newBadges)
+        // 뱃지 체크
+        try {
+          const badgeRes = await apiFetch("/api/badges/check", { method: "POST" })
+          if (badgeRes.ok) {
+            const allBadges = await badgeRes.json()
+            const newBadges = allBadges.filter((b: any) => b.newlyAchieved)
+            if (newBadges.length > 0) setUnlockedBadges(newBadges)
+          }
+        } catch (badgeErr) {
+          console.warn("뱃지 체크 실패", badgeErr)
         }
-      } catch (badgeErr) {
-        console.warn("뱃지 체크 실패", badgeErr)
       }
+
+      // 중단됐으면 여기서 멈춤
+      if (controller.signal.aborted) return
+
+      // 2. AI 학습 생성
+      const aiLearn = await generateAiLearning({ diagnosisId: dgnsId }, controller.signal)
+
+      if (controller.signal.aborted) return
+
+      // 3. 학습 세션 저장
+      const lrnRes = await saveLearning({
+        diagnosisId: dgnsId,
+        name: fileName || `학습 ${new Date().toLocaleString("ko-KR")}`,
+        tags: "",
+        optimizedCode: aiLearn.optimizedCode,
+        concepts: aiLearn.concepts.map((c, i) => ({
+          type: c.type,
+          title: c.title,
+          description: c.description,
+          referenceUrl: c.referenceUrl,
+          sortOrder: i + 1,
+        })),
+        blanks: aiLearn.blanks,
+      }, controller.signal);
+
+      const lrnId = lrnRes.id;
+
+      setLearnings(prev => new Map(prev).set(lrnId, {
+        lrnId,
+        optimizedCode: aiLearn.optimizedCode,
+        concepts: aiLearn.concepts,
+      }));
+      setAnalyzedCodeMap(prev => new Map(prev).set(lrnId, editorCode));
+
+      await loadSessions();
+
+      setActiveNav("learning");
+      setSelSession(lrnId);
+      syncUrl("learning", lrnId);
+    } catch (error: any) {
+      if (error.name === "AbortError") {
+        toast.info("학습 시작을 취소했어요")
+        return
+      }
+      console.error("학습 시작 실패:", error);
+      toast.error("학습 세션을 시작하지 못했어요");
+    } finally {
+      setIsStartingLearning(false);
+      learningAbortRef.current = null
     }
+  };
 
-    // 중단됐으면 여기서 멈춤
-    if (controller.signal.aborted) return
-
-    // 2. AI 학습 생성
-    const aiLearn = await generateAiLearning({ diagnosisId: dgnsId }, controller.signal)
-
-    if (controller.signal.aborted) return
-
-    // 3. 학습 세션 저장
-    const lrnRes = await saveLearning({
-      diagnosisId: dgnsId,
-      name: fileName || `학습 ${new Date().toLocaleString("ko-KR")}`,
-      tags: "",
-      optimizedCode: aiLearn.optimizedCode,
-      concepts: aiLearn.concepts.map((c, i) => ({
-        type: c.type,
-        title: c.title,
-        description: c.description,
-        referenceUrl: c.referenceUrl,
-        sortOrder: i + 1,
-      })),
-      blanks: aiLearn.blanks,
-    }, controller.signal);
-
-    const lrnId = lrnRes.id;
-
-    setLearnings(prev => new Map(prev).set(lrnId, {
-      lrnId,
-      optimizedCode: aiLearn.optimizedCode,
-      concepts: aiLearn.concepts,
-    }));
-    setAnalyzedCodeMap(prev => new Map(prev).set(lrnId, editorCode));
-
-    await loadSessions();
-
-    setActiveNav("learning");
-    setSelSession(lrnId);
-    syncUrl("learning", lrnId);
-  } catch (error: any) {
-    if (error.name === "AbortError") {
-      toast.info("학습 시작을 취소했어요")
-      return
-    }
-    console.error("학습 시작 실패:", error);
-    toast.error("학습 세션을 시작하지 못했어요");
-  } finally {
-    setIsStartingLearning(false);
-    learningAbortRef.current = null
+  // 학습 취소 핸들러
+  const handleCancelLearning = () => {
+    learningAbortRef.current?.abort()
   }
-};
-
-// 학습 취소 핸들러
-const handleCancelLearning = () => {
-  learningAbortRef.current?.abort()
-}
 
   /* 아카이브에서 학습 클릭 → 캐시에 없으면 서버에서 조회 */
   const handleSelectSession = async (lrnId: number) => {
@@ -556,32 +556,32 @@ const handleCancelLearning = () => {
   }
 
   const handleSaveNote = async () => {
-  if (!selSession) return
-  const content = learnings.get(selSession)
+    if (!selSession) return
+    const content = learnings.get(selSession)
 
-  try {
-    await saveNote({
-      optCdId: content?.optCdId ?? null,
-      noteName: noteTitle,
-      noteMemo: noteMemo,
-      tag: noteTags.join(","),
-      lang: currentSession?.language ?? language,
-    })
-    setSaveNoteOpen(false)
-    setSuccessModal({
-      title: "저장되었습니다",
-      message: "노트가 저장되었어요.",
-      actionText: "노트로 이동하기",
-      onAction: () => {
-        setSuccessModal(null)
-        handleNavClick("notes")
-      },
-    })
-  } catch (e: any) {
-    console.error("노트 저장 실패:", e)
-    toast.error("노트를 저장하지 못했어요", { description: e.message })
+    try {
+      await saveNote({
+        optCdId: content?.optCdId ?? null,
+        noteName: noteTitle,
+        noteMemo: noteMemo,
+        tag: noteTags.join(","),
+        lang: currentSession?.language ?? language,
+      })
+      setSaveNoteOpen(false)
+      setSuccessModal({
+        title: "저장되었습니다",
+        message: "노트가 저장되었어요.",
+        actionText: "노트로 이동하기",
+        onAction: () => {
+          setSuccessModal(null)
+          handleNavClick("notes")
+        },
+      })
+    } catch (e: any) {
+      console.error("노트 저장 실패:", e)
+      toast.error("노트를 저장하지 못했어요", { description: e.message })
+    }
   }
-}
 
   const addTag = () => {
     const t = tagInput.trim();
@@ -595,29 +595,29 @@ const handleCancelLearning = () => {
     setNoteTags((p) => p.filter((t) => t !== tag));
 
   const currentSession = useMemo<LearningSession | null>(() => {
-  if (!selSession) return null;
+    if (!selSession) return null;
 
-  // 1) 아카이브 목록에 있으면 그걸 우선 사용 (실제 저장된 이름)
-  const fromArchive = sessions.find((s) => s.id === selSession)
-  if (fromArchive) return fromArchive
+    // 1) 아카이브 목록에 있으면 그걸 우선 사용 (실제 저장된 이름)
+    const fromArchive = sessions.find((s) => s.id === selSession)
+    if (fromArchive) return fromArchive
 
-  // 2) 방금 만든 학습 (아직 목록에 없을 때만 fileName 기반 폴백)
-  const currentLearning = learnings.get(selSession);
-  if (currentLearning && currentLearning.lrnId === selSession) {
-    return {
-      id: currentLearning.lrnId,
-      title: fileName || "학습 세션",
-      date: new Date().toLocaleDateString("ko-KR"),
-      createdAtIso: new Date().toISOString(),
-      grade: aiResult?.grade || getGradeFromScore(aiResult?.totalScore ?? 0),
-      tags: [],
-      language: language.charAt(0).toUpperCase() + language.slice(1),
-      favorited: false,
+    // 2) 방금 만든 학습 (아직 목록에 없을 때만 fileName 기반 폴백)
+    const currentLearning = learnings.get(selSession);
+    if (currentLearning && currentLearning.lrnId === selSession) {
+      return {
+        id: currentLearning.lrnId,
+        title: fileName || "학습 세션",
+        date: new Date().toLocaleDateString("ko-KR"),
+        createdAtIso: new Date().toISOString(),
+        grade: aiResult?.grade || getGradeFromScore(aiResult?.totalScore ?? 0),
+        tags: [],
+        language: language.charAt(0).toUpperCase() + language.slice(1),
+        favorited: false,
+      }
     }
-  }
 
-  return null
-}, [selSession, learnings, sessions, fileName, language, aiResult])
+    return null
+  }, [selSession, learnings, sessions, fileName, language, aiResult])
 
 
   const currentLearningContent = useMemo<LearningContent | null>(() => {
@@ -764,8 +764,8 @@ const handleCancelLearning = () => {
                       setSavedDgnsId(null)    // 저장된 진단 id도 무효 (새 코드니까)
                     }
                   }}
-                  setLanguage={setLanguage}                         
-                  onLanguageDetected={(lang) => setLanguage(lang)}  
+                  setLanguage={setLanguage}
+                  onLanguageDetected={(lang) => setLanguage(lang)}
                 />
               </div>
             </div>
@@ -785,7 +785,7 @@ const handleCancelLearning = () => {
 
               {selSession && isLoadingDetail && (
                 <div className="flex-1 flex items-center justify-center bg-[#0d0d0d]">
-                  <p className="font-space text-sm text-zinc-500">학습 정보를 불러오는 중...</p>
+                  <p className="font-ko text-sm text-zinc-500">학습 정보를 불러오는 중...</p>
                 </div>
               )}
 
@@ -797,7 +797,7 @@ const handleCancelLearning = () => {
                       setSelSession(null);
                       syncUrl("learning", null);
                     }}
-                    className="font-space text-xs text-zinc-500 hover:text-zinc-300 underline"
+                    className="font-ko text-xs text-zinc-500 hover:text-zinc-300 underline"
                   >
                     ← 아카이브로 돌아가기
                   </button>
@@ -817,7 +817,7 @@ const handleCancelLearning = () => {
                   onGraded={handleLearningGraded}
                   pace={pace}
                   onRename={handleLearningRenamed}
-                  
+
                 />
               )}
             </>

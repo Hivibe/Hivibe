@@ -27,22 +27,26 @@ export function NotesList({ selNote, setSelNote, refreshKey }: NotesListProps) {
   const [newNoteOpen, setNewNoteOpen] = useState(false)
 
   const fetchNotes = async () => {
-  try {
-    const res = await apiFetch(`/api/notes`)
-    if (!res.ok) {
-      console.error("노트 목록 조회 실패:", res.status)
+    try {
+      const res = await apiFetch(`/api/notes`)
+      if (!res.ok) {
+        console.error("노트 목록 조회 실패:", res.status)
+        setNotes([])
+        return
+      }
+      const data = await res.json()
+      const list = Array.isArray(data) ? data : []
+      setNotes(list)
+      if (list.length > 0 && (selNote === null || !list.find(n => n.noteId === selNote))) {
+        setSelNote(list[0].noteId)
+      }
+    } catch (e) {
+      console.error("노트 불러오기 실패:", e)
       setNotes([])
-      return
+    } finally {
+      setLoading(false)
     }
-    const data = await res.json()
-    setNotes(Array.isArray(data) ? data : [])   // ← 배열 아니면 빈 배열
-  } catch (e) {
-    console.error("노트 불러오기 실패:", e)
-    setNotes([])
-  } finally {
-    setLoading(false)
   }
-}
 
   useEffect(() => {
     fetchNotes()

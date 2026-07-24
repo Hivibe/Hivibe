@@ -304,7 +304,7 @@ export default function HomePage() {
               <h1
                 className={`font-syne text-5xl lg:text-6xl font-bold leading-tight mb-6 ${visible ? "anim-1" : "opacity-0"}`}
               >
-                Understand
+                Hi, your code.
                 <br />
                 <span
                   style={{
@@ -313,12 +313,9 @@ export default function HomePage() {
                     WebkitTextFillColor: "transparent",
                   }}
                 >
-                  Your Code,
+                  High, your vibe.
                 </span>
-                <br />
-                Don't Just Run It.
               </h1>
-
               <p
                 className={`font-ko text-base text-zinc-400 leading-relaxed mb-8 ${visible ? "anim-2" : "opacity-0"}`}
               >

@@ -9,10 +9,12 @@ import { Switch } from "@/components/ui/switch"
 import { apiFetch } from "@/lib/api"
 import {
   User, Settings, Star, Flame, FolderOpen, BookOpen,
-  Edit2, Check, X, Bell, Shield, Smartphone, Camera,
+  Edit2, Check, X, Bell, Shield, Smartphone, Camera, Code,  // ← Code 추가
 } from "lucide-react"
 import type { Note } from "@/types"
 import { useRouter } from "next/navigation"
+
+
 
 const BRAND = "#63C1ED"
 
@@ -71,12 +73,19 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
   const [marketingSms, setMarketingSms] = useState(false)
   const [reviewAlarm, setReviewAlarm] = useState(true)
   const [savingSettings, setSavingSettings] = useState(false)
+  const [selectedLangs, setSelectedLangs] = useState<string[]>([])
 
   const router = useRouter()
 
   const handleLogout = () => {
     localStorage.removeItem("accessToken")
     localStorage.removeItem("refreshToken")
+    // 진단 상태 초기화
+    localStorage.removeItem("hivibe_code")
+    localStorage.removeItem("hivibe_lang")
+    localStorage.removeItem("hivibe_filename")
+    localStorage.removeItem("hivibe_airesult")
+    localStorage.removeItem("hivibe_analyzed")
     router.push("/login")
   }
 
@@ -118,6 +127,13 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
     Promise.all([fetchProfile(), fetchBadges(), fetchNotes()])
       .finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => {
+    const langs = Array.from(new Set(notes.map(n => n.lang).filter(Boolean))).slice(0, 3) as string[]
+    if (selectedLangs.length === 0 && langs.length > 0) {
+      setSelectedLangs(langs)
+    }
+  }, [notes])
 
   /* ── 이름 수정 ── */
   const saveName = async () => {
@@ -283,7 +299,7 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
                   )}
                   <div className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     {uploadingImg ? (
-                      <span className="font-space text-[9px] text-white">...</span>
+                      <span className="font-ko text-[9px] text-white">...</span>
                     ) : (
                       <Camera className="h-4 w-4 text-white" />
                     )}
@@ -318,7 +334,7 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
                   {usedLangs.length > 0 && (
                     <div className="flex gap-1.5 mt-2.5">
                       {usedLangs.map(l => (
-                        <span key={l} className="font-space text-[10px] px-2.5 py-1 rounded-full border"
+                        <span key={l} className="font-ko text-[10px] px-2.5 py-1 rounded-full border"
                           style={{ background: `${BRAND}10`, color: BRAND, borderColor: `${BRAND}30` }}>
                           {l}
                         </span>
@@ -328,7 +344,7 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
                 </div>
 
                 <div className="flex flex-col items-end gap-1 shrink-0">
-                  <span className="font-space text-[10px] text-zinc-500 tracking-widest uppercase">// TIER</span>
+                  <span className="font-ko text-[10px] text-zinc-500 tracking-widest uppercase">// TIER</span>
                   <span className="font-syne text-2xl font-bold" style={{ color: BRAND }}>
                     {profile.userGrd || "BASIC"}
                   </span>
@@ -361,7 +377,7 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
 
               {/* 티어 트랙 */}
               <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-                <p className="font-space text-[10px] tracking-widest mb-1.5" style={{ color: BRAND }}>// TIER TRACK</p>
+                <p className="font-ko text-[10px] tracking-widest mb-1.5" style={{ color: BRAND }}>// TIER TRACK</p>
                 <p className="font-ko text-base font-bold text-zinc-100 mb-6">성장 현황</p>
                 <div className="relative flex items-start justify-between">
                   <div className="absolute top-4 left-4 right-4 h-px bg-zinc-800 z-0" />
@@ -392,7 +408,7 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
 
               {/* 뱃지 */}
               <div>
-                <p className="font-space text-[10px] tracking-widest mb-1.5" style={{ color: BRAND }}>// BADGES</p>
+                <p className="font-ko text-[10px] tracking-widest mb-1.5" style={{ color: BRAND }}>// BADGES</p>
                 <p className="font-ko text-lg font-bold text-zinc-100 mb-3">획득한 뱃지 ({achievedBadges.length} / {badges.length})</p>
                 <div className="grid grid-cols-4 gap-3">
                   {badges.map(b => (
@@ -417,13 +433,13 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
 
               {/* 최근 분석 (Learning 노트 기준) */}
               <div>
-                <p className="font-space text-[10px] tracking-widest mb-1.5" style={{ color: BRAND }}>// RECENT</p>
+                <p className="font-ko text-[10px] tracking-widest mb-1.5" style={{ color: BRAND }}>// RECENT</p>
                 <p className="font-ko text-lg font-bold text-zinc-100 mb-3">최근 학습 노트</p>
                 {recentLearningNotes.length > 0 ? (
                   <div className="space-y-2">
                     {recentLearningNotes.map(n => (
                       <div key={n.noteId} className="bg-zinc-900 border border-zinc-800 rounded-xl px-5 py-4 flex items-center gap-4">
-                        <BookOpen className="h-4 w-4 text-violet-400 shrink-0" />
+                        <BookOpen className="h-4 w-4 shrink-0" style={{ color: BRAND }} />
                         <span className="font-ko text-sm text-zinc-300 flex-1 truncate">{n.noteName}</span>
                         <span className="font-ko text-xs text-zinc-400 flex items-center gap-1.5 shrink-0">
                           <span className="w-1.5 h-1.5 rounded-full" style={{ background: BRAND }} />
@@ -485,6 +501,39 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
                 </div>
               </div>
 
+              <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+                <div className="flex items-center gap-2 mb-5">
+                  <Code className="h-4 w-4" style={{ color: BRAND }} />
+                  <p className="font-ko text-base font-bold text-zinc-100">주요 사용 언어</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {["Java", "Python", "JavaScript", "TypeScript", "C", "C++"].map(lang => {
+                    const selected = selectedLangs.includes(lang)
+                    return (
+                      <button
+                        key={lang}
+                        onClick={() => {
+                          setSelectedLangs(prev =>
+                            prev.includes(lang)
+                              ? prev.filter(l => l !== lang)
+                              : prev.length < 3 ? [...prev, lang] : prev
+                          )
+                        }}
+                        className="font-ko text-xs px-3 py-1.5 rounded-full border transition-all"
+                        style={selected
+                          ? { background: `${BRAND}20`, color: BRAND, borderColor: `${BRAND}50` }
+                          : { background: "transparent", color: "#71717a", borderColor: "#3f3f46" }
+                        }
+                      >
+                        {lang}
+                      </button>
+                    )
+                  })}
+                </div>
+                <p className="font-ko text-xs text-zinc-600 mt-3">최대 3개 선택</p>
+              </div>
+
+
               {/* 휴대폰 번호 */}
               <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
                 <div className="flex items-center gap-2 mb-5">
@@ -531,7 +580,7 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
                         <div className="flex items-center gap-2">
                           <Input value={verifyCode} onChange={e => setVerifyCode(e.target.value)}
                             placeholder="인증번호 6자리" maxLength={6}
-                            className="h-10 bg-zinc-950 border-zinc-800 text-zinc-200 text-sm font-space placeholder:text-zinc-600" />
+                            className="h-10 bg-zinc-950 border-zinc-800 text-zinc-200 text-sm font-ko placeholder:text-zinc-600" />
                           <button onClick={confirmPhone}
                             className="h-10 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 font-ko text-sm text-white shrink-0 transition-colors">
                             확인
