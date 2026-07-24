@@ -57,6 +57,8 @@ import { Loader2 } from "lucide-react"
 
 import { SuccessDialog } from "@/components/dialogs/success-dialog";
 
+import { TierUpDialog, type TierUp } from "@/components/dialogs/tier-up-dialog"
+
 
 /* 점수 → 등급 (백엔드와 일치) */
 function getGradeFromScore(score: number): string {
@@ -159,6 +161,7 @@ export function LeetCodeIDE() {
   const learningAbortRef = useRef<AbortController | null>(null)          // 학습용
 
   const [sidebarRefreshKey, setSidebarRefreshKey] = useState(0)
+  const [tierUp, setTierUp] = useState<TierUp | null>(null)
 
   const [pace, setPace] = useState<Pace>("off");
 
@@ -378,6 +381,8 @@ const handleGoLearning = async () => {
       dgnsId = saveRes.dgnsId;
       setSavedDgnsId(dgnsId);
 
+      if (saveRes.tierUp) setTierUp(saveRes.tierUp)
+
       // 뱃지 체크
       try {
         const badgeRes = await apiFetch("/api/badges/check", { method: "POST" })
@@ -414,6 +419,8 @@ const handleGoLearning = async () => {
       })),
       blanks: aiLearn.blanks,
     }, controller.signal);
+
+    if (lrnRes.tierUp) setTierUp(lrnRes.tierUp)
 
     const lrnId = lrnRes.id;
 
@@ -900,19 +907,19 @@ const handleCancelLearning = () => {
           onClose={() => setUnlockedBadges([])}
         />
 
-        <SaveNoteDialog
-          open={saveNoteOpen}
-          onOpenChange={setSaveNoteOpen}
-          noteTitle={noteTitle}
-          setNoteTitle={setNoteTitle}
-          noteTags={noteTags}
-          tagInput={tagInput}
-          setTagInput={setTagInput}
-          noteMemo={noteMemo}
-          setNoteMemo={setNoteMemo}
-          addTag={addTag}
-          removeTag={removeTag}
-          onSave={handleSaveNote}
+        <TierUpDialog tier={tierUp} onClose={() => setTierUp(null)} />
+
+        <SaveDiagnosisDialog
+          open={saveDiagOpen}
+          onOpenChange={setSaveDiagOpen}
+          fileName={fileName}
+          setFileName={setFileName}
+          language={language}
+          editorCode={editorCode}
+          aiResult={aiResult}
+          onBadgesUnlocked={setUnlockedBadges}
+          onTierUp={setTierUp}
+          onSaved={() => setSuccessModal({ title: "저장되었습니다", message: "진단 결과가 저장되었어요." })}
         />
       </div>
     </TooltipProvider>

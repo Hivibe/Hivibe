@@ -45,7 +45,7 @@ public class LrnController {
 
     /** 학습 세션 저장 */
     @PostMapping("/api/v1/learnings")
-    public ResponseEntity<Map<String, Object>> saveLearning(
+    public ResponseEntity<LearningSaveResponseDto> saveLearning(
         @RequestBody LearningSaveRequestDto request,
         @AuthenticationPrincipal UserDetails userDetails
     ) {
@@ -60,11 +60,7 @@ public class LrnController {
         User user = userRepository.findByLgnId(userDetails.getUsername())
             .orElseThrow(() -> new IllegalStateException("사용자를 찾을 수 없습니다."));
 
-        Long lrnId = learningSaveService.save(request, user);
-        return ResponseEntity.ok(Map.of(
-            "message", "학습 세션 생성 완료",
-            "id", lrnId
-        ));
+        return ResponseEntity.ok(learningSaveService.save(request, user));
     }
 
 /**

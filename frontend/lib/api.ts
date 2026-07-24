@@ -48,6 +48,7 @@ export interface DiagnosisSaveResponse {
   ornCdId: number
   optCdId: number
   dgnsId: number
+  tierUp: TierUpResponse | null
 }
 
 export async function saveDiagnosis(
@@ -132,7 +133,7 @@ export type LearningSaveRequest = {
 export async function saveLearning(
   req: LearningSaveRequest,
   signal?: AbortSignal
-): Promise<{ message: string; id: number }> {
+): Promise<{ message: string; id: number; tierUp: TierUpResponse | null }> {
   const res = await apiFetch("/api/v1/learnings", {
     method: "POST",
     body: JSON.stringify(req),
@@ -148,6 +149,14 @@ export type SubmissionRequest = {
     userAns: string
     hintUsedLv: number
   }[]
+}
+
+/* ───────── 티어 승급 ───────── */
+export interface TierUpResponse {
+  key: string
+  name: string
+  label: string
+  minCount: number
 }
 
 export type BlankResult = {

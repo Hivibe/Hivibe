@@ -17,11 +17,13 @@ interface SaveDiagnosisDialogProps {
   editorCode: string
   aiResult: any
   onBadgesUnlocked?: (badges: { key: string; icon: string; name: string; desc: string }[]) => void
+  onTierUp?: (tier: { key: string; name: string; label: string; minCount: number }) => void
   onSaved?: () => void
 }
 
 export function SaveDiagnosisDialog({
-  open, onOpenChange, fileName, setFileName, language, editorCode, aiResult, onBadgesUnlocked, onSaved
+  open, onOpenChange, fileName, setFileName, language, editorCode, aiResult,
+  onBadgesUnlocked, onTierUp, onSaved
 }: SaveDiagnosisDialogProps) {
 
   const [isSaving, setIsSaving] = useState(false)
