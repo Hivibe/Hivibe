@@ -75,7 +75,7 @@ export function ArchiveView({ sessions, onSelectSession, onToggleFav, onDeleteSe
         
         {/* 헤더 타이틀 영역 */}
         <div className="mb-10">
-          <p className="font-space text-[11px] tracking-[0.2em] uppercase mb-3 text-[#63C1ED]">
+          <p className="font-ko text-[11px] tracking-[0.2em] uppercase mb-3 text-[#63C1ED]">
             // Archive
           </p>
           <h1 className="font-syne text-5xl font-bold text-white tracking-tight">
@@ -98,7 +98,7 @@ export function ArchiveView({ sessions, onSelectSession, onToggleFav, onDeleteSe
         <div className="flex items-center gap-2 mb-10 flex-wrap">
           {["All", "Java", "Python", "C++"].map(l => (
             <button key={l} onClick={() => setLangFilter(l)}
-              className={`font-space text-[11px] px-4 py-1.5 rounded-full border transition-all ${
+              className={`font-ko text-[11px] px-4 py-1.5 rounded-full border transition-all ${
                 langFilter === l
                   ? "bg-[#63C1ED]/10 text-[#63C1ED] border-[#63C1ED]/30"
                   : "bg-transparent text-zinc-500 border-zinc-800 hover:border-zinc-600"
@@ -108,7 +108,7 @@ export function ArchiveView({ sessions, onSelectSession, onToggleFav, onDeleteSe
           ))}
           <div className="w-px h-4 bg-zinc-800 mx-2"></div> {/* 구분선 */}
           <button onClick={() => setFavOnly(!favOnly)}
-            className={`font-space text-[11px] px-4 py-1.5 rounded-full border transition-all flex items-center gap-1.5 ${
+            className={`font-ko text-[11px] px-4 py-1.5 rounded-full border transition-all flex items-center gap-1.5 ${
               favOnly
                 ? "bg-amber-500/10 text-amber-500 border-amber-500/30"
                 : "bg-transparent text-zinc-500 border-zinc-800 hover:border-zinc-600"
@@ -129,7 +129,7 @@ export function ArchiveView({ sessions, onSelectSession, onToggleFav, onDeleteSe
             <div key={i} className="bg-[#17171b] border border-white/5 rounded-2xl p-5 hover:border-white/10 transition-colors">
               <div className="mb-3">{s.icon}</div>
               <p className="font-syne text-3xl font-bold text-white mb-1">{s.val}</p>
-              <p className="font-space text-[11px] text-zinc-500 uppercase tracking-wider">{s.label}</p>
+              <p className="font-ko text-[11px] text-zinc-500 uppercase tracking-wider">{s.label}</p>
             </div>
           ))}
         </div>
@@ -140,7 +140,7 @@ export function ArchiveView({ sessions, onSelectSession, onToggleFav, onDeleteSe
             <div className="flex items-center gap-3 mb-4">
               <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
               <span className="font-syne text-sm font-bold text-white tracking-wide uppercase">Starred</span>
-              <span className="font-space text-[10px] px-2 py-0.5 rounded-full bg-amber-400/10 text-amber-400 border border-amber-400/20">
+              <span className="font-ko text-[10px] px-2 py-0.5 rounded-full bg-amber-400/10 text-amber-400 border border-amber-400/20">
                 {filtered(favSessions).length}
               </span>
             </div>
@@ -161,7 +161,7 @@ export function ArchiveView({ sessions, onSelectSession, onToggleFav, onDeleteSe
             <span className="font-syne text-sm font-bold text-zinc-400 tracking-wide uppercase">
               {favOnly ? "Starred Sessions" : "Recent Sessions"}
             </span>
-            <span className="font-space text-[10px] px-2 py-0.5 rounded-full border border-zinc-800 text-zinc-500">
+            <span className="font-ko text-[10px] px-2 py-0.5 rounded-full border border-zinc-800 text-zinc-500">
               {favOnly ? filtered(favSessions).length : filtered(recentSessions).length}
             </span>
           </div>

@@ -12,6 +12,7 @@ public class UserProfileResponseDto {
     private String userPhone;
     private String userPhoto;
     private String userGrd;
+    private int actCnt;
     private String mktgAgreeYn;
     private String reviewAlarmYn;
     private long diagnosisCount;
@@ -25,9 +26,10 @@ public class UserProfileResponseDto {
         this.userPhone = user.getUserPhone();
         this.userPhoto = user.getUserPhoto();
         this.userGrd = user.getUserGrd();
+        this.actCnt = user.getActCnt() == null ? 0 : user.getActCnt();
         this.mktgAgreeYn = user.getMktgAgreeYn();
         this.reviewAlarmYn = user.getReviewAlarmYn();
         this.diagnosisCount = diagnosisCount;
-        this.avgGrade = avgGrade; // 추가
+        this.avgGrade = avgGrade; 
     }
 }

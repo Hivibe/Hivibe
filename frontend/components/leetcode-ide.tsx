@@ -57,6 +57,8 @@ import { Loader2 } from "lucide-react"
 
 import { SuccessDialog } from "@/components/dialogs/success-dialog";
 
+import { TierUpDialog, type TierUp } from "@/components/dialogs/tier-up-dialog"
+
 
 /* 점수 → 등급 (백엔드와 일치) */
 function getGradeFromScore(score: number): string {
@@ -159,6 +161,8 @@ export function LeetCodeIDE() {
   const learningAbortRef = useRef<AbortController | null>(null)          // 학습용
 
   const [sidebarRefreshKey, setSidebarRefreshKey] = useState(0)
+  const [tierUp, setTierUp] = useState<TierUp | null>(null)
+  const [pendingTierUp, setPendingTierUp] = useState<TierUp | null>(null)
 
   const [pace, setPace] = useState<Pace>("off");
 
@@ -279,6 +283,13 @@ export function LeetCodeIDE() {
     }
   }, []);
 
+  useEffect(() => {
+    if (pendingTierUp && unlockedBadges.length === 0) {
+      setTierUp(pendingTierUp)
+      setPendingTierUp(null)
+    }
+  }, [pendingTierUp, unlockedBadges])
+
   /* ── 핸들러 ── */
 
   // handleRunAnalysis 전체 교체
@@ -378,6 +389,8 @@ const handleGoLearning = async () => {
       dgnsId = saveRes.dgnsId;
       setSavedDgnsId(dgnsId);
 
+    if (saveRes.tierUp) handleTierUp(saveRes.tierUp) 
+
       // 뱃지 체크
       try {
         const badgeRes = await apiFetch("/api/badges/check", { method: "POST" })
@@ -414,6 +427,8 @@ const handleGoLearning = async () => {
       })),
       blanks: aiLearn.blanks,
     }, controller.signal);
+
+    if (lrnRes.tierUp) handleTierUp(lrnRes.tierUp)
 
     const lrnId = lrnRes.id;
 
@@ -651,6 +666,20 @@ const handleCancelLearning = () => {
     ))
   }, [])
 
+  /* 승급 처리 — 뱃지가 떠 있으면 대기시켰다가 뱃지 닫힌 후 표시 */
+  const handleTierUp = useCallback((tier: TierUp) => {
+    setPendingTierUp(tier)
+  }, [])
+
+  /* 뱃지 다이얼로그 닫힘 → 대기 중인 승급 표시 */
+  const handleBadgeDialogClose = useCallback(() => {
+    setUnlockedBadges([])
+    if (pendingTierUp) {
+      setTierUp(pendingTierUp)
+      setPendingTierUp(null)
+    }
+  }, [pendingTierUp])
+
   return (
     <TooltipProvider>
       <style>{`
@@ -785,7 +814,7 @@ const handleCancelLearning = () => {
 
               {selSession && isLoadingDetail && (
                 <div className="flex-1 flex items-center justify-center bg-[#0d0d0d]">
-                  <p className="font-space text-sm text-zinc-500">학습 정보를 불러오는 중...</p>
+                  <p className="font-ko text-sm text-zinc-500">학습 정보를 불러오는 중...</p>
                 </div>
               )}
 
@@ -797,7 +826,7 @@ const handleCancelLearning = () => {
                       setSelSession(null);
                       syncUrl("learning", null);
                     }}
-                    className="font-space text-xs text-zinc-500 hover:text-zinc-300 underline"
+                    className="font-ko text-xs text-zinc-500 hover:text-zinc-300 underline"
                   >
                     ← 아카이브로 돌아가기
                   </button>
@@ -869,6 +898,7 @@ const handleCancelLearning = () => {
           editorCode={editorCode}
           aiResult={aiResult}
           onBadgesUnlocked={setUnlockedBadges}
+          onTierUp={handleTierUp}
           onSaved={() => setSuccessModal({ title: "저장되었습니다", message: "진단 결과가 저장되었어요." })}
         />
 
@@ -897,8 +927,10 @@ const handleCancelLearning = () => {
 
         <BadgeUnlockDialog
           badges={unlockedBadges}
-          onClose={() => setUnlockedBadges([])}
+          onClose={handleBadgeDialogClose}
         />
+
+        <TierUpDialog tier={tierUp} onClose={() => setTierUp(null)} />
 
         <SaveNoteDialog
           open={saveNoteOpen}
@@ -916,5 +948,6 @@ const handleCancelLearning = () => {
         />
       </div>
     </TooltipProvider>
+    
   );
 }

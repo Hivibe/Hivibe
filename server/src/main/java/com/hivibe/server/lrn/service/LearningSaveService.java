@@ -1,8 +1,13 @@
 package com.hivibe.server.lrn.service;
 
 import com.hivibe.server.domain.entity.*;
+import com.hivibe.server.domain.enums.UserGrd;
 import com.hivibe.server.lrn.dto.LearningSaveRequestDto;
+import com.hivibe.server.lrn.dto.LearningSaveResponseDto;
 import com.hivibe.server.repository.*;
+import com.hivibe.server.user.dto.TierUpDto;
+import com.hivibe.server.user.service.UserGrdService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,9 +26,10 @@ public class LearningSaveService {
     private final OptCdRepository optCdRepository;
     private final ConceptRepository conceptRepository;
     private final LrnBlankRepository lrnBlankRepository;
+    private final UserGrdService userGrdService;
 
     @Transactional
-    public Long save(LearningSaveRequestDto request, User currentUser) {
+    public LearningSaveResponseDto save(LearningSaveRequestDto request, User currentUser) {
         Dgns dgns = dgnsRepository.findById(request.diagnosisId())
             .orElseThrow(() -> new IllegalArgumentException(
                 "진단을 찾을 수 없습니다: " + request.diagnosisId()));
@@ -94,9 +100,16 @@ public class LearningSaveService {
             log.warn("빈칸 정답이 없습니다. 채점 불가 상태. lrnId={}", savedLrn.getLrnId());
         }
 
-        return savedLrn.getLrnId();
-    }
+        // 4. 사용자 등급 재계산
+         lrnRepository.flush();
+        UserGrd upgraded = userGrdService.recalculate(currentUser.getId());
 
+        return new LearningSaveResponseDto(
+                "학습이 저장되었습니다.",
+                savedLrn.getLrnId(),
+                upgraded == null ? null : TierUpDto.from(upgraded));
+    }
+    
     /** conceptIndex(0-based)로 저장된 Concept 찾기. 범위 밖이면 null */
     private Concept resolveConcept(List<Concept> savedConcepts, Integer conceptIndex) {
         if (conceptIndex == null) return null;

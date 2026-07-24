@@ -43,7 +43,7 @@ export function SessionCard({ s, onSelect, onFav, compact, onDelete }: SCardProp
             {s.title}
           </h3>
 
-          <div className="flex items-center gap-2 mt-1.5 font-space text-[11px] text-zinc-500">
+          <div className="flex items-center gap-2 mt-1.5 font-ko text-[11px] text-zinc-500">
             <span>{s.date}</span>
             <span>·</span>
             <span className={`flex items-center gap-1 ${langColor[s.language] || "text-[#63C1ED]"}`}>
@@ -53,7 +53,7 @@ export function SessionCard({ s, onSelect, onFav, compact, onDelete }: SCardProp
 
           <div className="flex flex-wrap gap-1.5 mt-4">
             {s.tags.slice(0, compact ? 3 : 4).map(t => (
-              <span key={t} className="font-space text-[10px] px-2.5 py-1 rounded-md border border-white/5 bg-white/5 text-zinc-400">
+              <span key={t} className="font-ko text-[10px] px-2.5 py-1 rounded-md border border-white/5 bg-white/5 text-zinc-400">
                 #{t}
               </span>
             ))}
@@ -93,12 +93,12 @@ export function SessionCard({ s, onSelect, onFav, compact, onDelete }: SCardProp
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel className="bg-transparent border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100 font-space text-xs">
+                  <AlertDialogCancel className="bg-transparent border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100 font-ko text-xs">
                     취소
                   </AlertDialogCancel>
                   <AlertDialogAction
                     onClick={onDelete}
-                    className="bg-rose-500 hover:bg-rose-600 text-white font-space text-xs"
+                    className="bg-rose-500 hover:bg-rose-600 text-white font-ko text-xs"
                   >
                     삭제
                   </AlertDialogAction>

@@ -106,7 +106,7 @@ export function Sidebar({ activeNav, sidebarExp, setSidebarExp, onNavClick, refr
               {sidebarExp && (
                 <div className="flex-1 min-w-0 text-left">
                   <p className="text-xs font-medium text-zinc-200 truncate">{user?.userNm ?? "..."}</p>
-                  <p className="font-space text-[10px] text-zinc-500 truncate">{user?.userEmail ?? ""}</p>
+                  <p className="font-ko text-[10px] text-zinc-500 truncate">{user?.userEmail ?? ""}</p>
                 </div>
               )}
               {sidebarExp && (

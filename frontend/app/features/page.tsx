@@ -89,19 +89,19 @@ export default function FeaturesPage() {
 
                   <div className="relative flex items-center py-1">
                     <div className="flex-grow border-t border-zinc-800" />
-                    <span className="font-space flex-shrink-0 mx-4 text-zinc-600 text-[10px] tracking-wider">OR CONTINUE WITH EMAIL</span>
+                    <span className="font-ko flex-shrink-0 mx-4 text-zinc-600 text-[10px] tracking-wider">OR CONTINUE WITH EMAIL</span>
                     <div className="flex-grow border-t border-zinc-800" />
                   </div>
 
                   <div className="space-y-3">
                     <div className="space-y-1.5">
-                      <label className="font-space text-[10px] text-zinc-500 uppercase tracking-wider">Email</label>
+                      <label className="font-ko text-[10px] text-zinc-500 uppercase tracking-wider">Email</label>
                       <Input type="email" placeholder="you@example.com"
                         className="h-10 bg-zinc-900/50 border-zinc-800 font-ko text-sm"
                         style={{ ["--ring" as string]: BRAND }} />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="font-space text-[10px] text-zinc-500 uppercase tracking-wider">Password</label>
+                      <label className="font-ko text-[10px] text-zinc-500 uppercase tracking-wider">Password</label>
                       <div className="relative">
                         <Input type={showPw ? "text" : "password"} placeholder="••••••••••••"
                           className="h-10 bg-zinc-900/50 border-zinc-800 font-ko text-sm pr-10"
@@ -140,7 +140,7 @@ export default function FeaturesPage() {
 
           {/* Heading */}
           <div className="text-center mb-16">
-            <p className="font-space text-[10px] tracking-widest mb-3" style={{ color: BRAND }}>// FEATURE</p>
+            <p className="font-ko text-[10px] tracking-widest mb-3" style={{ color: BRAND }}>// FEATURE</p>
             <h1 className="font-syne text-4xl md:text-5xl font-bold text-zinc-100 mb-4">
               Your Personal Code Mentor
             </h1>
@@ -166,7 +166,7 @@ export default function FeaturesPage() {
                 <h3 className="font-syne text-lg font-bold text-zinc-100 mb-2">{f.title}</h3>
                 <p className="font-ko text-sm text-zinc-400 leading-relaxed mb-4">{f.desc}</p>
 
-                <span className="font-space text-[10px] px-2 py-1 rounded-full border" style={f.badgeStyle}>
+                <span className="font-ko text-[10px] px-2 py-1 rounded-full border" style={f.badgeStyle}>
                   {f.badge}
                 </span>
               </div>
@@ -190,7 +190,7 @@ export default function FeaturesPage() {
       <footer className="border-t border-zinc-800/50 py-7 bg-[#0a0a0a]">
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between">
           <span className="font-syne text-base font-bold" style={{ color: BRAND }}>HiVibe</span>
-          <p className="font-space text-[10px] text-zinc-600">© 2025 HiVibe. All rights reserved.</p>
+          <p className="font-ko text-[10px] text-zinc-600">© 2025 HiVibe. All rights reserved.</p>
           <div className="flex items-center gap-3">
             <Link href="#" className="text-zinc-500 hover:text-zinc-300 transition-colors"><Github className="w-4 h-4" /></Link>
             <Link href="#" className="text-zinc-500 hover:text-zinc-300 transition-colors"><Twitter className="w-4 h-4" /></Link>

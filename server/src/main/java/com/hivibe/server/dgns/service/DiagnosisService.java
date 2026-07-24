@@ -6,6 +6,7 @@ import com.hivibe.server.domain.entity.Lrn;
 import com.hivibe.server.domain.entity.OptCd;
 import com.hivibe.server.domain.entity.OrnCd;
 import com.hivibe.server.domain.entity.User;
+import com.hivibe.server.domain.enums.UserGrd;
 import com.hivibe.server.dgns.dto.DiagnosisDetailDto;
 import com.hivibe.server.dgns.dto.DiagnosisListItemDto;
 import com.hivibe.server.dgns.dto.DiagnosisSaveRequestDto;
@@ -15,10 +16,13 @@ import com.hivibe.server.repository.DgnsRepository;
 import com.hivibe.server.repository.OptCdRepository;
 import com.hivibe.server.repository.OrnCdRepository;
 import com.hivibe.server.repository.UserRepository;
+import com.hivibe.server.user.dto.TierUpDto;
+import com.hivibe.server.user.service.UserGrdService;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-// import 추가
+
 import com.hivibe.server.repository.LrnRepository;
 import com.hivibe.server.repository.LrnBlankRepository;
 import com.hivibe.server.repository.LrnSubmRepository;
@@ -36,11 +40,11 @@ public class DiagnosisService {
         private final OptCdRepository optCdRepository;
         private final DgnsRepository dgnsRepository;
         private final UserRepository userRepository;
-        // 필드 추가
         private final LrnRepository lrnRepository;
         private final LrnBlankRepository lrnBlankRepository;
         private final LrnSubmRepository lrnSubmRepository;
         private final ConceptRepository conceptRepository;
+        private final UserGrdService userGrdService;
 
         @Transactional
         public DiagnosisSaveResponseDto saveDiagnosis(String lgnId, DiagnosisSaveRequestDto request) {
@@ -90,12 +94,18 @@ public class DiagnosisService {
                                 .dgnsNm(request.name())
                                 .build();
                 Dgns savedDgns = dgnsRepository.save(dgns);
+                
+                // 5. 사용자 등급 재계산
+                dgnsRepository.flush();
+                
+                UserGrd upgraded = userGrdService.recalculate(user.getId());
 
                 return new DiagnosisSaveResponseDto(
                                 savedAnls.getAnlsId(),
                                 savedOrnCd.getOrnCdId(),
                                 savedOptCd.getOptCdId(),
-                                savedDgns.getDgnsId());
+                                savedDgns.getDgnsId(),
+                                upgraded == null ? null : TierUpDto.from(upgraded));
         }
 
         @Transactional(readOnly = true)
@@ -155,5 +165,9 @@ public class DiagnosisService {
                                 .ifPresent(optCdRepository::delete);
                 anlsRepository.delete(anls);
                 ornCdRepository.delete(ornCd);
+
+                // 사용자 등급 재계산
+                dgnsRepository.flush();
+                userGrdService.recalculate(user.getId());
         }
 }

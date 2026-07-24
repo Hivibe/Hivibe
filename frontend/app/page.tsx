@@ -6,7 +6,7 @@
  * 폰트:
  *   Syne (라틴 타이틀)    → font-syne
  *   Pretendard (한글 본문) → font-pretendard  (font-sans override)
- *   Space Mono (코드/배지) → font-space
+ *   Space Mono (코드/배지) → font-ko
  *
  * layout.tsx에 아래 추가 필요:
  *   import localFont from "next/font/local"
@@ -20,7 +20,7 @@
  * globals.css에 추가:
  *   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap');
  *   .font-syne  { font-family: 'Syne', sans-serif; }
- *   .font-space { font-family: 'Space Mono', monospace; }
+ *   .font-ko { font-family: 'Space Mono', monospace; }
  *   body { font-family: 'Pretendard Variable', 'Pretendard', sans-serif; }
  */
 
@@ -196,7 +196,7 @@ export default function HomePage() {
     <>
       <style>{`
         .font-syne  { font-family: 'Syne', sans-serif; }
-        .font-space { font-family: 'Space Mono', monospace; }
+        .font-ko { font-family: 'Space Mono', monospace; }
         .font-ko    { font-family: 'Pretendard Variable', 'Pretendard', -apple-system, sans-serif; }
 
         @keyframes fade-up {
@@ -294,7 +294,7 @@ export default function HomePage() {
               >
                 <Sparkles className="h-3 w-3" style={{ color: BRAND }} />
                 <span
-                  className="font-space text-[11px] tracking-wider"
+                  className="font-ko text-[11px] tracking-wider"
                   style={{ color: BRAND }}
                 >
                   AI-POWERED CODE MENTOR
@@ -382,7 +382,7 @@ export default function HomePage() {
                       />
                     ))}
                   </div>
-                  <p className="font-space text-[10px] text-zinc-500 mt-0.5">
+                  <p className="font-ko text-[10px] text-zinc-500 mt-0.5">
                     2,400+ 개발자가 사용 중
                   </p>
                 </div>
@@ -403,16 +403,16 @@ export default function HomePage() {
                       <div className="h-2.5 w-2.5 rounded-full bg-amber-500/70" />
                       <div className="h-2.5 w-2.5 rounded-full bg-emerald-500/70" />
                     </div>
-                    <span className="font-space text-[10px] text-zinc-600">
+                    <span className="font-ko text-[10px] text-zinc-600">
                       Solution.java
                     </span>
                     <div className="flex items-center gap-1.5">
-                      <span className="font-space text-[9px] px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-400 border border-rose-500/20">
+                      <span className="font-ko text-[9px] px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-400 border border-rose-500/20">
                         O(n²)
                       </span>
                       <ArrowRight className="h-3 w-3 text-zinc-600" />
                       <span
-                        className="font-space text-[9px] px-1.5 py-0.5 rounded border"
+                        className="font-ko text-[9px] px-1.5 py-0.5 rounded border"
                         style={{
                           background: `${BRAND}15`,
                           color: BRAND,
@@ -470,16 +470,16 @@ export default function HomePage() {
                   {/* bottom bar */}
                   <div className="flex items-center justify-between px-4 py-2.5 border-t border-zinc-800 bg-zinc-900/30">
                     <div className="flex items-center gap-3">
-                      <span className="font-space text-[10px] text-zinc-500">
+                      <span className="font-ko text-[10px] text-zinc-500">
                         Score
                       </span>
-                      <span className="font-space text-[10px] font-bold text-amber-400">
+                      <span className="font-ko text-[10px] font-bold text-amber-400">
                         C → A+
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <TrendingUp className="h-3 w-3 text-emerald-400" />
-                      <span className="font-space text-[10px] text-emerald-400">
+                      <span className="font-ko text-[10px] text-emerald-400">
                         99.6% faster
                       </span>
                     </div>
@@ -499,7 +499,7 @@ export default function HomePage() {
                       <p className="font-ko text-xs font-bold text-zinc-100">
                         분석 완료
                       </p>
-                      <p className="font-space text-[9px] text-zinc-500">
+                      <p className="font-ko text-[9px] text-zinc-500">
                         3가지 최적화 발견
                       </p>
                     </div>
@@ -515,7 +515,7 @@ export default function HomePage() {
           <div className="max-w-6xl mx-auto px-6">
             <div className="text-center mb-16">
               <p
-                className="font-space text-[10px] tracking-widest mb-3"
+                className="font-ko text-[10px] tracking-widest mb-3"
                 style={{ color: BRAND }}
               >
                 // FEATURE
@@ -557,7 +557,7 @@ export default function HomePage() {
                   </p>
 
                   <span
-                    className={`font-space text-[10px] px-2 py-1 rounded-full border ${f.badgeColor}`}
+                    className={`font-ko text-[10px] px-2 py-1 rounded-full border ${f.badgeColor}`}
                   >
                     {f.badge}
                   </span>
@@ -572,7 +572,7 @@ export default function HomePage() {
           <div className="max-w-4xl mx-auto px-6">
             <div className="text-center mb-16">
               <p
-                className="font-space text-[10px] tracking-widest mb-3"
+                className="font-ko text-[10px] tracking-widest mb-3"
                 style={{ color: BRAND }}
               >
                 // HOW IT WORKS
@@ -597,7 +597,7 @@ export default function HomePage() {
                       style={{ borderColor: `${BRAND}66` }}
                     >
                       <span
-                        className="font-space text-xs font-bold"
+                        className="font-ko text-xs font-bold"
                         style={{ color: BRAND }}
                       >
                         {step.num}
@@ -633,7 +633,7 @@ export default function HomePage() {
               </div>
 
               <p
-                className="font-space text-[10px] tracking-widest mb-4"
+                className="font-ko text-[10px] tracking-widest mb-4"
                 style={{ color: BRAND }}
               >
                 // GET STARTED
@@ -668,7 +668,7 @@ export default function HomePage() {
             >
               HiVibe
             </span>
-            <p className="font-space text-[10px] text-zinc-600">
+            <p className="font-ko text-[10px] text-zinc-600">
               © 2025 HiVibe. All rights reserved.
             </p>
             <div className="flex items-center gap-3">
