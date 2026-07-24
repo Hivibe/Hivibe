@@ -179,7 +179,7 @@ function ResultPopover({ result }: { result: BlankResult }) {
             <button
               type="button"
               onClick={() => setShowAnswer(p => !p)}
-              className="font-space text-[10px] text-zinc-500 hover:text-zinc-300 underline transition-colors flex items-center gap-1"
+              className="font-ko text-[10px] text-zinc-500 hover:text-zinc-300 underline transition-colors flex items-center gap-1"
             >
               {showAnswer ? (
                 <><EyeOff className="h-3 w-3" /> 정답 가리기</>
@@ -617,11 +617,11 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
         {/* 헤더 */}
         <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/5 bg-white/[0.02]">
           <div className="flex items-center gap-2">
-            <span className="font-space text-[10px] font-bold tracking-widest" style={{ color: BRAND }}>
+            <span className="font-ko text-[10px] font-bold tracking-widest" style={{ color: BRAND }}>
               LIVE COACHING
             </span>
-            <span className="font-space text-[10px] text-zinc-600">·</span>
-            <span className="font-space text-[10px] text-zinc-500">빈칸 #{idx0 + 1}</span>
+            <span className="font-ko text-[10px] text-zinc-600">·</span>
+            <span className="font-ko text-[10px] text-zinc-500">빈칸 #{idx0 + 1}</span>
           </div>
           <div className="flex items-center gap-2">
             {level < 3 && (
@@ -632,7 +632,7 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
                 title={isRunning ? "일시정지" : "재생"}
               >
                 {isRunning ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
-                <span className="font-space text-[10px]">
+                <span className="font-ko text-[10px]">
                   {etaSec !== null && <span className="text-zinc-300 font-bold">{etaSec}s</span>}
                 </span>
               </button>
@@ -648,7 +648,7 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
             <div className="w-full">
               <div className="flex items-center gap-2 mb-1.5">
                 <span
-                  className="font-space text-[9px] font-bold px-1.5 py-0.5 rounded"
+                  className="font-ko text-[9px] font-bold px-1.5 py-0.5 rounded"
                   style={{ background: `${BRAND}1a`, color: BRAND }}
                 >
                   {levelMeta[viewLevel]?.tag}
@@ -715,13 +715,13 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
           <div className="p-5 space-y-6">
             <button
               onClick={onBack}
-              className="font-space text-[11px] text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-2"
+              className="font-ko text-[11px] text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-2"
             >
               ← Back to Archive
             </button>
 
             <div>
-              <p className="font-space text-[10px] tracking-widest mb-1.5" style={{ color: BRAND }}>// LEARNING</p>
+              <p className="font-ko text-[10px] tracking-widest mb-1.5" style={{ color: BRAND }}>// LEARNING</p>
               {editingTitle ? (
               <input
                 autoFocus
@@ -746,14 +746,14 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
               </h2>
             )}
               <div className="flex items-center gap-2 mt-2">
-                <span className="font-space text-[11px] text-zinc-500">{session.date}</span>
-                <span className="font-space text-[10px] px-2 py-0.5 rounded bg-white/5 border border-white/10 text-zinc-300">{session.grade}</span>
+                <span className="font-ko text-[11px] text-zinc-500">{session.date}</span>
+                <span className="font-ko text-[10px] px-2 py-0.5 rounded bg-white/5 border border-white/10 text-zinc-300">{session.grade}</span>
               </div>
             </div>
 
             <Card className="bg-[#17171b] border-white/5">
               <CardContent className="p-5">
-                <p className="font-space text-[10px] tracking-widest mb-3 text-rose-400">// ORIGINAL CONCEPTS</p>
+                <p className="font-ko text-[10px] tracking-widest mb-3 text-rose-400">// ORIGINAL CONCEPTS</p>
                 <p className="font-ko text-xs text-zinc-400 mb-4 leading-relaxed">
                   {userName}님이 작성한 코드에는 아래 패턴이 들어가 있어요.
                 </p>
@@ -785,7 +785,7 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
 
             <Card className="border-white/5" style={{ background: `${BRAND}08`, borderColor: `${BRAND}20` }}>
               <CardContent className="p-5">
-                <p className="font-space text-[10px] tracking-widest mb-3" style={{ color: BRAND }}>// OPTIMIZED CONCEPTS</p>
+                <p className="font-ko text-[10px] tracking-widest mb-3" style={{ color: BRAND }}>// OPTIMIZED CONCEPTS</p>
                 <p className="font-ko text-xs text-zinc-400 mb-4 leading-relaxed">
                   아래 개념을 사용하면 코드를 최적화할 수 있어요.
                 </p>
@@ -869,7 +869,7 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
         <div className="flex-1 flex overflow-hidden">
           <div className="flex-1 flex flex-col border-r border-zinc-800/50">
             <div className="px-5 py-3 border-b border-zinc-800/50 bg-[#0a0a0c]">
-              <span className="font-space text-xs font-bold text-zinc-300">Original code</span>
+              <span className="font-ko text-xs font-bold text-zinc-300">Original code</span>
             </div>
             <div className="flex-1 overflow-auto font-code text-[13px] leading-7 py-3">
               {originalLines.length === 0 || (originalLines.length === 1 && originalLines[0] === "") ? (
@@ -886,11 +886,11 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
           <div className="flex-1 flex flex-col">
             <div className="px-5 py-3 border-b border-zinc-800/50 bg-[#0a0a0c] flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <span className="font-space text-xs font-bold" style={{ color: BRAND }}>
+                <span className="font-ko text-xs font-bold" style={{ color: BRAND }}>
                   Fill in the blanks ({filledCount}/{blankCount})
                 </span>
                 {!isGraded && (draftSaving || draftSavedAt) && (
-                  <span className="flex items-center gap-1 font-space text-[10px] text-zinc-600">
+                  <span className="flex items-center gap-1 font-ko text-[10px] text-zinc-600">
                     {draftSaving ? (
                       <>
                         <Loader2 className="h-2.5 w-2.5 animate-spin" />
@@ -910,7 +910,7 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
                 )}
               </div>
               {isGraded && summary ? (
-                <span className={`font-space text-[10px] px-2 py-0.5 rounded border ${summary.correctCount === summary.totalBlanks
+                <span className={`font-ko text-[10px] px-2 py-0.5 rounded border ${summary.correctCount === summary.totalBlanks
                   ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-400"
                   : "bg-rose-500/10 border-rose-500/40 text-rose-400"
                   }`}>
@@ -918,7 +918,7 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
                   {summary.grade && ` · ${summary.grade}`}
                 </span>
               ) : blankCount > 0 && pace !== "off" && (
-                <span className="flex items-center gap-1.5 font-space text-[10px] font-bold tracking-wide" style={{ color: BRAND }}>
+                <span className="flex items-center gap-1.5 font-ko text-[10px] font-bold tracking-wide" style={{ color: BRAND }}>
                   <span className="h-1.5 w-1.5 rounded-full" style={{ background: BRAND, boxShadow: `0 0 6px ${BRAND}` }} />
                   LIVE COACHING ON
                 </span>
@@ -978,7 +978,7 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
                 <div className="flex items-start gap-2.5">
                   <Sparkles className="h-4 w-4 shrink-0 mt-0.5" style={{ color: BRAND }} />
                   <div className="min-w-0">
-                    <p className="font-space text-[10px] tracking-widest mb-1.5" style={{ color: BRAND }}>
+                    <p className="font-ko text-[10px] tracking-widest mb-1.5" style={{ color: BRAND }}>
                       // AI COMMENT
                     </p>
                     <p className="font-ko text-[12px] text-zinc-300 leading-relaxed">
@@ -991,7 +991,7 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
 
             {blankCount > 0 && (
               <div className="border-t border-zinc-800/50 bg-[#0a0a0c] px-5 py-3 flex items-center justify-between">
-                <span className="font-space text-[11px] text-zinc-500">
+                <span className="font-ko text-[11px] text-zinc-500">
                   {gradeError ? (
                     <span className="text-rose-400">{gradeError}</span>
                   ) : isGrading ? (
@@ -1010,7 +1010,7 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
                 {isGraded ? (
                   <button
                     onClick={handleRetry}
-                    className="h-8 px-4 rounded font-space text-xs font-bold flex items-center gap-1.5 bg-zinc-700 hover:bg-zinc-600 text-zinc-100 transition-colors"
+                    className="h-8 px-4 rounded font-ko text-xs font-bold flex items-center gap-1.5 bg-zinc-700 hover:bg-zinc-600 text-zinc-100 transition-colors"
                   >
                     <RotateCcw className="h-3.5 w-3.5" />
                     다시 풀기
@@ -1019,7 +1019,7 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
                   <button
                     onClick={handleSubmit}
                     disabled={!allFilled || isGrading}
-                    className={`h-8 px-4 rounded font-space text-xs font-bold flex items-center gap-1.5 transition-colors ${allFilled && !isGrading
+                    className={`h-8 px-4 rounded font-ko text-xs font-bold flex items-center gap-1.5 transition-colors ${allFilled && !isGrading
                       ? "bg-emerald-500 hover:bg-emerald-600 text-white"
                       : "bg-emerald-500/20 text-emerald-500/40 cursor-not-allowed"
                       }`}

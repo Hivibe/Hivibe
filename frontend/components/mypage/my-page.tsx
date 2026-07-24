@@ -23,7 +23,8 @@ interface Profile {
   userEmail: string
   userPhone: string | null
   userPhoto: string | null
-  userGrd: string
+  userGrd: string          // "BASIC" | "BRONZE" | "SILVER" | "GOLD" | "PLATINUM" | "DIAMOND"
+  actCnt: number           // 누적 활동 수 (진단 + 학습)
   mktgAgreeYn: string
   reviewAlarmYn: string
   diagnosisCount: number
@@ -40,11 +41,11 @@ interface Badge {
 }
 
 const TIERS = [
-  { name: "Bronze", color: "#CD7F32" },
-  { name: "Silver", color: "#C0C0C0" },
-  { name: "Gold", color: "#FFD700" },
-  { name: "Platinum", color: BRAND },
-  { name: "Diamond", color: "#a78bfa" },
+  { key: "BRONZE",   name: "Bronze",   color: "#CD7F32", min: 3   },
+  { key: "SILVER",   name: "Silver",   color: "#C0C0C0", min: 10  },
+  { key: "GOLD",     name: "Gold",     color: "#FFD700", min: 25  },
+  { key: "PLATINUM", name: "Platinum", color: BRAND,     min: 50  },
+  { key: "DIAMOND",  name: "Diamond",  color: "#a78bfa", min: 100 },
 ]
 
 export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) {
@@ -238,8 +239,11 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
     .filter(n => n.noteType === "LEARNING")
     .slice(0, 3)
 
-  // 티어 — userGrd 값으로 매칭 안 되면 0번(Bronze)으로 기본 표시
-  const currentTierIdx = Math.max(0, TIERS.findIndex(t => t.name.toUpperCase() === profile.userGrd?.toUpperCase()))
+  // 현재 티어 인덱스. BASIC이면 -1 (아직 브론즈 미달)
+    const currentTierIdx = TIERS.findIndex(t => t.key === profile.userGrd?.toUpperCase())
+    const nextTier = currentTierIdx + 1 < TIERS.length ? TIERS[currentTierIdx + 1] : null
+    const actCnt = profile.actCnt ?? 0
+    const remaining = nextTier ? Math.max(0, nextTier.min - actCnt) : 0
 
   return (
     <div className="h-full flex flex-col bg-zinc-950 overflow-hidden">
@@ -283,7 +287,7 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
                   )}
                   <div className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     {uploadingImg ? (
-                      <span className="font-space text-[9px] text-white">...</span>
+                      <span className="font-ko text-[9px] text-white">...</span>
                     ) : (
                       <Camera className="h-4 w-4 text-white" />
                     )}
@@ -318,7 +322,7 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
                   {usedLangs.length > 0 && (
                     <div className="flex gap-1.5 mt-2.5">
                       {usedLangs.map(l => (
-                        <span key={l} className="font-space text-[10px] px-2.5 py-1 rounded-full border"
+                        <span key={l} className="font-ko text-[10px] px-2.5 py-1 rounded-full border"
                           style={{ background: `${BRAND}10`, color: BRAND, borderColor: `${BRAND}30` }}>
                           {l}
                         </span>
@@ -328,7 +332,7 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
                 </div>
 
                 <div className="flex flex-col items-end gap-1 shrink-0">
-                  <span className="font-space text-[10px] text-zinc-500 tracking-widest uppercase">// TIER</span>
+                  <span className="font-ko text-[10px] text-zinc-500 tracking-widest uppercase">// TIER</span>
                   <span className="font-syne text-2xl font-bold" style={{ color: BRAND }}>
                     {profile.userGrd || "BASIC"}
                   </span>
@@ -361,8 +365,9 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
 
               {/* 티어 트랙 */}
               <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-                <p className="font-space text-[10px] tracking-widest mb-1.5" style={{ color: BRAND }}>// TIER TRACK</p>
+                <p className="font-ko text-[10px] tracking-widest mb-1.5" style={{ color: BRAND }}>// TIER TRACK</p>
                 <p className="font-ko text-base font-bold text-zinc-100 mb-6">성장 현황</p>
+
                 <div className="relative flex items-start justify-between">
                   <div className="absolute top-4 left-4 right-4 h-px bg-zinc-800 z-0" />
                   {TIERS.map((tier, i) => {
@@ -370,7 +375,7 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
                     const current = i === currentTierIdx
                     const locked = i > currentTierIdx
                     return (
-                      <div key={tier.name} className="flex flex-col items-center gap-2 z-10 flex-1">
+                      <div key={tier.key} className="flex flex-col items-center gap-2 z-10 flex-1">
                         <div className="w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs bg-zinc-950"
                           style={current
                             ? { borderColor: tier.color, color: tier.color, boxShadow: `0 0 0 4px ${tier.color}15` }
@@ -383,16 +388,44 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
                           style={{ color: current ? tier.color : done ? "#a1a1aa" : "#52525b" }}>
                           {tier.name}
                         </span>
+                        <span className="font-ko text-[10px] text-zinc-600">{tier.min}회</span>
                       </div>
                     )
                   })}
                 </div>
-                <p className="font-ko text-xs text-zinc-500 mt-5">티어 산정 기준은 추후 연동될 예정이에요.</p>
+
+                {/* 진행 바 */}
+                {nextTier && (
+                  <div className="mt-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-ko text-xs text-zinc-400">
+                        다음 <span className="font-bold" style={{ color: nextTier.color }}>{nextTier.name}</span>까지
+                      </span>
+                      <span className="font-ko text-xs" style={{ color: BRAND }}>
+                        {actCnt} / {nextTier.min}
+                      </span>
+                    </div>
+
+                    <div className="h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-500"
+                        style={{
+                          width: `${Math.min(100, (actCnt / nextTier.min) * 100)}%`,
+                          background: nextTier.color,
+                        }} />
+                    </div>
+                  </div>
+                )}
+
+                <p className="font-ko text-xs text-zinc-500 mt-5">
+                  {nextTier
+                    ? <>진단 또는 학습을 {remaining}회 더 하면 <span className="font-bold" style={{ color: nextTier.color }}>{nextTier.name}</span> 등급에 도달해요.</>
+                    : "최고 등급에 도달했어요!"}
+                </p>
               </div>
 
               {/* 뱃지 */}
               <div>
-                <p className="font-space text-[10px] tracking-widest mb-1.5" style={{ color: BRAND }}>// BADGES</p>
+                <p className="font-ko text-[10px] tracking-widest mb-1.5" style={{ color: BRAND }}>// BADGES</p>
                 <p className="font-ko text-lg font-bold text-zinc-100 mb-3">획득한 뱃지 ({achievedBadges.length} / {badges.length})</p>
                 <div className="grid grid-cols-4 gap-3">
                   {badges.map(b => (
@@ -417,7 +450,7 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
 
               {/* 최근 분석 (Learning 노트 기준) */}
               <div>
-                <p className="font-space text-[10px] tracking-widest mb-1.5" style={{ color: BRAND }}>// RECENT</p>
+                <p className="font-ko text-[10px] tracking-widest mb-1.5" style={{ color: BRAND }}>// RECENT</p>
                 <p className="font-ko text-lg font-bold text-zinc-100 mb-3">최근 학습 노트</p>
                 {recentLearningNotes.length > 0 ? (
                   <div className="space-y-2">
@@ -531,7 +564,7 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
                         <div className="flex items-center gap-2">
                           <Input value={verifyCode} onChange={e => setVerifyCode(e.target.value)}
                             placeholder="인증번호 6자리" maxLength={6}
-                            className="h-10 bg-zinc-950 border-zinc-800 text-zinc-200 text-sm font-space placeholder:text-zinc-600" />
+                            className="h-10 bg-zinc-950 border-zinc-800 text-zinc-200 text-sm font-ko placeholder:text-zinc-600" />
                           <button onClick={confirmPhone}
                             className="h-10 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 font-ko text-sm text-white shrink-0 transition-colors">
                             확인

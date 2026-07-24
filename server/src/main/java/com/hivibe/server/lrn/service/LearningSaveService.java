@@ -3,6 +3,8 @@ package com.hivibe.server.lrn.service;
 import com.hivibe.server.domain.entity.*;
 import com.hivibe.server.lrn.dto.LearningSaveRequestDto;
 import com.hivibe.server.repository.*;
+import com.hivibe.server.user.service.UserGrdService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,7 @@ public class LearningSaveService {
     private final OptCdRepository optCdRepository;
     private final ConceptRepository conceptRepository;
     private final LrnBlankRepository lrnBlankRepository;
+    private final UserGrdService userGrdService;
 
     @Transactional
     public Long save(LearningSaveRequestDto request, User currentUser) {
@@ -94,6 +97,9 @@ public class LearningSaveService {
             log.warn("빈칸 정답이 없습니다. 채점 불가 상태. lrnId={}", savedLrn.getLrnId());
         }
 
+        // 4. 사용자 등급 재계산
+        lrnRepository.flush();
+        userGrdService.recalculate(currentUser.getId());
         return savedLrn.getLrnId();
     }
 

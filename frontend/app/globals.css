@@ -190,7 +190,7 @@
      브라우저가 자동으로 한글만 Pretendard로 렌더링함 — 영문은 그대로 Syne/Space Mono 유지됨.
      이렇게 해두면 매번 파일 하나씩 찾아서 고칠 필요 없이 전체적으로 통일된 한글 폰트가 보장됨. */
   --font-syne: 'Syne', 'Pretendard Variable', 'Pretendard', sans-serif;
-  --font-space: 'Space Mono', 'Pretendard Variable', 'Pretendard', monospace;
+  --font-ko: 'Space Mono', 'Pretendard Variable', 'Pretendard', monospace;
   --font-ko: 'Pretendard Variable', 'Pretendard', -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
   --font-code: 'D2Coding', 'Fira Code', 'Pretendard Variable', monospace;
 }
@@ -208,7 +208,7 @@
 }
 
 .font-space {
-  font-family: var(--font-space);
+  font-family: var(--font-ko);
 }
 
 .font-ko {

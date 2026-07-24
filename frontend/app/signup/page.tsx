@@ -109,7 +109,7 @@ export default function SignupPage() {
           className="flex items-center gap-2 text-zinc-400 hover:text-zinc-200 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span className="font-space text-xs">홈으로</span>
+          <span className="font-ko text-xs">홈으로</span>
         </Link>
         <span
           className="font-syne text-lg font-bold mx-auto"
@@ -128,7 +128,7 @@ export default function SignupPage() {
           {/* 헤딩 */}
           <div className="text-center mb-8">
             <p
-              className="font-space text-[10px] tracking-widest mb-3"
+              className="font-ko text-[10px] tracking-widest mb-3"
               style={{ color: BRAND }}
             >
               // GET STARTED
@@ -185,7 +185,7 @@ export default function SignupPage() {
 
             <div className="relative flex items-center py-1">
               <div className="flex-grow border-t border-zinc-800" />
-              <span className="font-space flex-shrink-0 mx-4 text-zinc-600 text-[10px] tracking-wider">
+              <span className="font-ko flex-shrink-0 mx-4 text-zinc-600 text-[10px] tracking-wider">
                 OR
               </span>
               <div className="flex-grow border-t border-zinc-800" />
@@ -194,7 +194,7 @@ export default function SignupPage() {
             {/* 입력 폼 - 라벨 스타일 및 h-11 통일 */}
             <div className="space-y-3">
               <div className="space-y-1.5">
-                <label className="font-space text-[10px] text-zinc-500 uppercase tracking-wider">
+                <label className="font-ko text-[10px] text-zinc-500 uppercase tracking-wider">
                   Name
                 </label>
                 <Input
@@ -207,7 +207,7 @@ export default function SignupPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="font-space text-[10px] text-zinc-500 uppercase tracking-wider">
+                <label className="font-ko text-[10px] text-zinc-500 uppercase tracking-wider">
                   Email
                 </label>
                 <div className="flex gap-2">
@@ -232,19 +232,19 @@ export default function SignupPage() {
                   </Button>
                 </div>
                 {emailDuplicate === true && (
-                  <p className="font-space text-[9px] text-rose-400">
+                  <p className="font-ko text-[9px] text-rose-400">
                     이미 사용 중인 이메일입니다
                   </p>
                 )}
                 {emailDuplicate === false && (
-                  <p className="font-space text-[9px] text-emerald-400">
+                  <p className="font-ko text-[9px] text-emerald-400">
                     사용 가능한 이메일입니다
                   </p>
                 )}
               </div>
 
               <div className="space-y-1.5">
-                <label className="font-space text-[10px] text-zinc-500 uppercase tracking-wider">
+                <label className="font-ko text-[10px] text-zinc-500 uppercase tracking-wider">
                   Password
                 </label>
                 <div className="relative">
@@ -270,7 +270,7 @@ export default function SignupPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="font-space text-[10px] text-zinc-500 uppercase tracking-wider">
+                <label className="font-ko text-[10px] text-zinc-500 uppercase tracking-wider">
                   Confirm Password
                 </label>
                 <div className="relative">
@@ -300,7 +300,7 @@ export default function SignupPage() {
                 </div>
                 {password2 && (
                   <p
-                    className={`font-space text-[9px] mt-1 ${pwMatch ? "text-emerald-400" : "text-rose-400"}`}
+                    className={`font-ko text-[9px] mt-1 ${pwMatch ? "text-emerald-400" : "text-rose-400"}`}
                   >
                     {pwMatch
                       ? "비밀번호가 일치합니다"
@@ -311,7 +311,7 @@ export default function SignupPage() {
 
               {/* 주 사용 언어 - 높이 줄이기 위해 간격 조절 */}
               <div className="space-y-2">
-                <label className="font-space text-[10px] text-zinc-500 uppercase tracking-wider">
+                <label className="font-ko text-[10px] text-zinc-500 uppercase tracking-wider">
                   Langs
                 </label>
                 <div className="flex flex-wrap gap-1.5">
@@ -319,7 +319,7 @@ export default function SignupPage() {
                     <button
                       key={lang}
                       onClick={() => toggleLang(lang)}
-                      className="font-space text-[9px] px-2.5 py-1 rounded-full border transition-all"
+                      className="font-ko text-[9px] px-2.5 py-1 rounded-full border transition-all"
                       style={
                         selLangs.includes(lang)
                           ? {

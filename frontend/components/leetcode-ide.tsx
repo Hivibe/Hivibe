@@ -785,7 +785,7 @@ const handleCancelLearning = () => {
 
               {selSession && isLoadingDetail && (
                 <div className="flex-1 flex items-center justify-center bg-[#0d0d0d]">
-                  <p className="font-space text-sm text-zinc-500">학습 정보를 불러오는 중...</p>
+                  <p className="font-ko text-sm text-zinc-500">학습 정보를 불러오는 중...</p>
                 </div>
               )}
 
@@ -797,7 +797,7 @@ const handleCancelLearning = () => {
                       setSelSession(null);
                       syncUrl("learning", null);
                     }}
-                    className="font-space text-xs text-zinc-500 hover:text-zinc-300 underline"
+                    className="font-ko text-xs text-zinc-500 hover:text-zinc-300 underline"
                   >
                     ← 아카이브로 돌아가기
                   </button>

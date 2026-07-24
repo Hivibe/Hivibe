@@ -51,7 +51,7 @@ export default function LoginPage() {
           className="flex items-center gap-2 text-zinc-400 hover:text-zinc-200 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span className="font-space text-xs">홈으로</span>
+          <span className="font-ko text-xs">홈으로</span>
         </Link>
         <span
           className="font-syne text-lg font-bold mx-auto"
@@ -68,7 +68,7 @@ export default function LoginPage() {
           {/* 헤딩 */}
           <div className="text-center mb-8">
             <p
-              className="font-space text-[10px] tracking-widest mb-3"
+              className="font-ko text-[10px] tracking-widest mb-3"
               style={{ color: BRAND }}
             >
               // WELCOME BACK
@@ -126,7 +126,7 @@ export default function LoginPage() {
             {/* 구분선 */}
             <div className="relative flex items-center py-1">
               <div className="flex-grow border-t border-zinc-800" />
-              <span className="font-space flex-shrink-0 mx-4 text-zinc-600 text-[10px] tracking-wider">
+              <span className="font-ko flex-shrink-0 mx-4 text-zinc-600 text-[10px] tracking-wider">
                 OR
               </span>
               <div className="flex-grow border-t border-zinc-800" />
@@ -135,7 +135,7 @@ export default function LoginPage() {
             {/* 이메일/비밀번호 */}
             <div className="space-y-3">
               <div className="space-y-1.5">
-                <label className="font-space text-[10px] text-zinc-500 uppercase tracking-wider">
+                <label className="font-ko text-[10px] text-zinc-500 uppercase tracking-wider">
                   Email
                 </label>
                 <Input
@@ -150,12 +150,12 @@ export default function LoginPage() {
 
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="font-space text-[10px] text-zinc-500 uppercase tracking-wider">
+                  <label className="font-ko text-[10px] text-zinc-500 uppercase tracking-wider">
                     Password
                   </label>
                   <Link
                     href="#"
-                    className="font-space text-[10px] hover:underline"
+                    className="font-ko text-[10px] hover:underline"
                     style={{ color: BRAND }}
                   >
                     비밀번호 찾기

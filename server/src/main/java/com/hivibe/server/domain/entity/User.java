@@ -79,12 +79,34 @@ public class User {
     @Column(name = "USER_PHONE", length = 11)
     private String userPhone;
 
+    @PrePersist
+    protected void onCreate() {
+        if (acntJoinDt == null) acntJoinDt = LocalDateTime.now();
+    }
+
     // 복습 알림 동의
     @Column(name = "REVIEW_ALARM_YN", nullable = false, length = 1)
     private String reviewAlarmYn = "Y";
 
-    @PrePersist
-    protected void onCreate() {
-        if (acntJoinDt == null) acntJoinDt = LocalDateTime.now();
+    // 복습 알림 발송 희망 시각 (0~23)
+    @Column(name = "REVIEW_ALARM_HOUR", nullable = false)
+    private Integer reviewAlarmHour = 9;
+
+    public boolean isReviewAlarmOn() {
+        return "Y".equals(this.reviewAlarmYn);
+    }
+
+    public void updateReviewSettings(boolean enabled, int hour) {
+        this.reviewAlarmYn = enabled ? "Y" : "N";
+        this.reviewAlarmHour = hour;
+    }
+
+    /** 누적 활동 수(진단+학습). 티어 산정 기준값 */
+    @Column(name = "ACT_CNT", nullable = false)
+    private Integer actCnt = 0;
+
+    public void updateGrade(String grd, int totalCount) {
+        this.userGrd = grd;
+        this.actCnt = totalCount;
     }
 }

@@ -46,7 +46,7 @@ public class Note {
 
     /** 코드 스냅샷 블록 (특정 시점의 코드를 저장) */
     @Lob
-    @Column(name = "NOTE_CN")
+    @Column(name = "NOTE_CN", columnDefinition = "TEXT")
     private String noteCn;
 
     /** 즐겨찾기 여부 (Y: 즐겨찾기 / N: 일반) */

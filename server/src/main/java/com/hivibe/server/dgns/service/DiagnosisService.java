@@ -15,6 +15,8 @@ import com.hivibe.server.repository.DgnsRepository;
 import com.hivibe.server.repository.OptCdRepository;
 import com.hivibe.server.repository.OrnCdRepository;
 import com.hivibe.server.repository.UserRepository;
+import com.hivibe.server.user.service.UserGrdService;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,11 +38,11 @@ public class DiagnosisService {
         private final OptCdRepository optCdRepository;
         private final DgnsRepository dgnsRepository;
         private final UserRepository userRepository;
-        // 필드 추가
         private final LrnRepository lrnRepository;
         private final LrnBlankRepository lrnBlankRepository;
         private final LrnSubmRepository lrnSubmRepository;
         private final ConceptRepository conceptRepository;
+        private final UserGrdService userGrdService;
 
         @Transactional
         public DiagnosisSaveResponseDto saveDiagnosis(String lgnId, DiagnosisSaveRequestDto request) {
@@ -90,6 +92,10 @@ public class DiagnosisService {
                                 .dgnsNm(request.name())
                                 .build();
                 Dgns savedDgns = dgnsRepository.save(dgns);
+                
+                // 5. 사용자 등급 재계산
+                dgnsRepository.flush();
+                userGrdService.recalculate(user.getId());
 
                 return new DiagnosisSaveResponseDto(
                                 savedAnls.getAnlsId(),
@@ -155,5 +161,9 @@ public class DiagnosisService {
                                 .ifPresent(optCdRepository::delete);
                 anlsRepository.delete(anls);
                 ornCdRepository.delete(ornCd);
+
+                // 사용자 등급 재계산
+                dgnsRepository.flush();
+                userGrdService.recalculate(user.getId());
         }
 }
