@@ -5,6 +5,7 @@ import com.hivibe.server.lrn.dto.*;
 import com.hivibe.server.lrn.service.AiLearningService;
 import com.hivibe.server.lrn.service.LearningQueryService;
 import com.hivibe.server.lrn.service.LearningSaveService;
+import com.hivibe.server.lrn.service.LrnDraftService;
 import com.hivibe.server.lrn.service.LrnGradingService;
 import com.hivibe.server.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import com.hivibe.server.lrn.service.LrnHintService;
 
 import java.util.List;
 import java.util.Map;
@@ -28,6 +30,8 @@ public class LrnController {
     private final UserRepository userRepository;
     private final LrnGradingService lrnGradingService;
     private final LearningQueryService learningQueryService;
+    private final LrnHintService lrnHintService;
+    private final LrnDraftService lrnDraftService;
 
     /** AI 학습 생성 (DB 저장 X, 순수 Gemini 호출) */
     @PostMapping("/api/v1/ai/learning")
@@ -163,5 +167,67 @@ public class LrnController {
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.ok(latest);
+    }
+
+    @GetMapping("/api/v1/learnings/{lrnId}/blanks/{blankOrd}/hint")
+    public ResponseEntity<HintResponseDto> getHint(
+        @PathVariable("lrnId") Long lrnId,
+        @PathVariable("blankOrd") Integer blankOrd,
+        @RequestParam("level") Integer level,
+        @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        User user = userRepository.findByLgnId(userDetails.getUsername())
+            .orElseThrow(() -> new IllegalStateException("사용자를 찾을 수 없습니다."));
+        return ResponseEntity.ok(lrnHintService.getHint(lrnId, blankOrd, level, user));
+    }
+
+    /**
+     * 학습 이름 수정
+     * PATCH /api/v1/learnings/{lrnId}/name
+     */
+    @PatchMapping("/api/v1/learnings/{lrnId}/name")
+    public ResponseEntity<Map<String, String>> renameLearning(
+        @PathVariable("lrnId") Long lrnId,
+        @RequestBody Map<String, String> body,
+        @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        User user = currentUser(userDetails);
+        String newName = body.get("name");
+        learningQueryService.rename(lrnId, newName, user);
+        return ResponseEntity.ok(Map.of("name", newName));
+    }
+
+    /**
+     * 임시 답안 저장 (자동저장)
+     * PUT /api/v1/learnings/{lrnId}/draft
+     * - 전체 덮어쓰기 방식 (부분 업데이트 아님)
+     */
+    @PutMapping("/api/v1/learnings/{lrnId}/draft")
+    public ResponseEntity<Void> saveDraft(
+        @PathVariable("lrnId") Long lrnId,
+        @RequestBody DraftSaveRequestDto request,
+        @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        User user = currentUser(userDetails);
+        lrnDraftService.save(lrnId, request, user);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * 임시 답안 조회
+     * GET /api/v1/learnings/{lrnId}/draft
+     * - 저장된 draft 없으면 204 No Content
+     */
+    @GetMapping("/api/v1/learnings/{lrnId}/draft")
+    public ResponseEntity<DraftResponseDto> getDraft(
+        @PathVariable("lrnId") Long lrnId,
+        @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        User user = currentUser(userDetails);
+        DraftResponseDto draft = lrnDraftService.find(lrnId, user);
+        if (draft == null) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(draft);
     }
 }

@@ -2,11 +2,10 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import type { Pace } from "@/components/learning/diff-view"
+
 import {
-  Play, Copy, Bookmark, Save,
+  Play, Copy, Save,
   Share2, Upload, Monitor, HardDrive,
   Activity as ActivityIcon, GraduationCap, Book, Check, User,
 } from "lucide-react"
@@ -17,8 +16,6 @@ interface MainHeaderProps {
   activeNav: string
   language: string
   setLanguage: (v: string) => void
-  aiCoaching: boolean
-  setAiCoaching: (v: boolean) => void
   editorCode: string
   hasAnalyzed: boolean
   isAnalyzing?: boolean
@@ -35,6 +32,8 @@ interface MainHeaderProps {
   onFileUpload: () => void
   onLoadPrevious: () => void
   isStartingLearning?: boolean
+  pace: Pace
+  setPace: (p: Pace) => void
 }
 
 const headerTitle: Record<string, string> = {
@@ -51,9 +50,60 @@ const headerIcon: Record<string, any> = {
   mypage: User,
 }
 
+const PACE_OPTIONS: { key: Pace; label: string; dot: number }[] = [
+  { key: "off", label: "Off", dot: 9 },
+  { key: "slow", label: "천천히", dot: 9 },
+  { key: "medium", label: "중간", dot: 9 },
+  { key: "fast", label: "빠르게", dot: 9 },
+]
+
+function PaceRadio({ pace, setPace }: { pace: Pace; setPace: (p: Pace) => void }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="font-space text-[10px] font-bold tracking-wide hidden xl:inline" style={{ color: BRAND }}>
+        LIVE COACHING
+      </span>
+      <div className="flex items-center">
+        {PACE_OPTIONS.map((opt, i) => {
+          const active = pace === opt.key
+          return (
+            <div key={opt.key} className="flex items-center">
+              {/* 원들 사이 연결선 (첫 번째 제외) */}
+              {i > 0 && <span className="w-4 h-px bg-zinc-700" />}
+              <button
+                type="button"
+                onClick={() => setPace(opt.key)}
+                className="flex flex-col items-center gap-1 group px-0.5"
+                title={opt.label}
+              >
+                <span
+                  className="rounded-full border-2 flex items-center justify-center transition-all duration-150"
+                  style={{
+                    width: opt.dot,
+                    height: opt.dot,
+                    borderColor: active ? BRAND : "#52525b",
+                    background: active ? BRAND : "transparent",
+                    boxShadow: active ? `0 0 6px ${BRAND}` : "none",
+                  }}
+                />
+                <span
+                  className="font-space text-[9px] transition-colors leading-none"
+                  style={{ color: active ? BRAND : "#71717a" }}
+                >
+                  {opt.label}
+                </span>
+              </button>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 export function MainHeader({
   activeNav, language, setLanguage,
-  aiCoaching, setAiCoaching,
+  pace, setPace,
   editorCode, hasAnalyzed, isAnalyzing, selSession,
   codeCopied, uploadOpen, setUploadOpen,
   onRunAnalysis, onGoLearning,
@@ -68,35 +118,20 @@ export function MainHeader({
 
       {/* Row 1 */}
       <div className="h-14 flex items-center justify-between px-5">
-        <div className="flex items-center gap-2">
-          <IconComp className="h-4 w-4" style={{ color: BRAND }} />
-          <span className="font-ko text-sm font-semibold text-zinc-100">
+        <div className="flex items-center gap-2 shrink-0">
+          <IconComp className="h-4 w-4 shrink-0" style={{ color: BRAND }} />
+          <span className="font-ko text-sm font-semibold text-zinc-100 whitespace-nowrap">
             {headerTitle[activeNav] ?? ""}
           </span>
         </div>
-
         {activeNav !== "notes" && activeNav !== "mypage" && (
           <div className="flex items-center gap-2.5">
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={aiCoaching}
-                onCheckedChange={setAiCoaching}
-                className="data-[state=checked]:bg-[#63C1ED] scale-90" />
-              <span className="font-ko text-[12px] text-zinc-500 hidden xl:inline">Live AI Coaching</span>
-            </div>
-
-            <div className="h-4 w-px bg-zinc-800" />
-
-            <Select value={language} onValueChange={setLanguage} disabled={activeNav === "learning"}>
-              <SelectTrigger className="h-8 w-[120px] bg-zinc-900 border-zinc-800 text-xs text-zinc-300">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800">
-                {[["java", "Java"], ["python", "Python"], ["javascript", "JavaScript"], ["typescript", "TypeScript"], ["cpp", "C++"], ["c", "C"]].map(([v, l]) => (
-                  <SelectItem key={v} value={v} className="text-xs">{l}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {activeNav === "learning" && selSession && (
+              <>
+                <PaceRadio pace={pace} setPace={setPace} />
+                <div className="h-4 w-px bg-zinc-800" />
+              </>
+            )}
 
             {activeNav === "diagnosis" && (
               <Button size="sm" disabled={!editorCode.trim() || isAnalyzing}
@@ -111,8 +146,8 @@ export function MainHeader({
               <Button size="sm" disabled={!hasAnalyzed || isStartingLearning}
                 onClick={onGoLearning}
                 className={`h-8 text-xs px-4 font-medium text-white ${hasAnalyzed && !isStartingLearning
-                  ? "bg-amber-400 hover:bg-amber-500"
-                  : "bg-amber-400/25 cursor-not-allowed"
+                    ? "bg-amber-400 hover:bg-amber-500"
+                    : "bg-amber-400/25 cursor-not-allowed"
                   }`}>
                 <GraduationCap className="h-3.5 w-3.5 mr-1.5 shrink-0" />
                 <span className="hidden lg:inline">
@@ -121,17 +156,19 @@ export function MainHeader({
               </Button>
             )}
 
-            <Button size="sm"
-              disabled={activeNav === "diagnosis" && !hasAnalyzed}
-              className={`h-8 text-xs px-4 font-medium ${activeNav === "diagnosis" && !hasAnalyzed
-                ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
-                : "text-white"
-                }`}
-              style={activeNav === "diagnosis" && !hasAnalyzed ? {} : { background: BRAND }}
-              onClick={onSaveDiag}>
-              <Save className="h-3.5 w-3.5 mr-1.5 shrink-0" />
-              <span className="hidden lg:inline">Save</span>
-            </Button>
+            {(activeNav === "diagnosis" || (activeNav === "learning" && selSession)) && (
+              <Button size="sm"
+                disabled={activeNav === "diagnosis" && !hasAnalyzed}
+                className={`h-8 text-xs px-4 font-medium ${activeNav === "diagnosis" && !hasAnalyzed
+                  ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
+                  : "text-white"
+                  }`}
+                style={activeNav === "diagnosis" && !hasAnalyzed ? {} : { background: BRAND }}
+                onClick={activeNav === "learning" ? onSaveNote : onSaveDiag}>
+                <Save className="h-3.5 w-3.5 mr-1.5 shrink-0" />
+                <span className="hidden lg:inline">Save</span>
+              </Button>
+            )}
           </div>
         )}
       </div>
@@ -139,23 +176,7 @@ export function MainHeader({
       {/* Row 2 — 파일명 입력란 제거, 탭에서 더블클릭으로 이름 변경하는 방식으로 통합 */}
       {(activeNav === "diagnosis" || (activeNav === "learning" && selSession)) && (
         <div className="h-9 flex items-center justify-between px-5 border-t border-zinc-800/40">
-          <div className="flex items-center gap-2">
-            {activeNav === "learning" && selSession && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={onSaveNote}
-                    className="h-5 w-5 flex items-center justify-center rounded text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800 transition-colors">
-                    <Bookmark className="h-3.5 w-3.5" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  노트에 저장
-                </TooltipContent>
-              </Tooltip>
-            )}
-          </div>
-
+          <div className="flex items-center gap-2" />
           <div className="flex items-center gap-1.5">
             <div className="relative">
               <button

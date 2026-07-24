@@ -6,6 +6,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // next.config.js
   async rewrites() {
     return [
       {

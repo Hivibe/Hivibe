@@ -5,6 +5,42 @@ import { Star, Flame, FolderOpen, Search } from "lucide-react"
 import { SessionCard } from "@/components/learning/session-card"
 import type { LearningSession } from "@/types"
 
+const GRADE_POINTS: Record<string, number> = { S: 4, A: 3, B: 2, C: 1, F: 0 }
+const POINT_GRADES = ["F", "C", "B", "A", "S"]
+
+function computeAvgGrade(sessions: LearningSession[]): string {
+  const graded = sessions.filter(s => s.grade && s.grade !== "-" && s.grade in GRADE_POINTS)
+  if (graded.length === 0) return "-"
+  const avg = graded.reduce((sum, s) => sum + GRADE_POINTS[s.grade], 0) / graded.length
+  const idx = Math.max(0, Math.min(POINT_GRADES.length - 1, Math.round(avg)))
+  return POINT_GRADES[idx]
+}
+
+function computeDayStreak(sessions: LearningSession[]): number {
+  const days = new Set(
+    sessions
+      .filter(s => s.createdAtIso)
+      .map(s => new Date(s.createdAtIso).toDateString())
+  )
+  if (days.size === 0) return 0
+
+  let streak = 0
+  const cursor = new Date()
+  cursor.setHours(0, 0, 0, 0)
+
+  // 오늘 학습이 없으면 어제부터 이어지는 스트릭을 인정
+  if (!days.has(cursor.toDateString())) {
+    cursor.setDate(cursor.getDate() - 1)
+    if (!days.has(cursor.toDateString())) return 0
+  }
+
+  while (days.has(cursor.toDateString())) {
+    streak++
+    cursor.setDate(cursor.getDate() - 1)
+  }
+  return streak
+}
+
 interface ArchiveViewProps {
   sessions: LearningSession[]
   onSelectSession: (id: number) => void
@@ -19,6 +55,10 @@ export function ArchiveView({ sessions, onSelectSession, onToggleFav, onDeleteSe
 
   const favSessions    = sessions.filter(s => s.favorited)
   const recentSessions = sessions.filter(s => !s.favorited)
+
+  const totalSessions = sessions.length
+  const avgGrade = computeAvgGrade(sessions)
+  const dayStreak = computeDayStreak(sessions)
 
   const filtered = (list: LearningSession[]) =>
     list
@@ -81,9 +121,9 @@ export function ArchiveView({ sessions, onSelectSession, onToggleFav, onDeleteSe
         {/* 대시보드 통계 */}
         <div className="grid grid-cols-4 gap-4 mb-12">
           {[
-            { icon: <FolderOpen className="h-4 w-4 text-[#63C1ED]" />, val: "12",  label: "Total Sessions" },
-            { icon: <Star className="h-4 w-4 text-amber-400" />,        val: "B+", label: "Avg. Grade" },
-            { icon: <Flame className="h-4 w-4 text-rose-500" />,        val: "7",  label: "Day Streak" },
+            { icon: <FolderOpen className="h-4 w-4 text-[#63C1ED]" />, val: String(totalSessions), label: "Total Sessions" },
+            { icon: <Star className="h-4 w-4 text-amber-400" />, val: avgGrade, label: "Avg. Grade" },
+            { icon: <Flame className="h-4 w-4 text-rose-500" />, val: String(dayStreak), label: "Day Streak" },
             { icon: <Star className="h-4 w-4 text-amber-400 fill-amber-400" />, val: String(favSessions.length), label: "Starred" },
           ].map((s, i) => (
             <div key={i} className="bg-[#17171b] border border-white/5 rounded-2xl p-5 hover:border-white/10 transition-colors">

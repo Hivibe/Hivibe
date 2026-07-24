@@ -100,11 +100,12 @@ interface CodeEditorProps {
   aiCoaching: boolean
   onLanguageDetected?: (lang: string) => void   // ← 추가
   setLanguage: (v: string) => void
+  onUserEdit?: () => void
 }
 
 export function CodeEditor({
   language, fileName, setFileName, editorCode,
-  setEditorCode, hasAnalyzed, aiCoaching, onLanguageDetected, setLanguage,
+  setEditorCode, hasAnalyzed, aiCoaching, onLanguageDetected, setLanguage,onUserEdit,
 }: CodeEditorProps) {
   const ext = extMap[language] ?? "txt"
   const prismLang = langMap[language] ?? "javascript"
@@ -169,6 +170,7 @@ export function CodeEditor({
       const end = ta.selectionEnd
       const newVal = editorCode.substring(0, start) + "  " + editorCode.substring(end)
       setEditorCode(newVal)
+      onUserEdit?.()
       requestAnimationFrame(() => {
         ta.selectionStart = ta.selectionEnd = start + 2
       })
@@ -275,7 +277,6 @@ export function CodeEditor({
               </Highlight>
             </div>
 
-            {/* textarea 레이어 (앞, 투명) */}
             <textarea
               ref={textareaRef}
               value={editorCode}
@@ -290,6 +291,7 @@ export function CodeEditor({
                   }
                 }
                 setEditorCode(newCode)
+                onUserEdit?.() 
               }}
               onKeyDown={handleKeyDown}
               spellCheck={false}

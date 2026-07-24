@@ -1,20 +1,36 @@
 "use client"
 
-import { useState, useMemo, useEffect, Fragment } from "react"
+import { useState, useMemo, useEffect, useRef, Fragment } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { TrendingUp, HelpCircle, Check, X, MessageSquare, ExternalLink, Loader2, RotateCcw, Eye, EyeOff, Sparkles } from "lucide-react"
+import { TrendingUp, HelpCircle, Check, X, MessageSquare, ExternalLink, Loader2, RotateCcw, Eye, EyeOff, Sparkles, ChevronLeft, ChevronRight, Play, Pause, Pencil } from "lucide-react"
 import {
   ResponsiveContainer, AreaChart, Area,
   Line, CartesianGrid,
   XAxis, YAxis, Tooltip as RechartsTooltip, Legend,
 } from "recharts"
 import type { LearningSession } from "@/types"
-import { apiFetch, submitLearning, type AiLearningResponse, type BlankResult } from "@/lib/api"
+import { apiFetch, submitLearning, fetchHint, renameLearning, saveDraft, fetchDraft, type AiLearningResponse, type BlankResult, type SubmissionResponse } from "@/lib/api"
 import { toast } from "sonner"
 
 const BRAND = "#63C1ED"
+
+export type Pace = "off" | "slow" | "medium" | "fast"
+
+export const PACE_INTERVALS_MS: Record<"slow" | "medium" | "fast", number> = {
+  fast: 20000,
+  medium: 40000,
+  slow: 70000,
+}
+
+const hintStorageKey = (lrnId: number) => `hivibe_hint_${lrnId}`
+
+type PersistedHint = {
+  levels: Record<number, number>
+  contents: Record<number, Record<number, string>>
+  elapsed: Record<number, number>
+  viewLevel: Record<number, number>
+}
 
 const complexityComparisonData = [
   { name: "10", original: 100, optimized: 10 },
@@ -42,7 +58,10 @@ interface DiffViewProps {
   analyzedCode: string
   learningContent: LearningContent | null
   onBack: () => void
-  onBadgesUnlocked?: (badges: any[]) => void  // ← 추가
+  onGraded?: (lrnId: number, res: SubmissionResponse) => void
+  pace: Pace
+  onBadgesUnlocked?: (badges: any[]) => void
+  onRename?: (lrnId: number, newName: string) => void
 }
 
 function highlightLine(text: string) {
@@ -184,14 +203,33 @@ function ResultPopover({ result }: { result: BlankResult }) {
   )
 }
 
-export function DiffView({ session, analyzedCode, learningContent, onBack, onBadgesUnlocked }: DiffViewProps) {
+export function DiffView({ session, analyzedCode, learningContent, onBack, onBadgesUnlocked, onGraded, pace, onRename }: DiffViewProps) {
   const [panelOpen, setPanelOpen] = useState(true)
   const [answers, setAnswers] = useState<Record<number, string>>({})
   const [userName, setUserName] = useState<string>("사용자")
 
+  // 제목 인라인 편집
+  const [editingTitle, setEditingTitle] = useState(false)
+  const [titleDraft, setTitleDraft] = useState(session.title)
+  const [savingTitle, setSavingTitle] = useState(false)
+  
   // 채점 상태
   const [isGrading, setIsGrading] = useState(false)
   const [results, setResults] = useState<Record<number, BlankResult> | null>(null)
+  const isGraded = results !== null
+  
+  // 힌트 상태: blankIdx0 → 열람한 최고 레벨(0~3) / 레벨별 캐시된 내용 / 로딩 여부
+  const [hintLevels, setHintLevels] = useState<Record<number, number>>({})
+  const [hintContents, setHintContents] = useState<Record<number, Record<number, string>>>({})
+  const [hintLoading, setHintLoading] = useState<Record<number, boolean>>({})
+  const [hintElapsed, setHintElapsed] = useState<Record<number, number>>({})  // 빈칸별 누적 경과(ms)
+  const [runningBlank, setRunningBlank] = useState<number | null>(null)        // 지금 타이머 도는 빈칸
+  const [, setNowTick] = useState(() => Date.now())                            // 리렌더 트리거용
+  const [focusedBlank, setFocusedBlank] = useState<number | null>(null)
+  const [hintViewLevel, setHintViewLevel] = useState<Record<number, number>>({})
+
+  const [displayTitle, setDisplayTitle] = useState(session.title)
+
 
   const [summary, setSummary] = useState<{
     correctCount: number
@@ -202,6 +240,47 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
 
   const [gradeError, setGradeError] = useState<string | null>(null)
 
+  // draft 자동저장
+  const draftTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const draftLoadedRef = useRef(false)   // 복원 완료 전엔 저장 안 함 (빈 답안 덮어쓰기 방지)
+  const [draftSaving, setDraftSaving] = useState(false)
+  const [draftSavedAt, setDraftSavedAt] = useState<Date | null>(null)
+
+  const handleTitleSave = async () => {
+      const trimmed = titleDraft.trim()
+      if (!trimmed) {
+        setTitleDraft(displayTitle)   // 빈 값이면 원래대로
+        setEditingTitle(false)
+        return
+      }
+      if (trimmed === displayTitle) {
+        setEditingTitle(false)
+        return
+      }
+      if (!learningContent) return
+
+      setSavingTitle(true)
+      try {
+        await renameLearning(learningContent.lrnId, trimmed)
+        setDisplayTitle(trimmed) 
+        onRename?.(learningContent.lrnId, trimmed)
+        setEditingTitle(false)
+        toast.success("이름을 변경했어요")
+      } catch (e: any) {
+        console.error("이름 변경 실패:", e)
+        toast.error("이름을 변경하지 못했어요", { description: e.message })
+        setTitleDraft(session.title)   // 실패 시 원복
+      } finally {
+        setSavingTitle(false)
+      }
+    }
+
+  useEffect(() => {
+    setTitleDraft(session.title)
+    setDisplayTitle(session.title)
+    setEditingTitle(false)
+  }, [session.title, learningContent?.lrnId])
+
   useEffect(() => {
     apiFetch("/api/mypage/me")
       .then(res => res.json())
@@ -211,11 +290,16 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
       .catch(e => console.error("유저 이름 불러오기 실패:", e))
   }, [])
 
-  // 학습 세션이 바뀌면 상태 초기화 (이전 채점 있으면 복원)
+// 학습 세션이 바뀌면 상태 초기화 (이전 채점 있으면 복원)
+  // 학습 세션이 바뀌면 상태 초기화 (이전 채점 있으면 복원, 없으면 draft 복원)
   useEffect(() => {
+    const lrnId = learningContent?.lrnId
+    draftLoadedRef.current = false
+    setDraftSavedAt(null)
+
     const prev = learningContent?.previousSubmission
     if (prev && prev.results.length > 0) {
-      // 답 복원
+      // 채점 이력이 있으면 그걸 우선 복원 (draft보다 우선)
       const restoredAnswers: Record<number, string> = {}
       const restoredResults: Record<number, BlankResult> = {}
       for (const r of prev.results) {
@@ -230,14 +314,101 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
         grade: prev.grade,
         overallComment: prev.overallComment,
       })
-
+      draftLoadedRef.current = true
     } else {
       setAnswers({})
       setResults(null)
       setSummary(null)
+
+      // 채점 이력 없을 때만 draft 복원
+      if (lrnId) {
+        fetchDraft(lrnId)
+          .then(draft => {
+            if (draft?.answers) {
+              const restored: Record<number, string> = {}
+              for (const [ord, val] of Object.entries(draft.answers)) {
+                restored[parseInt(ord, 10) - 1] = val   // 1-based → 0-based
+              }
+              setAnswers(restored)
+              if (Object.keys(restored).length > 0) {
+                toast.info("입력하던 답안을 불러왔어요")
+              }
+            }
+          })
+          .catch(e => console.warn("draft 불러오기 실패:", e))
+          .finally(() => { draftLoadedRef.current = true })
+      } else {
+        draftLoadedRef.current = true
+      }
     }
+
     setGradeError(null)
+
+    // 힌트 상태 복원 (새로고침 대비, sessionStorage)
+    let restoredHint: PersistedHint | null = null
+    if (lrnId) {
+      try {
+        const raw = sessionStorage.getItem(hintStorageKey(lrnId))
+        if (raw) restoredHint = JSON.parse(raw)
+      } catch (e) {
+        console.warn("힌트 상태 복원 실패:", e)
+      }
+    }
+
+    setHintLevels(restoredHint?.levels ?? {})
+    setHintContents(restoredHint?.contents ?? {})
+    setHintElapsed(restoredHint?.elapsed ?? {})
+    setHintViewLevel(restoredHint?.viewLevel ?? {})
+    setHintLoading({})
+    setRunningBlank(null)
+    setFocusedBlank(null)
   }, [learningContent?.lrnId])
+  
+
+  // 답안 변경 시 1.5초 디바운스로 서버 자동저장
+  useEffect(() => {
+    const lrnId = learningContent?.lrnId
+    if (!lrnId) return
+    if (!draftLoadedRef.current) return   // 복원 전엔 저장 안 함
+    if (isGraded) return                  // 채점 완료 상태는 저장 안 함
+
+    if (draftTimerRef.current) clearTimeout(draftTimerRef.current)
+    draftTimerRef.current = setTimeout(() => {
+      // 0-based → 1-based(blankOrd)로 변환해서 전송
+      const payload: Record<string, string> = {}
+      for (const [idx0, val] of Object.entries(answers)) {
+        if (val?.trim()) payload[String(parseInt(idx0, 10) + 1)] = val
+      }
+      setDraftSaving(true)
+      saveDraft(lrnId, payload)
+        .then(() => setDraftSavedAt(new Date()))
+        .catch(e => console.warn("draft 저장 실패:", e))
+        .finally(() => setDraftSaving(false))
+    }, 1500)
+
+    return () => {
+      if (draftTimerRef.current) clearTimeout(draftTimerRef.current)
+    }
+  }, [answers, learningContent?.lrnId, isGraded])
+
+  // 힌트 상태를 sessionStorage에 저장 (새로고침 시 복원용)
+  useEffect(() => {
+    const lrnId = learningContent?.lrnId
+    if (!lrnId) return
+    if (Object.keys(hintLevels).length === 0) return   // 아직 힌트 안 봤으면 저장 안 함
+
+    try {
+      const payload: PersistedHint = {
+        levels: hintLevels,
+        contents: hintContents,
+        elapsed: hintElapsed,
+        viewLevel: hintViewLevel,
+      }
+      sessionStorage.setItem(hintStorageKey(lrnId), JSON.stringify(payload))
+    } catch (e) {
+      console.warn("힌트 상태 저장 실패:", e)   // 용량 초과 등
+    }
+  }, [hintLevels, hintContents, hintElapsed, hintViewLevel, learningContent?.lrnId])
 
   const blankCode = learningContent?.optimizedCode.blank ?? ""
   const concepts = learningContent?.concepts ?? []
@@ -260,7 +431,72 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
 
   const filledCount = Object.values(answers).filter(v => v?.trim().length > 0).length
   const allFilled = blankCount > 0 && filledCount === blankCount
-  const isGraded = results !== null
+
+  const handleRevealHint = async (idx0: number, nextLevel: number) => {
+    if (!learningContent) return
+
+    const cached = hintContents[idx0]?.[nextLevel]
+    if (cached !== undefined) {
+      setHintLevels(prev => ({ ...prev, [idx0]: nextLevel }))
+      setHintViewLevel(prev => ({ ...prev, [idx0]: nextLevel }))
+      setFocusedBlank(null)
+      return
+    }
+
+    setHintLoading(prev => ({ ...prev, [idx0]: true }))
+    try {
+      const res = await fetchHint(learningContent.lrnId, idx0 + 1, nextLevel)
+      console.log("🟢 힌트 응답:", res, "→ idx0:", idx0, "level:", nextLevel)   // ← 추가
+      setHintContents(prev => ({
+        ...prev,
+        [idx0]: { ...(prev[idx0] ?? {}), [nextLevel]: res.content },
+      }))
+      setHintLevels(prev => {
+        const next = { ...prev, [idx0]: nextLevel }
+        console.log("🟢 레벨 갱신:", next)   // ← 추가
+        return next
+      })
+    } catch (e: any) {
+      console.error("힌트 조회 실패:", e)
+      toast.error("힌트를 불러오지 못했어요", { description: e.message })
+    } finally {
+      setHintLoading(prev => ({ ...prev, [idx0]: false }))
+    }
+  }
+
+  // 라이브 코칭 타이머 — runningBlank 하나만 경과시간 누적, 임계치 넘으면 다음 레벨
+  useEffect(() => {
+    if (pace === "off" || isGraded || runningBlank === null) return
+
+    const intervalMs = PACE_INTERVALS_MS[pace]
+    const timer = setInterval(() => {
+      setNowTick(Date.now())
+      setHintElapsed(prev => {
+        const idx0 = runningBlank
+        const next = (prev[idx0] ?? 0) + 250
+        const currentLevel = hintLevels[idx0] ?? 0
+        const nextLevel = currentLevel + 1
+        if (nextLevel <= 3 && next >= nextLevel * intervalMs && !hintLoading[idx0]) {
+          void handleRevealHint(idx0, nextLevel)
+        }
+        return { ...prev, [idx0]: next }
+      })
+    }, 250)
+
+    return () => clearInterval(timer)
+  }, [pace, isGraded, runningBlank, hintLevels, hintLoading])
+
+  const handleBlankFocus = (idx0: number) => {
+    setFocusedBlank(idx0)
+    if (pace === "off" || isGraded) return
+    // 새 빈칸으로 오면 그 빈칸을 재생 상태로 (이전 빈칸은 자동 일시정지, 경과시간은 보존됨)
+    setHintElapsed(prev => (prev[idx0] === undefined ? { ...prev, [idx0]: 0 } : prev))
+    setRunningBlank(idx0)
+  }
+
+  const togglePlay = (idx0: number) => {
+    setRunningBlank(prev => (prev === idx0 ? null : idx0))
+  }
 
   const handleSubmit = async () => {
     if (!learningContent) return
@@ -274,7 +510,7 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
         answers: Object.entries(answers).map(([idx0, userAns]) => ({
           blankOrd: parseInt(idx0, 10) + 1,   // 0-based → 1-based
           userAns,
-          hintUsedLv: 0,                       // 계층적 힌트 붙이면 여기 연결
+          hintUsedLv: hintLevels[parseInt(idx0, 10)] ?? 0,
         })),
       })
 
@@ -289,8 +525,12 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
         grade: res.grade,
         overallComment: res.overallComment,
       })
+      onGraded?.(learningContent.lrnId, res)
 
-      // 추가 (07.20)
+      // 채점 완료 → 힌트 상태 정리
+      try {
+        sessionStorage.removeItem(hintStorageKey(learningContent.lrnId))
+      } catch {}
 
       // 채점 완료 후 일반 뱃지 체크 (ON_FIRE 등) — 백그라운드
       try {
@@ -329,7 +569,7 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
     setResults(null)
     setSummary(null)
     setGradeError(null)
-    // answers는 유지 — 틀린 것만 고치면 되게
+    // answers, 힌트 상태는 유지 — 틀린 것만 고치면 되게
   }
 
   /** 빈칸 input 스타일 (채점 상태에 따라) */
@@ -347,6 +587,127 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
     return `${base} border-2 border-rose-500 text-rose-300 cursor-default`
   }
 
+
+  /** 특정 빈칸의 라이브 코칭 힌트 (코드 줄 아래 인라인 표시용) */
+  const renderHintBar = (idx0: number) => {
+    if (isGraded || pace === "off" || focusedBlank !== idx0) return null
+
+    const level = hintLevels[idx0] ?? 0
+    const contents = hintContents[idx0] ?? {}
+    const viewLevel = hintViewLevel[idx0] ?? level
+    const elapsed = hintElapsed[idx0] ?? 0
+    const isRunning = runningBlank === idx0
+    let etaSec: number | null = null
+    if (level < 3) {
+      const nextThreshold = (level + 1) * PACE_INTERVALS_MS[pace]
+      etaSec = Math.max(0, Math.ceil((nextThreshold - elapsed) / 1000))
+    }
+
+    const levelMeta: Record<number, { tag: string; label: string }> = {
+      1: { tag: "Lv.1", label: "개념" },
+      2: { tag: "Lv.2", label: "설명" },
+      3: { tag: "Lv.3", label: "부분 정답" },
+    }
+
+    return (
+      <div
+        className="ml-12 my-2 mr-4 rounded-xl bg-[#161619] border border-white/10 overflow-hidden"
+        style={{ boxShadow: "0 8px 24px rgba(0,0,0,0.45)" }}
+      >
+        {/* 헤더 */}
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/5 bg-white/[0.02]">
+          <div className="flex items-center gap-2">
+            <span className="font-space text-[10px] font-bold tracking-widest" style={{ color: BRAND }}>
+              LIVE COACHING
+            </span>
+            <span className="font-space text-[10px] text-zinc-600">·</span>
+            <span className="font-space text-[10px] text-zinc-500">빈칸 #{idx0 + 1}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {level < 3 && (
+              <button
+                type="button"
+                onClick={() => togglePlay(idx0)}
+                className="flex items-center gap-1 text-zinc-400 hover:text-white transition-colors"
+                title={isRunning ? "일시정지" : "재생"}
+              >
+                {isRunning ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
+                <span className="font-space text-[10px]">
+                  {etaSec !== null && <span className="text-zinc-300 font-bold">{etaSec}s</span>}
+                </span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* 본문 */}
+        <div className="px-4 py-3.5 min-h-[52px] flex items-center">
+          {level === 0 ? (
+            <p className="font-ko text-[11px] text-zinc-500">잠시 후 첫 힌트가 나와요...</p>
+          ) : (
+            <div className="w-full">
+              <div className="flex items-center gap-2 mb-1.5">
+                <span
+                  className="font-space text-[9px] font-bold px-1.5 py-0.5 rounded"
+                  style={{ background: `${BRAND}1a`, color: BRAND }}
+                >
+                  {levelMeta[viewLevel]?.tag}
+                </span>
+                <span className="font-ko text-[10px] text-zinc-500">{levelMeta[viewLevel]?.label}</span>
+              </div>
+              {viewLevel === 3 ? (
+                <code className="font-code text-[12px] text-amber-300 block bg-zinc-950/60 rounded px-2.5 py-1.5 break-all">
+                  {contents[3]}
+                </code>
+              ) : (
+                <p className="font-ko text-[12px] text-zinc-200 leading-relaxed">
+                  {contents[viewLevel]}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* 캐러셀 (레벨 2개 이상일 때만) */}
+        {level >= 1 && (
+          <div className="flex items-center justify-center gap-4 px-4 py-2 border-t border-white/5 bg-white/[0.02]">
+            <button
+              type="button"
+              onClick={() => setHintViewLevel(prev => ({ ...prev, [idx0]: Math.max(1, viewLevel - 1) }))}
+              disabled={viewLevel <= 1}
+              className="text-zinc-500 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+
+            {/* 점 인디케이터 */}
+            <div className="flex items-center gap-1.5">
+              {[1, 2, 3].map(lv => (
+                <span
+                  key={lv}
+                  className="h-1.5 rounded-full transition-all duration-200"
+                  style={{
+                    width: lv === viewLevel ? 14 : 6,
+                    background: lv === viewLevel ? BRAND : lv <= level ? "#52525b" : "#27272a",
+                  }}
+                />
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setHintViewLevel(prev => ({ ...prev, [idx0]: Math.min(level, viewLevel + 1) }))}
+              disabled={viewLevel >= level}
+              className="text-zinc-500 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="flex h-full overflow-hidden">
       <div className={`transition-all duration-300 ease-in-out overflow-hidden shrink-0 ${panelOpen ? "w-[350px]" : "w-0"}`}>
@@ -361,7 +722,29 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
 
             <div>
               <p className="font-space text-[10px] tracking-widest mb-1.5" style={{ color: BRAND }}>// LEARNING</p>
-              <h2 className="font-syne text-2xl font-bold text-white leading-tight">{session.title}</h2>
+              {editingTitle ? (
+              <input
+                autoFocus
+                value={titleDraft}
+                onChange={e => setTitleDraft(e.target.value)}
+                onBlur={handleTitleSave}
+                onKeyDown={e => {
+                  if (e.key === "Enter") { e.preventDefault(); handleTitleSave() }
+                  if (e.key === "Escape") { e.preventDefault(); setTitleDraft(displayTitle); setEditingTitle(false) }
+                }}
+                disabled={savingTitle}
+                className="font-syne text-2xl font-bold text-white leading-tight bg-transparent border-b border-white/20 focus:border-[#63C1ED] outline-none w-full"
+              />
+            ) : (
+              <h2
+                className="font-syne text-2xl font-bold text-white leading-tight group flex items-center gap-2 cursor-text"
+                onClick={() => setEditingTitle(true)}
+                title="클릭해서 이름 변경"
+              >
+                {displayTitle}
+                <Pencil className="h-3.5 w-3.5 text-zinc-600 group-hover:text-zinc-400 transition-colors shrink-0" />
+              </h2>
+            )}
               <div className="flex items-center gap-2 mt-2">
                 <span className="font-space text-[11px] text-zinc-500">{session.date}</span>
                 <span className="font-space text-[10px] px-2 py-0.5 rounded bg-white/5 border border-white/10 text-zinc-300">{session.grade}</span>
@@ -502,9 +885,30 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
 
           <div className="flex-1 flex flex-col">
             <div className="px-5 py-3 border-b border-zinc-800/50 bg-[#0a0a0c] flex items-center justify-between">
-              <span className="font-space text-xs font-bold" style={{ color: BRAND }}>
-                Fill in the blanks ({filledCount}/{blankCount})
-              </span>
+              <div className="flex items-center gap-2.5">
+                <span className="font-space text-xs font-bold" style={{ color: BRAND }}>
+                  Fill in the blanks ({filledCount}/{blankCount})
+                </span>
+                {!isGraded && (draftSaving || draftSavedAt) && (
+                  <span className="flex items-center gap-1 font-space text-[10px] text-zinc-600">
+                    {draftSaving ? (
+                      <>
+                        <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                        저장 중...
+                      </>
+                    ) : (
+                      <>
+                        <Check className="h-2.5 w-2.5 text-emerald-500/70" />
+                        {draftSavedAt!.toLocaleTimeString("ko-KR", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          second: "2-digit",
+                        })} 저장됨
+                      </>
+                    )}
+                  </span>
+                )}
+              </div>
               {isGraded && summary ? (
                 <span className={`font-space text-[10px] px-2 py-0.5 rounded border ${summary.correctCount === summary.totalBlanks
                   ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-400"
@@ -513,9 +917,10 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
                   {summary.correctCount}/{summary.totalBlanks} 정답
                   {summary.grade && ` · ${summary.grade}`}
                 </span>
-              ) : blankCount > 0 && (
-                <span className="font-space text-[10px] text-zinc-500">
-                  마우스를 <HelpCircle className="h-3 w-3 inline mx-0.5" />에 올려 힌트 보기
+              ) : blankCount > 0 && pace !== "off" && (
+                <span className="flex items-center gap-1.5 font-space text-[10px] font-bold tracking-wide" style={{ color: BRAND }}>
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: BRAND, boxShadow: `0 0 6px ${BRAND}` }} />
+                  LIVE COACHING ON
                 </span>
               )}
             </div>
@@ -523,71 +928,48 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
             <div className="flex-1 overflow-auto font-code text-[13px] leading-7 py-3">
               {parsedLines.length === 0 || blankCode === "" ? (
                 <p className="px-5 text-zinc-600 text-xs italic">빈칸 코드가 없습니다.</p>
-              ) : parsedLines.map((line, idx) => (
-                <div
-                  key={idx}
-                  className={`flex px-2 ${line.hasBlank ? "bg-emerald-500/10 border-l-2 border-emerald-500/60" : "border-l-2 border-transparent"}`}
-                >
-                  <div className="w-10 text-right pr-4 select-none text-zinc-600">{line.lineNo}</div>
-                  <div className="flex-1 whitespace-pre text-zinc-300 flex items-center flex-wrap">
-                    {line.tokens.map((t, ti) => {
-                      if (t.type === "text") {
-                        return <span key={ti}>{highlightLine(t.value)}</span>
-                      }
-                      const idx0 = t.blankIdx!
-                      const concept = concepts[idx0]
-                      const result = isGraded ? results![idx0] : null
+              )  : parsedLines.map((line, idx) => {
+                // 이 줄에 포커스된 빈칸이 있는지
+                const focusedInLine =
+                  focusedBlank !== null &&
+                  line.tokens.some(t => t.type === "blank" && t.blankIdx === focusedBlank)
 
-                      return (
-                        <span key={ti} className="inline-flex items-center gap-1 mx-0.5 align-middle">
-                          <input
-                            type="text"
-                            value={answers[idx0] ?? ""}
-                            onChange={(e) => setAnswers(prev => ({ ...prev, [idx0]: e.target.value }))}
-                            readOnly={isGraded || isGrading}
-                            placeholder={`#${idx0 + 1}`}
-                            className={inputClass(idx0)}
-                          />
+                return (
+                  <Fragment key={idx}>
+                    <div
+                      className={`flex px-2 ${line.hasBlank ? "bg-emerald-500/10 border-l-2 border-emerald-500/60" : "border-l-2 border-transparent"}`}
+                    >
+                      <div className="w-10 text-right pr-4 select-none text-zinc-600">{line.lineNo}</div>
+                      <div className="flex-1 whitespace-pre text-zinc-300 flex items-center flex-wrap">
+                        {line.tokens.map((t, ti) => {
+                          if (t.type === "text") {
+                            return <span key={ti}>{highlightLine(t.value)}</span>
+                          }
+                          const idx0 = t.blankIdx!
+                          const concept = concepts[idx0]
+                          const result = isGraded ? results![idx0] : null
 
-                          {/* 채점 결과 아이콘 */}
-                          {result && <ResultPopover result={result} />}
-
-                          {/* 미채점 상태에서만 힌트 툴팁 */}
-                          {!isGraded && (
-                            concept ? (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <button className="text-zinc-500 hover:text-amber-400 transition-colors" type="button">
-                                    <HelpCircle className="h-3.5 w-3.5" />
-                                  </button>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="max-w-xs bg-zinc-900 border border-amber-500/30">
-                                  <p className="font-ko font-bold text-xs text-amber-400 mb-1">💡 {concept.title}</p>
-                                  <p className="font-ko text-[11px] text-zinc-300 leading-relaxed">{concept.description}</p>
-                                  {concept.referenceUrl && (
-                                    <a
-                                      href={concept.referenceUrl}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="font-ko text-[11px] text-amber-400 hover:text-amber-300 underline mt-2 inline-flex items-center gap-1"
-                                    >
-                                      참고 링크 <ExternalLink className="h-2.5 w-2.5" />
-                                    </a>
-                                  )}
-                                </TooltipContent>
-                              </Tooltip>
-                            ) : (
-                              <button className="text-zinc-700 cursor-not-allowed" type="button" title="힌트 없음">
-                                <HelpCircle className="h-3.5 w-3.5" />
-                              </button>
-                            )
-                          )}
-                        </span>
-                      )
-                    })}
-                  </div>
-                </div>
-              ))}
+                          return (
+                            <span key={ti} className="inline-flex items-center gap-1 mx-0.5 align-middle">
+                              <input
+                                type="text"
+                                value={answers[idx0] ?? ""}
+                                onChange={(e) => setAnswers(prev => ({ ...prev, [idx0]: e.target.value }))}
+                                onFocus={() => handleBlankFocus(idx0)}
+                                readOnly={isGraded || isGrading}
+                                placeholder={`#${idx0 + 1}`}
+                                className={inputClass(idx0)}
+                              />
+                              {result && <ResultPopover result={result} />}
+                            </span>
+                          )
+                        })}
+                      </div>
+                    </div>
+                    {focusedInLine && renderHintBar(focusedBlank!)}
+                  </Fragment>
+                )
+              })}
             </div>
 
             {/* AI 총평 */}

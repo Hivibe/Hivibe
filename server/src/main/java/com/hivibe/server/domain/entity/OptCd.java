@@ -40,11 +40,11 @@ public class OptCd {
 
     /** 최적화된 전체 코드 내용 */
     @Lob
-    @Column(name = "CD_CN", columnDefinition = "TEXT")
+    @Column(name = "CD_CN", columnDefinition = "LONGTEXT")
     private String cdCn;
 
     /** 최적화 코드의 시간복잡도 (예: O(n log n)) */
-    @Column(name = "TIME_COMP", length = 10)
+    @Column(name = "TIME_COMP", columnDefinition = "TEXT")
     private String timeComp;
 
     // OptCd 엔티티 클래스 안 적당한 위치에

@@ -19,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-/**
+/**f
  * 학습 조회 서비스
  * - 아카이브 목록 / 학습 상세
  * - AI 호출 없음
@@ -42,18 +42,41 @@ public class LearningQueryService {
         List<Lrn> lrns = lrnRepository.findByUser_IdOrderByCreatedAtDesc(currentUser.getId());
 
         return lrns.stream()
-            .map(lrn -> new LearningListItemDto(
-                lrn.getLrnId(),
-                lrn.getLrnName(),
-                lrn.getCreatedAt(),
-                lrn.getGrade(),
-                lrn.getOptCd().getLang(),      // LAZY → @Transactional 안이라 OK
-                lrn.getTag(),
-                "Y".equals(lrn.getBkmkYn()),
-                lrn.getStat(),
-                lrn.getProgRt()
-            ))
+            .map(lrn -> {
+                String grade = resolveGrade(lrn);
+                return new LearningListItemDto(
+                    lrn.getLrnId(),
+                    lrn.getLrnName(),
+                    lrn.getCreatedAt(),
+                    grade,
+                    lrn.getOptCd().getLang(),
+                    lrn.getTag(),
+                    "Y".equals(lrn.getBkmkYn()),
+                    lrn.getStat(),
+                    lrn.getProgRt()
+                );
+            })
             .toList();
+    }
+
+    /**
+     * 학습 등급 결정
+     * - 진단 등급(OPT_CD → ANLS.cdGrd)을 우선 사용
+     * - 값이 없으면 Lrn.grade(채점 등급) 폴백
+     */
+    private String resolveGrade(Lrn lrn) {
+        try {
+            OptCd optCd = lrn.getOptCd();
+            if (optCd != null && optCd.getAnls() != null) {
+                String dgnsGrade = optCd.getAnls().getCdGrd();
+                if (dgnsGrade != null && !dgnsGrade.isBlank()) {
+                    return dgnsGrade;
+                }
+            }
+        } catch (Exception e) {
+            log.warn("진단 등급 조회 실패 lrnId={}: {}", lrn.getLrnId(), e.getMessage());
+        }
+        return lrn.getGrade();  // 폴백
     }
 
     /**
@@ -96,6 +119,7 @@ public class LearningQueryService {
             lrn.getTag(),
             lrn.getOverallComment(),
             ornCd.getCdCn(),
+            optCd.getOptCdId(),
             new LearningDetailResponseDto.OptimizedCodeDto(
                 optCd.getLang(),
                 optCd.getCdCn(),
@@ -144,5 +168,25 @@ public class LearningQueryService {
         lrnRepository.delete(lrn);
 
         log.info("학습 세션 삭제 완료. lrnId={}", lrnId);
+    }
+
+    /**
+     * 학습 이름 수정
+     */
+    @Transactional
+    public void rename(Long lrnId, String newName, User currentUser) {
+        Lrn lrn = lrnRepository.findById(lrnId)
+            .orElseThrow(() -> new IllegalArgumentException("학습 세션을 찾을 수 없습니다: " + lrnId));
+
+        if (!lrn.getUser().getId().equals(currentUser.getId())) {
+            throw new IllegalStateException("본인의 학습 세션이 아닙니다.");
+        }
+
+        String trimmed = newName == null ? "" : newName.trim();
+        if (trimmed.isEmpty()) {
+            throw new IllegalArgumentException("학습 이름은 비워둘 수 없습니다.");
+        }
+        lrn.setLrnName(trimmed);
+        lrnRepository.save(lrn);   // ← 명시적 저장 추가
     }
 }
