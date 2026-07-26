@@ -43,7 +43,7 @@ export function BadgeUnlockDialog({ badges, onClose }: BadgeUnlockDialogProps) {
     return (
         <Dialog open={badges.length > 0} onOpenChange={(open) => { if (!open) onClose() }}>
             <DialogContent
-                className="bg-zinc-900 border-zinc-800 text-zinc-100 sm:max-w-sm text-center overflow-hidden"
+                className="bg-card border-border text-foreground sm:max-w-sm text-center overflow-hidden"
                 showCloseButton={false}
             >
                 <DialogTitle className="sr-only">새로운 뱃지 획득</DialogTitle>
@@ -67,12 +67,12 @@ export function BadgeUnlockDialog({ badges, onClose }: BadgeUnlockDialogProps) {
                     </div>
 
                     <div>
-                        <p className="font-syne text-lg font-bold text-zinc-100">{current.name}</p>
-                        <p className="font-ko text-sm text-zinc-400 mt-1 leading-relaxed">{current.desc}</p>
+                        <p className="font-syne text-lg font-bold text-foreground">{current.name}</p>
+                        <p className="font-ko text-sm text-muted-foreground mt-1 leading-relaxed">{current.desc}</p>
                     </div>
 
                     {badges.length > 1 && (
-                        <p className="font-ko text-[11px] text-zinc-500">
+                        <p className="font-ko text-[11px] text-muted-foreground">
                             {index + 1} / {badges.length}
                         </p>
                     )}

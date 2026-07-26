@@ -278,6 +278,20 @@ body {
   background: rgba(99, 193, 237, 0.2);
 }
 
+/* 라이트모드 스크롤바 */
+html:not(.dark) ::-webkit-scrollbar {
+  width: 6px;
+}
+
+html:not(.dark) ::-webkit-scrollbar-track {
+  background: #f4f4f5;
+}
+
+html:not(.dark) ::-webkit-scrollbar-thumb {
+  background: #d4d4d8;
+  border-radius: 3px;
+}
+
 /* ────────────────────────────────────────────
    D2Coding 로컬 폰트
    ──────────────────────────────────────────── */
@@ -287,4 +301,8 @@ body {
   font-weight: normal;
   font-style: normal;
   font-display: swap;
+}
+
+.TooltipContent+span {
+  display: none;
 }

@@ -99,14 +99,14 @@ export function NotesList({ selNote, setSelNote, refreshKey }: NotesListProps) {
           + New
         </Button>
       </div>
-      <h2 className="font-syne text-2xl font-bold text-zinc-100 mb-4">My Library</h2>
+      <h2 className="font-syne text-2xl font-bold text-foreground mb-4">My Library</h2>
 
       {/* 검색 */}
       <div className="relative mb-3">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input value={search} onChange={e => setSearch(e.target.value)}
           placeholder="Search by keywords or tags..."
-          className="pl-9 bg-zinc-900 border-zinc-800 text-zinc-200 text-sm h-9 font-ko" />
+          className="pl-9 bg-card border-border text-foreground text-sm h-9 font-ko" />
       </div>
 
       {/* 언어 필터 */}
@@ -116,7 +116,7 @@ export function NotesList({ selNote, setSelNote, refreshKey }: NotesListProps) {
             className="font-ko text-[10px] px-2.5 py-1 rounded-full border transition-all"
             style={langFilter === l
               ? { background: `${BRAND}15`, color: BRAND, borderColor: `${BRAND}44` }
-              : { color: "#a1a1aa", borderColor: "#3f3f46" }}>
+              : { color: "#a1a1aa", borderColor: "#a8a8a8" }}>
             {l}
           </button>
         ))}
@@ -125,7 +125,7 @@ export function NotesList({ selNote, setSelNote, refreshKey }: NotesListProps) {
       <ScrollArea className="flex-1 min-h-0">
         {loading ? (
           <div className="flex items-center justify-center h-40">
-            <p className="font-ko text-sm text-zinc-500">불러오는 중...</p>
+            <p className="font-ko text-sm text-muted-foreground">불러오는 중...</p>
           </div>
         ) : (
           <div className="pb-4">
@@ -135,7 +135,7 @@ export function NotesList({ selNote, setSelNote, refreshKey }: NotesListProps) {
               <>
                 <div className="flex items-center gap-2 mb-2 px-0.5">
                   <Star className="h-3 w-3 text-amber-400 fill-amber-400" />
-                  <span className="font-ko text-[11px] text-zinc-400">즐겨찾기</span>
+                  <span className="font-ko text-[11px] text-muted-foreground">즐겨찾기</span>
                   <span className="font-ko text-[9px] px-1.5 py-0.5 rounded-full bg-amber-400/10 text-amber-400 border border-amber-400/20">
                     {filtered(favNotes).length}
                   </span>
@@ -146,7 +146,7 @@ export function NotesList({ selNote, setSelNote, refreshKey }: NotesListProps) {
                     setSelNote={setSelNote}
                     toggleNoteFav={toggleNoteFav} />
                 ))}
-                <div className="h-px bg-zinc-800/60 my-3" />
+                <div className="h-px bg-muted/60 my-3" />
               </>
             )}
 
@@ -154,8 +154,8 @@ export function NotesList({ selNote, setSelNote, refreshKey }: NotesListProps) {
             {filtered(recentNotes).length > 0 && (
               <>
                 <div className="flex items-center gap-2 mb-2 px-0.5">
-                  <span className="font-ko text-[11px] text-zinc-500">전체</span>
-                  <span className="font-ko text-[9px] px-1.5 py-0.5 rounded-full border border-zinc-800 text-zinc-600">
+                  <span className="font-ko text-[11px] text-muted-foreground">전체</span>
+                  <span className="font-ko text-[9px] px-1.5 py-0.5 rounded-full border border-border text-muted-foreground">
                     {filtered(recentNotes).length}
                   </span>
                 </div>
@@ -171,8 +171,8 @@ export function NotesList({ selNote, setSelNote, refreshKey }: NotesListProps) {
             {/* 빈 상태 */}
             {notes.length === 0 && (
               <div className="flex flex-col items-center justify-center h-40 gap-3">
-                <p className="font-ko text-base font-bold text-zinc-400">노트가 없어요</p>
-                <p className="font-ko text-sm text-zinc-500">New 버튼으로 첫 노트를 만들어보세요</p>
+                <p className="font-ko text-base font-bold text-muted-foreground">노트가 없어요</p>
+                <p className="font-ko text-sm text-muted-foreground">New 버튼으로 첫 노트를 만들어보세요</p>
                 <Button size="sm" onClick={() => setNewNoteOpen(true)}
                   className="h-8 px-4 text-white font-ko text-xs mt-1"
                   style={{ background: BRAND }}>
@@ -186,7 +186,7 @@ export function NotesList({ selNote, setSelNote, refreshKey }: NotesListProps) {
 
       {/* 새 노트 다이얼로그 */}
       <Dialog open={newNoteOpen} onOpenChange={setNewNoteOpen}>
-        <DialogContent className="bg-zinc-900 border-zinc-800 text-zinc-100 sm:max-w-md">
+        <DialogContent className="bg-card border-border text-foreground sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="font-ko" style={{ color: BRAND }}>새 노트 만들기</DialogTitle>
           </DialogHeader>
@@ -255,14 +255,14 @@ function NewNoteForm({ onSave, onCancel }: {
   return (
     <div className="space-y-4 py-2">
       <div className="space-y-1.5">
-        <label className="font-ko text-[12px] text-zinc-500 uppercase tracking-wider">제목</label>
+        <label className="font-ko text-[12px] text-muted-foreground uppercase tracking-wider">제목</label>
         <Input value={noteName} onChange={e => setNoteName(e.target.value)}
           placeholder="노트 제목을 입력하세요"
-          className="h-9 bg-zinc-950 border-zinc-800 text-zinc-200 text-sm font-ko" />
+          className="h-9 bg-background border-border text-foreground text-sm font-ko" />
       </div>
 
       <div className="space-y-1.5">
-        <label className="font-ko text-[12px] text-zinc-500 uppercase tracking-wider">언어</label>
+        <label className="font-ko text-[12px] text-muted-foreground uppercase tracking-wider">언어</label>
         <div className="flex gap-2 flex-wrap">
           {["Java", "Python", "JavaScript", "TypeScript", "C++", "C", "기타"].map(l => (
             <button key={l} onClick={() => setLang(l)}
@@ -277,7 +277,7 @@ function NewNoteForm({ onSave, onCancel }: {
       </div>
 
       <div className="space-y-1.5">
-        <label className="font-ko text-[12px] text-zinc-500 uppercase tracking-wider">코드 (선택)</label>
+        <label className="font-ko text-[12px] text-muted-foreground uppercase tracking-wider">코드 (선택)</label>
         <textarea
           value={noteCn}
           onChange={e => setNoteCn(e.target.value)}
@@ -287,26 +287,26 @@ function NewNoteForm({ onSave, onCancel }: {
             setLang(detected);
           }}
           placeholder="코드를 입력하세요"
-          className="font-code placeholder-ko w-full h-28 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 text-sm p-3 resize-none outline-none"
+          className="font-code placeholder-ko w-full h-28 rounded-lg bg-background border border-border text-foreground text-sm p-3 resize-none outline-none"
         />
       </div>
 
       <div className="space-y-1.5">
-        <label className="font-ko text-[12px] text-zinc-500 uppercase tracking-wider">메모 (선택)</label>
+        <label className="font-ko text-[12px] text-muted-foreground uppercase tracking-wider">메모 (선택)</label>
         <textarea value={noteMemo} onChange={e => setNoteMemo(e.target.value)}
           placeholder="메모를 입력하세요"
-          className="font-ko w-full h-20 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 text-sm p-3 resize-none outline-none" />
+          className="font-ko w-full h-20 rounded-lg bg-background border border-border text-foreground text-sm p-3 resize-none outline-none" />
       </div>
 
       <div className="space-y-1.5">
-        <label className="font-ko text-[12px] text-zinc-500 uppercase tracking-wider">태그 (선택)</label>
+        <label className="font-ko text-[12px] text-muted-foreground uppercase tracking-wider">태그 (선택)</label>
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-2">
             {tags.map(tag => (
-              <span key={tag} className="font-ko text-[10px] px-2 py-0.5 rounded-full border border-zinc-700 text-zinc-400 flex items-center gap-1">
+              <span key={tag} className="font-ko text-[10px] px-2 py-0.5 rounded-full border border-border text-muted-foreground flex items-center gap-1">
                 #{tag}
                 <button onClick={() => removeTag(tag)}>
-                  <X className="h-2.5 w-2.5 ml-0.5 hover:text-zinc-100" />
+                  <X className="h-2.5 w-2.5 ml-0.5 hover:text-foreground" />
                 </button>
               </span>
             ))}
@@ -316,8 +316,8 @@ function NewNoteForm({ onSave, onCancel }: {
           <Input value={tagInput} onChange={e => setTagInput(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addTag() } }}
             placeholder="태그 입력 후 Enter..."
-            className="h-9 bg-zinc-950 border-zinc-800 text-zinc-200 text-sm font-ko" />
-          <Button size="sm" variant="outline" className="border-zinc-800 text-zinc-400 font-ko text-xs shrink-0" onClick={addTag}>
+            className="h-9 bg-background border-border text-foreground text-sm font-ko" />
+          <Button size="sm" variant="outline" className="border-border text-muted-foreground font-ko text-xs shrink-0" onClick={addTag}>
             추가
           </Button>
         </div>
@@ -325,7 +325,7 @@ function NewNoteForm({ onSave, onCancel }: {
 
       <DialogFooter>
         <Button variant="outline" size="sm"
-          className="border-zinc-800 text-zinc-400 font-ko text-xs"
+          className="border-border text-muted-foreground font-ko text-xs"
           onClick={onCancel}>
           취소
         </Button>

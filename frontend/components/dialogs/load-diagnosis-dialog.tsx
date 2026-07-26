@@ -93,8 +93,6 @@ export function LoadDiagnosisDialog({ open, onOpenChange, onSelect, onDeleted }:
                 summary: data.summary,
             }
             onSelect(data.content, data.lang, data.name, aiResult)
-            onOpenChange(false)
-            toast.success("진단 결과를 불러왔어요!")
         } catch (e) {
             console.error("진단 결과 불러오기 실패:", e)
             toast.error("서버와 연결할 수 없습니다.")
@@ -126,7 +124,7 @@ export function LoadDiagnosisDialog({ open, onOpenChange, onSelect, onDeleted }:
     return (
         <>
             <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent className="bg-zinc-900 border-zinc-800 text-zinc-100 sm:max-w-md">
+                <DialogContent className="bg-card border-border text-foreground sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle className="sr-only">이전 분석에서 불러오기</DialogTitle>
                         <div className="font-ko flex items-center gap-2 text-lg font-semibold" style={{ color: BRAND }}>
@@ -135,32 +133,32 @@ export function LoadDiagnosisDialog({ open, onOpenChange, onSelect, onDeleted }:
                     </DialogHeader>
                     <ScrollArea className="max-h-[400px]">
                         {loading ? (
-                            <p className="font-ko text-sm text-zinc-500 text-center py-8">불러오는 중...</p>
+                            <p className="font-ko text-sm text-muted-foreground text-center py-8">불러오는 중...</p>
                         ) : items.length === 0 ? (
-                            <p className="font-ko text-sm text-zinc-500 text-center py-8">저장된 진단 결과가 없어요.</p>
+                            <p className="font-ko text-sm text-muted-foreground text-center py-8">저장된 진단 결과가 없어요.</p>
                         ) : (
                             <div className="space-y-2 py-2">
                                 {items.map(item => (
                                     <div key={item.dgnsId}
-                                        className="w-full flex items-center justify-between p-2 pl-3 rounded-lg border border-zinc-800 hover:bg-zinc-800 transition-colors group">
+                                        className="w-full flex items-center justify-between p-2 pl-3 rounded-lg border border-border hover:bg-muted transition-colors group">
                                         <div
                                             className="flex-1 flex items-center gap-3 min-w-0 cursor-pointer"
                                             onClick={() => { if (loadingId === null) handlePick(item.dgnsId) }}>
-                                            <FileCode className="h-4 w-4 text-zinc-500 shrink-0" />
+                                            <FileCode className="h-4 w-4 text-muted-foreground shrink-0" />
                                             <div className="flex-1 min-w-0 py-1">
-                                                <p className="font-ko text-sm font-medium text-zinc-200 truncate">{item.name}</p>
-                                                <p className="font-ko text-xs text-zinc-500">
+                                                <p className="font-ko text-sm font-medium text-foreground truncate">{item.name}</p>
+                                                <p className="font-ko text-xs text-muted-foreground">
                                                     {item.lang} · {new Date(item.date).toLocaleDateString("ko-KR")}
                                                 </p>
                                             </div>
                                             {loadingId === item.dgnsId && (
-                                                <span className="font-ko text-xs text-zinc-500 shrink-0 mr-2">불러오는 중...</span>
+                                                <span className="font-ko text-xs text-muted-foreground shrink-0 mr-2">불러오는 중...</span>
                                             )}
                                         </div>
                                         <button
                                             onClick={() => setDeleteTarget(item)}
                                             disabled={loadingId !== null}
-                                            className="p-2 text-zinc-600 hover:text-rose-400 hover:bg-zinc-700/50 rounded-md transition-colors shrink-0"
+                                            className="p-2 text-muted-foreground hover:text-rose-400 hover:bg-accent/50 rounded-md transition-colors shrink-0"
                                             aria-label="삭제하기">
                                             <Trash2 className="h-4 w-4" />
                                         </button>
@@ -174,19 +172,19 @@ export function LoadDiagnosisDialog({ open, onOpenChange, onSelect, onDeleted }:
 
             {/* 삭제 확인 AlertDialog */}
             <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}>
-                <AlertDialogContent className="bg-[#17171b] border-white/10">
+                <AlertDialogContent className="bg-card border-border">
                     <AlertDialogHeader>
                         <AlertDialogTitle className="font-syne text-white">
                             진단 기록을 삭제할까요?
                         </AlertDialogTitle>
-                        <AlertDialogDescription className="font-ko text-zinc-400 leading-relaxed">
-                            <span className="text-zinc-200 font-bold">{deleteTarget?.name}</span>
+                        <AlertDialogDescription className="font-ko text-muted-foreground leading-relaxed">
+                            <span className="text-foreground font-bold">{deleteTarget?.name}</span>
                             <br />
                             삭제된 진단 기록은 되돌릴 수 없어요.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel className="bg-transparent border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100 font-ko text-xs">
+                        <AlertDialogCancel className="bg-transparent border-border text-foreground/80 hover:bg-muted hover:text-foreground font-ko text-xs">
                             취소
                         </AlertDialogCancel>
                         <AlertDialogAction

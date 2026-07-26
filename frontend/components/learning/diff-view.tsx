@@ -136,68 +136,71 @@ function ResultPopover({ result }: { result: BlankResult }) {
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition-colors"
+          className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-border bg-card hover:bg-accent text-muted-foreground hover:text-foreground transition-colors shadow-sm"
           title="코멘트 보기"
         >
           <MessageSquare className="h-3 w-3" />        </button>
       </PopoverTrigger>
-      <PopoverContent side="top" className="max-w-sm bg-zinc-900 border-zinc-700 p-4 space-y-3">
-        <p className={`font-ko font-bold text-xs ${headerColor}`}>{headerText}</p>
-
-        {/* 완전정답(S) — 개념 설명 */}
-        {isExactPass && result.conceptTitle && (
-          <div>
-            <p className="font-ko text-[12px] text-zinc-200 font-bold mb-1.5">{result.conceptTitle}</p>
-            {result.conceptDesc && (
-              <p className="font-ko text-[11px] text-zinc-400 leading-relaxed">{result.conceptDesc}</p>
-            )}
-          </div>
-        )}
-
-        {/* AI 채점(A/N) — 차이점 */}
-        {result.diffNote && (
-          <p className="font-ko text-[11px] text-zinc-300 leading-relaxed">{result.diffNote}</p>
-        )}
-
-        {result.recommend && (
-          <div className="pt-2 border-t border-zinc-800">
-            <p className="font-ko text-[10px] font-bold mb-1" style={{ color: BRAND }}>💬 추천</p>
-            <p className="font-ko text-[11px] text-zinc-400 leading-relaxed">{result.recommend}</p>
-          </div>
-        )}
-
-        {result.securityNote && (
-          <div className="pt-2 border-t border-zinc-800">
-            <p className="font-ko text-[10px] font-bold text-orange-400 mb-1">⚠️ 주의</p>
-            <p className="font-ko text-[11px] text-zinc-400 leading-relaxed">{result.securityNote}</p>
-          </div>
-        )}
-
-        {/* 오답 — 정답 보기/가리기 */}
-        {isWrong && result.expAns && (
-          <div className="pt-2 border-t border-zinc-800">
-            <button
-              type="button"
-              onClick={() => setShowAnswer(p => !p)}
-              className="font-ko text-[10px] text-zinc-500 hover:text-zinc-300 underline transition-colors flex items-center gap-1"
-            >
-              {showAnswer ? (
-                <><EyeOff className="h-3 w-3" /> 정답 가리기</>
-              ) : (
-                <><Eye className="h-3 w-3" /> 정답 보기</>
+      <PopoverContent side="top" className="max-w-sm bg-card border-border p-0 shadow-xl shadow-black/10 rounded-xl overflow-hidden">
+        <div className="px-4 py-3 border-b border-border" style={{ borderLeft: `3px solid ${isWrong ? '#f43f5e' : isAiPass ? '#f59e0b' : '#10b981'}` }}>
+          <p className={`font-syne font-bold text-sm ${headerColor}`}>{headerText}</p>
+        </div>
+        <div className="p-4 space-y-3">
+          {/* 완전정답(S) — 개념 설명 */}
+          {isExactPass && result.conceptTitle && (
+            <div>
+              <p className="font-ko text-[12px] text-foreground font-bold mb-1.5">{result.conceptTitle}</p>
+              {result.conceptDesc && (
+                <p className="font-ko text-[11px] text-muted-foreground leading-relaxed">{result.conceptDesc}</p>
               )}
-            </button>
+            </div>
+          )}
 
-            {showAnswer && (
-              <div className="mt-2">
-                <p className="font-ko text-[10px] font-bold text-emerald-400 mb-1">정답</p>
-                <code className="font-code text-[11px] text-emerald-300 block bg-zinc-950 rounded px-2 py-1.5 whitespace-pre-wrap break-all">
-                  {result.expAns}
-                </code>
-              </div>
-            )}
-          </div>
-        )}
+          {/* AI 채점(A/N) — 차이점 */}
+          {result.diffNote && (
+            <p className="font-ko text-[11px] text-foreground/80 leading-relaxed">{result.diffNote}</p>
+          )}
+
+          {result.recommend && (
+            <div className="pt-2 border-t border-border">
+              <p className="font-ko text-[10px] font-bold mb-1" style={{ color: BRAND }}>💬 추천</p>
+              <p className="font-ko text-[11px] text-muted-foreground leading-relaxed">{result.recommend}</p>
+            </div>
+          )}
+
+          {result.securityNote && (
+            <div className="pt-2 border-t border-border">
+              <p className="font-ko text-[10px] font-bold text-orange-400 mb-1">⚠️ 주의</p>
+              <p className="font-ko text-[11px] text-muted-foreground leading-relaxed">{result.securityNote}</p>
+            </div>
+          )}
+
+          {/* 오답 — 정답 보기/가리기 */}
+          {isWrong && result.expAns && (
+            <div className="pt-2 border-t border-border">
+              <button
+                type="button"
+                onClick={() => setShowAnswer(p => !p)}
+                className="font-ko text-[10px] text-muted-foreground hover:text-foreground/80 underline transition-colors flex items-center gap-1"
+              >
+                {showAnswer ? (
+                  <><EyeOff className="h-3 w-3" /> 정답 가리기</>
+                ) : (
+                  <><Eye className="h-3 w-3" /> 정답 보기</>
+                )}
+              </button>
+
+              {showAnswer && (
+                <div className="mt-2">
+                  <p className="font-ko text-[10px] font-bold text-emerald-400 mb-1">정답</p>
+                  <code className="font-code text-[11px] text-emerald-300 block bg-background rounded px-2 py-1.5 whitespace-pre-wrap break-all">
+                    {result.expAns}
+                  </code>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </PopoverContent>
     </Popover>
   )
@@ -574,12 +577,12 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
 
   /** 빈칸 input 스타일 (채점 상태에 따라) */
   const inputClass = (idx0: number) => {
-    const base = "bg-zinc-900 rounded px-2 py-0.5 text-[12px] font-code w-32 focus:outline-none transition-colors"
+    const base = "bg-card rounded px-2 py-0.5 text-[12px] font-code w-32 focus:outline-none transition-colors"
     if (!isGraded) {
       return `${base} border border-emerald-500/50 focus:border-emerald-400 text-emerald-300`
     }
     const r = results![idx0]
-    if (!r) return `${base} border border-zinc-700 text-zinc-400`
+    if (!r) return `${base} border border-border text-muted-foreground`
 
     // S: 완전정답 초록 / A: 애매정답 노랑 / N: 오답 빨강
     if (r.grdMethod === "S") return `${base} border-2 border-emerald-500 text-emerald-300 cursor-default`
@@ -611,7 +614,7 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
 
     return (
       <div
-        className="ml-12 my-2 mr-4 rounded-xl bg-[#161619] border border-white/10 overflow-hidden"
+        className="ml-12 my-2 mr-4 rounded-xl bg-card border border-border overflow-hidden"
         style={{ boxShadow: "0 8px 24px rgba(0,0,0,0.45)" }}
       >
         {/* 헤더 */}
@@ -620,20 +623,20 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
             <span className="font-ko text-[10px] font-bold tracking-widest" style={{ color: BRAND }}>
               LIVE COACHING
             </span>
-            <span className="font-ko text-[10px] text-zinc-600">·</span>
-            <span className="font-ko text-[10px] text-zinc-500">빈칸 #{idx0 + 1}</span>
+            <span className="font-ko text-[10px] text-muted-foreground">·</span>
+            <span className="font-ko text-[10px] text-muted-foreground">빈칸 #{idx0 + 1}</span>
           </div>
           <div className="flex items-center gap-2">
             {level < 3 && (
               <button
                 type="button"
                 onClick={() => togglePlay(idx0)}
-                className="flex items-center gap-1 text-zinc-400 hover:text-white transition-colors"
+                className="flex items-center gap-1 text-muted-foreground hover:text-white transition-colors"
                 title={isRunning ? "일시정지" : "재생"}
               >
                 {isRunning ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
                 <span className="font-ko text-[10px]">
-                  {etaSec !== null && <span className="text-zinc-300 font-bold">{etaSec}s</span>}
+                  {etaSec !== null && <span className="text-foreground/80 font-bold">{etaSec}s</span>}
                 </span>
               </button>
             )}
@@ -643,7 +646,7 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
         {/* 본문 */}
         <div className="px-4 py-3.5 min-h-[52px] flex items-center">
           {level === 0 ? (
-            <p className="font-ko text-[11px] text-zinc-500">잠시 후 첫 힌트가 나와요...</p>
+            <p className="font-ko text-[11px] text-muted-foreground">잠시 후 첫 힌트가 나와요...</p>
           ) : (
             <div className="w-full">
               <div className="flex items-center gap-2 mb-1.5">
@@ -653,14 +656,14 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
                 >
                   {levelMeta[viewLevel]?.tag}
                 </span>
-                <span className="font-ko text-[10px] text-zinc-500">{levelMeta[viewLevel]?.label}</span>
+                <span className="font-ko text-[10px] text-muted-foreground">{levelMeta[viewLevel]?.label}</span>
               </div>
               {viewLevel === 3 ? (
-                <code className="font-code text-[12px] text-amber-300 block bg-zinc-950/60 rounded px-2.5 py-1.5 break-all">
+                <code className="font-code text-[12px] text-amber-300 block bg-background/60 rounded px-2.5 py-1.5 break-all">
                   {contents[3]}
                 </code>
               ) : (
-                <p className="font-ko text-[12px] text-zinc-200 leading-relaxed">
+                <p className="font-ko text-[12px] text-foreground leading-relaxed">
                   {contents[viewLevel]}
                 </p>
               )}
@@ -675,7 +678,7 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
               type="button"
               onClick={() => setHintViewLevel(prev => ({ ...prev, [idx0]: Math.max(1, viewLevel - 1) }))}
               disabled={viewLevel <= 1}
-              className="text-zinc-500 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+              className="text-muted-foreground hover:text-white disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
@@ -688,7 +691,7 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
                   className="h-1.5 rounded-full transition-all duration-200"
                   style={{
                     width: lv === viewLevel ? 14 : 6,
-                    background: lv === viewLevel ? BRAND : lv <= level ? "#52525b" : "#27272a",
+                    background: lv === viewLevel ? BRAND : lv <= level ? "var(--muted-foreground)" : "var(--border)",
                   }}
                 />
               ))}
@@ -698,7 +701,7 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
               type="button"
               onClick={() => setHintViewLevel(prev => ({ ...prev, [idx0]: Math.min(level, viewLevel + 1) }))}
               disabled={viewLevel >= level}
-              className="text-zinc-500 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+              className="text-muted-foreground hover:text-white disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
@@ -711,11 +714,11 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
   return (
     <div className="flex h-full overflow-hidden">
       <div className={`transition-all duration-300 ease-in-out overflow-hidden shrink-0 ${panelOpen ? "w-[350px]" : "w-0"}`}>
-        <div className="w-[350px] h-full overflow-auto bg-[#111114]">
+        <div className="w-[350px] h-full overflow-auto bg-card">
           <div className="p-5 space-y-6">
             <button
               onClick={onBack}
-              className="font-ko text-[11px] text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-2"
+              className="font-ko text-[11px] text-muted-foreground hover:text-foreground/80 transition-colors flex items-center gap-2"
             >
               ← Back to Archive
             </button>
@@ -733,40 +736,40 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
                     if (e.key === "Escape") { e.preventDefault(); setTitleDraft(displayTitle); setEditingTitle(false) }
                   }}
                   disabled={savingTitle}
-                  className="font-syne text-2xl font-bold text-white leading-tight bg-transparent border-b border-white/20 focus:border-[#63C1ED] outline-none w-full"
+                  className="font-syne text-2xl font-bold text-foreground leading-tight bg-transparent border-b border-white/20 focus:border-[#63C1ED] outline-none w-full"
                 />
               ) : (
                 <h2
-                  className="font-syne text-2xl font-bold text-white leading-tight group flex items-center gap-2 cursor-text"
+                  className="font-syne text-2xl font-bold text-foreground leading-tight group flex items-center gap-2 cursor-text"
                   onClick={() => setEditingTitle(true)}
                   title="클릭해서 이름 변경"
                 >
                   {displayTitle}
-                  <Pencil className="h-3.5 w-3.5 text-zinc-600 group-hover:text-zinc-400 transition-colors shrink-0" />
+                  <Pencil className="h-3.5 w-3.5 text-muted-foreground group-hover:text-muted-foreground transition-colors shrink-0" />
                 </h2>
               )}
               <div className="flex items-center gap-2 mt-2">
-                <span className="font-ko text-[11px] text-zinc-500">{session.date}</span>
-                <span className="font-ko text-[10px] px-2 py-0.5 rounded bg-white/5 border border-white/10 text-zinc-300">{session.grade}</span>
+                <span className="font-ko text-[11px] text-muted-foreground">{session.date}</span>
+                <span className="font-ko text-[10px] px-2 py-0.5 rounded bg-white/5 border border-border text-foreground/80">{session.grade}</span>
               </div>
             </div>
 
-            <Card className="bg-[#17171b] border-white/5">
+            <Card className="bg-card border-white/5">
               <CardContent className="p-5">
                 <p className="font-ko text-[10px] tracking-widest mb-3 text-rose-400">// ORIGINAL CONCEPTS</p>
-                <p className="font-ko text-xs text-zinc-400 mb-4 leading-relaxed">
+                <p className="font-ko text-xs text-muted-foreground mb-4 leading-relaxed">
                   {userName}님이 작성한 코드에는 아래 패턴이 들어가 있어요.
                 </p>
                 {originalConcepts.length === 0 ? (
-                  <p className="font-ko text-xs text-zinc-600 italic">개념 정보가 없습니다.</p>
+                  <p className="font-ko text-xs text-muted-foreground italic">개념 정보가 없습니다.</p>
                 ) : (
                   originalConcepts.map((c, i) => (
                     <div key={i} className="mb-4 last:mb-0">
                       <div className="flex items-center gap-2 mb-1.5">
                         <div className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" />
-                        <span className="font-ko text-[13px] text-zinc-200 font-bold">{c.title}</span>
+                        <span className="font-ko text-[13px] text-foreground font-bold">{c.title}</span>
                       </div>
-                      <p className="font-ko text-xs text-zinc-500 leading-relaxed pl-3.5">{c.description}</p>
+                      <p className="font-ko text-xs text-muted-foreground leading-relaxed pl-3.5">{c.description}</p>
                       {c.referenceUrl && (
                         <a
                           href={c.referenceUrl}
@@ -786,19 +789,19 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
             <Card className="border-white/5" style={{ background: `${BRAND}08`, borderColor: `${BRAND}20` }}>
               <CardContent className="p-5">
                 <p className="font-ko text-[10px] tracking-widest mb-3" style={{ color: BRAND }}>// OPTIMIZED CONCEPTS</p>
-                <p className="font-ko text-xs text-zinc-400 mb-4 leading-relaxed">
+                <p className="font-ko text-xs text-muted-foreground mb-4 leading-relaxed">
                   아래 개념을 사용하면 코드를 최적화할 수 있어요.
                 </p>
                 {optimizedConcepts.length === 0 ? (
-                  <p className="font-ko text-xs text-zinc-600 italic">개념 정보가 없습니다.</p>
+                  <p className="font-ko text-xs text-muted-foreground italic">개념 정보가 없습니다.</p>
                 ) : (
                   optimizedConcepts.map((c, i) => (
                     <div key={i} className="mb-4 last:mb-0">
                       <div className="flex items-center gap-2 mb-1.5">
                         <div className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: BRAND }} />
-                        <span className="font-ko text-[13px] text-zinc-200 font-bold">{c.title}</span>
+                        <span className="font-ko text-[13px] text-foreground font-bold">{c.title}</span>
                       </div>
-                      <p className="font-ko text-xs text-zinc-500 leading-relaxed pl-3.5">{c.description}</p>
+                      <p className="font-ko text-xs text-muted-foreground leading-relaxed pl-3.5">{c.description}</p>
                       {c.referenceUrl && (
                         <a
                           href={c.referenceUrl}
@@ -816,37 +819,50 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
               </CardContent>
             </Card>
 
-            <Card className="bg-[#17171b] border-white/5">
+            <Card className="bg-card border-white/5">
               <CardHeader className="pb-2 pt-5 px-5">
-                <CardTitle className="font-syne text-sm font-bold text-zinc-100 flex items-center gap-2">
+                <CardTitle className="font-syne text-sm font-bold text-foreground flex items-center gap-2">
                   <TrendingUp className="h-4 w-4" style={{ color: BRAND }} /> Performance Comparison
                 </CardTitle>
               </CardHeader>
               <CardContent className="px-5 pb-5">
                 <div className="h-48 mt-2">
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={complexityComparisonData} margin={{ top: 5, right: 5, left: -25, bottom: 5 }}>
+                    <AreaChart data={complexityComparisonData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                       <defs>
-                        <linearGradient id="bf" x1="0" y1="0" x2="0" y2="1">
+                        <linearGradient id="originalGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.15} />
+                          <stop offset="95%" stopColor="#f43f5e" stopOpacity={0.02} />
+                        </linearGradient>
+                        <linearGradient id="optimizedGrad" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor={BRAND} stopOpacity={0.15} />
                           <stop offset="95%" stopColor={BRAND} stopOpacity={0.02} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#27272a" opacity={0.4} vertical={false} />
-                      <XAxis dataKey="name" stroke="#52525b" tick={{ fill: "#52525b", fontSize: 10, fontFamily: 'Space Mono' }} tickLine={false} axisLine={false} />
-                      <YAxis stroke="#52525b" tick={{ fill: "#52525b", fontSize: 10, fontFamily: 'Space Mono' }} tickLine={false} axisLine={false} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.4} vertical={false} />
+                      <XAxis dataKey="name" stroke="var(--muted-foreground)"
+                        tick={{ fill: "var(--muted-foreground)", fontSize: 10, fontFamily: 'Space Mono' }}
+                        tickLine={false} axisLine={false} />
+                      <YAxis stroke="var(--muted-foreground)"
+                        tick={{ fill: "var(--muted-foreground)", fontSize: 10, fontFamily: 'Space Mono' }}
+                        tickLine={false} axisLine={false} width={45} />
                       <RechartsTooltip
-                        contentStyle={{ backgroundColor: "#18181b", border: "1px solid #27272a", borderRadius: "8px", fontSize: "11px" }}
-                        labelStyle={{ color: "#a1a1aa", fontFamily: 'Space Mono', marginBottom: '4px' }}
-                      />
+                        contentStyle={{ backgroundColor: "var(--card)", border: "1px solid var(--border)", borderRadius: "8px", fontSize: "11px" }}
+                        labelStyle={{ color: "var(--muted-foreground)", fontFamily: 'Space Mono', marginBottom: '4px' }} />
                       <Legend
                         wrapperStyle={{ fontSize: "11px", fontFamily: 'Space Mono', paddingTop: '10px' }}
                         iconType="circle"
-                        formatter={v => <span className="text-zinc-400">{v === "original" ? "Original" : "Optimized"}</span>}
+                        formatter={v => <span style={{ color: "var(--muted-foreground)" }}>{v === "original" ? "Original" : "Optimized"}</span>}
                       />
-                      <Area type="monotone" dataKey="original" stroke="transparent" fill="url(#bf)" legendType="none" tooltipType="none" />
-                      <Line type="monotone" dataKey="original" stroke="#f43f5e" strokeWidth={2} strokeDasharray="4 4" dot={{ fill: "#17171b", stroke: "#f43f5e", strokeWidth: 2, r: 3 }} name="original" />
-                      <Line type="monotone" dataKey="optimized" stroke={BRAND} strokeWidth={2.5} dot={{ fill: "#17171b", stroke: BRAND, strokeWidth: 2, r: 4 }} name="optimized" />
+                      // original
+                      <Area type="monotone" dataKey="original" stroke="#f43f5e" strokeWidth={2}
+                        fill="url(#originalGrad)"
+                        dot={{ fill: "var(--card)", stroke: "#f43f5e", strokeWidth: 2, r: 3 }} name="original" />
+
+// optimized
+                      <Area type="monotone" dataKey="optimized" stroke={BRAND} strokeWidth={2.5}
+                        fill="url(#optimizedGrad)"
+                        dot={{ fill: "var(--card)", stroke: BRAND, strokeWidth: 2, r: 4 }} name="optimized" />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
@@ -856,41 +872,41 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
         </div>
       </div>
 
-      <div className="w-px bg-zinc-800 relative flex items-center justify-center shrink-0">
+      <div className="w-px bg-muted relative flex items-center justify-center shrink-0">
         <button
           onClick={() => setPanelOpen(p => !p)}
-          className="absolute z-10 w-5 h-10 bg-[#17171b] hover:bg-[#27272a] border border-zinc-700 rounded-md flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
+          className="absolute z-10 w-5 h-10 bg-card hover:bg-accent border border-border rounded-md flex items-center justify-center text-muted-foreground hover:text-white transition-colors"
         >
           {panelOpen ? "‹" : "›"}
         </button>
       </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden bg-[#0d0d0d]">
+      <div className="flex-1 flex flex-col overflow-hidden bg-background">
         <div className="flex-1 flex overflow-hidden">
-          <div className="flex-1 flex flex-col border-r border-zinc-800/50">
-            <div className="px-5 py-3 border-b border-zinc-800/50 bg-[#0a0a0c]">
-              <span className="font-ko text-xs font-bold text-zinc-300">Original code</span>
+          <div className="flex-1 flex flex-col border-r border-border/50">
+            <div className="px-5 py-3 border-b border-border/50 bg-background">
+              <span className="font-ko text-xs font-bold text-foreground/80">Original code</span>
             </div>
             <div className="flex-1 overflow-auto font-code text-[13px] leading-7 py-3">
               {originalLines.length === 0 || (originalLines.length === 1 && originalLines[0] === "") ? (
-                <p className="px-5 text-zinc-600 text-xs italic">원본 코드가 없습니다.</p>
+                <p className="px-5 text-muted-foreground text-xs italic">원본 코드가 없습니다.</p>
               ) : originalLines.map((line, idx) => (
                 <div key={idx} className="flex px-2">
-                  <div className="w-10 text-right pr-4 select-none text-zinc-600">{idx + 1}</div>
-                  <div className="flex-1 whitespace-pre text-zinc-300">{highlightLine(line)}</div>
+                  <div className="w-10 text-right pr-4 select-none text-muted-foreground">{idx + 1}</div>
+                  <div className="flex-1 whitespace-pre text-foreground/80">{highlightLine(line)}</div>
                 </div>
               ))}
             </div>
           </div>
 
           <div className="flex-1 flex flex-col">
-            <div className="px-5 py-3 border-b border-zinc-800/50 bg-[#0a0a0c] flex items-center justify-between">
+            <div className="px-5 py-3 border-b border-border/50 bg-background flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <span className="font-ko text-xs font-bold" style={{ color: BRAND }}>
                   Fill in the blanks ({filledCount}/{blankCount})
                 </span>
                 {!isGraded && (draftSaving || draftSavedAt) && (
-                  <span className="flex items-center gap-1 font-ko text-[10px] text-zinc-600">
+                  <span className="flex items-center gap-1 font-ko text-[10px] text-muted-foreground">
                     {draftSaving ? (
                       <>
                         <Loader2 className="h-2.5 w-2.5 animate-spin" />
@@ -927,7 +943,7 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
 
             <div className="flex-1 overflow-auto font-code text-[13px] leading-7 py-3">
               {parsedLines.length === 0 || blankCode === "" ? (
-                <p className="px-5 text-zinc-600 text-xs italic">빈칸 코드가 없습니다.</p>
+                <p className="px-5 text-muted-foreground text-xs italic">빈칸 코드가 없습니다.</p>
               ) : parsedLines.map((line, idx) => {
                 // 이 줄에 포커스된 빈칸이 있는지
                 const focusedInLine =
@@ -939,8 +955,8 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
                     <div
                       className={`flex px-2 ${line.hasBlank ? "bg-emerald-500/10 border-l-2 border-emerald-500/60" : "border-l-2 border-transparent"}`}
                     >
-                      <div className="w-10 text-right pr-4 select-none text-zinc-600">{line.lineNo}</div>
-                      <div className="flex-1 whitespace-pre text-zinc-300 flex items-center flex-wrap">
+                      <div className="w-10 text-right pr-4 select-none text-muted-foreground">{line.lineNo}</div>
+                      <div className="flex-1 whitespace-pre text-foreground/80 flex items-center flex-wrap">
                         {line.tokens.map((t, ti) => {
                           if (t.type === "text") {
                             return <span key={ti}>{highlightLine(t.value)}</span>
@@ -974,14 +990,14 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
 
             {/* AI 총평 */}
             {isGraded && summary?.overallComment && (
-              <div className="border-t border-zinc-800/50 bg-[#0f0f12] px-5 py-4">
+              <div className="border-t border-border/50 bg-background px-5 py-4">
                 <div className="flex items-start gap-2.5">
                   <Sparkles className="h-4 w-4 shrink-0 mt-0.5" style={{ color: BRAND }} />
                   <div className="min-w-0">
                     <p className="font-ko text-[10px] tracking-widest mb-1.5" style={{ color: BRAND }}>
                       // AI COMMENT
                     </p>
-                    <p className="font-ko text-[12px] text-zinc-300 leading-relaxed">
+                    <p className="font-ko text-[12px] text-foreground/80 leading-relaxed">
                       {summary.overallComment}
                     </p>
                   </div>
@@ -990,8 +1006,8 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
             )}
 
             {blankCount > 0 && (
-              <div className="border-t border-zinc-800/50 bg-[#0a0a0c] px-5 py-3 flex items-center justify-between">
-                <span className="font-ko text-[11px] text-zinc-500">
+              <div className="border-t border-border/50 bg-background px-5 py-3 flex items-center justify-between">
+                <span className="font-ko text-[11px] text-muted-foreground">
                   {gradeError ? (
                     <span className="text-rose-400">{gradeError}</span>
                   ) : isGrading ? (
@@ -1010,7 +1026,7 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
                 {isGraded ? (
                   <button
                     onClick={handleRetry}
-                    className="h-8 px-4 rounded font-ko text-xs font-bold flex items-center gap-1.5 bg-zinc-700 hover:bg-zinc-600 text-zinc-100 transition-colors"
+                    className="h-8 px-4 rounded font-ko text-xs font-bold flex items-center gap-1.5 bg-muted hover:bg-accent text-foreground transition-colors"
                   >
                     <RotateCcw className="h-3.5 w-3.5" />
                     다시 풀기
@@ -1020,7 +1036,7 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
                     onClick={handleSubmit}
                     disabled={!allFilled || isGrading}
                     className={`h-8 px-4 rounded font-ko text-xs font-bold flex items-center gap-1.5 transition-colors ${allFilled && !isGrading
-                      ? "bg-emerald-500 hover:bg-emerald-600 text-white"
+                      ? "bg-emerald-500 hover:bg-emerald-600 text-foreground"
                       : "bg-emerald-500/20 text-emerald-500/40 cursor-not-allowed"
                       }`}
                   >

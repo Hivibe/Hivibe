@@ -36,7 +36,7 @@ export function CodeHighlight({ code, language }: CodeHighlightProps) {
     return (
         <Highlight
             prism={Prism as any}
-            theme={themes.vsDark}
+            theme={typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? themes.vsDark : themes.vsLight}
             code={code}
             language={prismLang}
         >

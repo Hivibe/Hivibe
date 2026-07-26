@@ -3,6 +3,7 @@
 
 import { Button } from "@/components/ui/button"
 import type { Pace } from "@/components/learning/diff-view"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 import {
   Play, Copy, Save,
@@ -68,8 +69,7 @@ function PaceRadio({ pace, setPace }: { pace: Pace; setPace: (p: Pace) => void }
           const active = pace === opt.key
           return (
             <div key={opt.key} className="flex items-center">
-              {/* 원들 사이 연결선 (첫 번째 제외) */}
-              {i > 0 && <span className="w-4 h-px bg-zinc-700" />}
+              {i > 0 && <span className="w-6 h-px bg-border" />}
               <button
                 type="button"
                 onClick={() => setPace(opt.key)}
@@ -81,7 +81,7 @@ function PaceRadio({ pace, setPace }: { pace: Pace; setPace: (p: Pace) => void }
                   style={{
                     width: opt.dot,
                     height: opt.dot,
-                    borderColor: active ? BRAND : "#52525b",
+                    borderColor: active ? BRAND : "var(--border)",
                     background: active ? BRAND : "transparent",
                     boxShadow: active ? `0 0 6px ${BRAND}` : "none",
                   }}
@@ -107,29 +107,41 @@ export function MainHeader({
   editorCode, hasAnalyzed, isAnalyzing, selSession,
   codeCopied, uploadOpen, setUploadOpen,
   onRunAnalysis, onGoLearning,
-
   onCopyCode, onShare, onSaveDiag, onSaveNote, onFileUpload, onLoadPrevious,
   isStartingLearning,
 }: MainHeaderProps) {
   const IconComp = headerIcon[activeNav] ?? ActivityIcon
 
   return (
-    <header className="bg-[#0a0a0a] border-b border-zinc-800/50 shrink-0">
+    <header className="bg-background border-b border-border shrink-0">
 
       {/* Row 1 */}
       <div className="h-14 flex items-center justify-between px-5">
         <div className="flex items-center gap-2 shrink-0">
           <IconComp className="h-4 w-4 shrink-0" style={{ color: BRAND }} />
-          <span className="font-ko text-sm font-semibold text-zinc-100 whitespace-nowrap">
+          <span className="font-ko text-sm font-semibold text-foreground whitespace-nowrap">
             {headerTitle[activeNav] ?? ""}
           </span>
         </div>
         {activeNav !== "notes" && activeNav !== "mypage" && (
           <div className="flex items-center gap-2.5">
+            <Select
+              value={language}
+              onValueChange={setLanguage}
+              disabled={activeNav === "learning"}>
+              <SelectTrigger className="h-8 w-[120px] bg-card border-border text-xs text-muted-foreground font-ko">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border-border">
+                {[["java", "Java"], ["python", "Python"], ["javascript", "JavaScript"], ["typescript", "TypeScript"], ["cpp", "C++"], ["c", "C"]].map(([v, l]) => (
+                  <SelectItem key={v} value={v} className="text-xs font-ko">{l}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {activeNav === "learning" && selSession && (
               <>
                 <PaceRadio pace={pace} setPace={setPace} />
-                <div className="h-4 w-px bg-zinc-800" />
+                <div className="h-4 w-px bg-border" />
               </>
             )}
 
@@ -160,10 +172,16 @@ export function MainHeader({
               <Button size="sm"
                 disabled={activeNav === "diagnosis" && !hasAnalyzed}
                 className={`h-8 text-xs px-4 font-medium ${activeNav === "diagnosis" && !hasAnalyzed
-                  ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
+                  ? "bg-muted text-muted-foreground cursor-not-allowed"
                   : "text-white"
                   }`}
-                style={activeNav === "diagnosis" && !hasAnalyzed ? {} : { background: BRAND }}
+                style={
+                  activeNav === "diagnosis" && !hasAnalyzed
+                    ? {}
+                    : activeNav === "learning"
+                      ? { background: "#10b981" }
+                      : { background: BRAND }
+                }
                 onClick={activeNav === "learning" ? onSaveNote : onSaveDiag}>
                 <Save className="h-3.5 w-3.5 mr-1.5 shrink-0" />
                 <span className="hidden lg:inline">Save</span>
@@ -173,59 +191,60 @@ export function MainHeader({
         )}
       </div>
 
-      {/* Row 2 — 파일명 입력란 제거, 탭에서 더블클릭으로 이름 변경하는 방식으로 통합 */}
+      {/* Row 2 */}
       {(activeNav === "diagnosis" || (activeNav === "learning" && selSession)) && (
-        <div className="h-9 flex items-center justify-between px-5 border-t border-zinc-800/40">
+        <div className="h-9 flex items-center justify-between px-5 border-t border-border">
           <div className="flex items-center gap-2" />
           <div className="flex items-center gap-1.5">
-            <div className="relative">
-              <button
-                onClick={() => setUploadOpen(!uploadOpen)}
-                className="h-7 px-2.5 flex items-center gap-1.5 rounded border border-zinc-800 font-ko text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 text-[11px] transition-colors">
-                <Upload className="h-3 w-3" />
-                <span className="hidden lg:inline">Upload</span>
-              </button>
-              {uploadOpen && (
-                <>
-                  <div className="fixed inset-0 z-10" onClick={() => setUploadOpen(false)} />
-                  <div className="absolute right-0 top-8 z-20 w-56 bg-zinc-900 border border-zinc-700 rounded-xl shadow-xl overflow-hidden">
-                    <button
-                      onClick={() => { setUploadOpen(false); onFileUpload() }}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-zinc-800 transition-colors text-left">
-                      <HardDrive className="h-4 w-4 text-zinc-400 shrink-0" />
-                      <div>
-                        <p className="font-ko text-xs text-zinc-200 font-bold">내 컴퓨터에서 코드 불러오기</p>
-                        <p className="font-ko text-[12px] text-zinc-500 mt-0.5">모든 코드 파일 지원</p>
-                      </div>
-                    </button>
-                    <div className="h-px bg-zinc-800" />
-                    <button
-                      onClick={() => { setUploadOpen(false); onLoadPrevious() }}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-zinc-800 transition-colors text-left">
-                      <Monitor className="h-4 w-4 text-zinc-400 shrink-0" />
-                      <div>
-                        <p className="font-ko text-xs text-zinc-200 font-bold">이전 분석에서</p>
-                        <p className="font-ko text-[12px] text-zinc-500 mt-0.5">저장된 코드 불러오기</p>
-                      </div>
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
+            {activeNav !== "learning" && (   // ← 추가
+              <div className="relative">
+                <button
+                  onClick={() => setUploadOpen(!uploadOpen)}
+                  className="h-7 px-2.5 flex items-center gap-1.5 rounded border border-border font-ko text-muted-foreground hover:text-foreground hover:bg-accent text-[11px] transition-colors">
+                  <Upload className="h-3 w-3" />
+                  <span className="hidden lg:inline">Upload</span>
+                </button>
+                {uploadOpen && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setUploadOpen(false)} />
+                    <div className="absolute right-0 top-8 z-20 w-56 bg-popover border border-border rounded-xl shadow-xl overflow-hidden">
+                      <button
+                        onClick={() => { setUploadOpen(false); onFileUpload() }}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent transition-colors text-left">
+                        <HardDrive className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <div>
+                          <p className="font-ko text-xs text-foreground font-bold">내 컴퓨터에서 코드 불러오기</p>
+                          <p className="font-ko text-[12px] text-muted-foreground mt-0.5">모든 코드 파일 지원</p>
+                        </div>
+                      </button>
+                      <div className="h-px bg-border" />
+                      <button
+                        onClick={() => { setUploadOpen(false); onLoadPrevious() }}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent transition-colors text-left">
+                        <Monitor className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <div>
+                          <p className="font-ko text-xs text-foreground font-bold">이전 분석에서</p>
+                          <p className="font-ko text-[12px] text-muted-foreground mt-0.5">저장된 코드 불러오기</p>
+                        </div>
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>)}
 
             <button
               onClick={onShare}
-              className="h-7 px-2.5 flex items-center gap-1.5 rounded border border-zinc-800 font-ko text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 text-[11px] transition-colors">
+              className="h-7 px-2.5 flex items-center gap-1.5 rounded border border-border font-ko text-muted-foreground hover:text-foreground hover:bg-accent text-[11px] transition-colors">
               <Share2 className="h-3 w-3" />
               <span className="hidden lg:inline">Share</span>
             </button>
 
             <button
               onClick={onCopyCode}
-              className="h-7 px-2.5 flex items-center gap-1.5 rounded border font-ko text-[11px] transition-colors hover:bg-zinc-800"
+              className="h-7 px-2.5 flex items-center gap-1.5 rounded border border-border font-ko text-muted-foreground text-[11px] transition-colors hover:bg-accent"
               style={codeCopied
                 ? { color: BRAND, borderColor: `${BRAND}44` }
-                : { color: "#71717a", borderColor: "#27272a" }}>
+                : {}}>
               {codeCopied
                 ? <><Check className="h-3 w-3" /><span className="hidden lg:inline">Copied!</span></>
                 : <><Copy className="h-3 w-3" /><span className="hidden lg:inline">Copy Code</span></>}

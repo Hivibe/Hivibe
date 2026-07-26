@@ -101,11 +101,12 @@ interface CodeEditorProps {
   onLanguageDetected?: (lang: string) => void   // ← 추가
   setLanguage: (v: string) => void
   onUserEdit?: () => void
+  skipLangConfirm?: boolean
 }
 
 export function CodeEditor({
   language, fileName, setFileName, editorCode,
-  setEditorCode, hasAnalyzed, aiCoaching, onLanguageDetected, setLanguage,onUserEdit,
+  setEditorCode, hasAnalyzed, aiCoaching, onLanguageDetected, setLanguage, onUserEdit, skipLangConfirm
 }: CodeEditorProps) {
   const ext = extMap[language] ?? "txt"
   const prismLang = langMap[language] ?? "javascript"
@@ -149,7 +150,7 @@ export function CodeEditor({
         // 자동 감지로 바꾼 거면 그냥 언어만 변경
         isAutoDetectRef.current = false
         prevLang.current = language
-      } else if (editorCode.trim() && editorCode.trim() !== (templates[prevLang.current] ?? "").trim()) {
+      } else if (!skipLangConfirm && editorCode.trim() && editorCode.trim() !== (templates[prevLang.current] ?? "").trim()) {
         // 사용자가 직접 바꾼 거면 팝업
         pendingLangRef.current = language
         setLanguage(prevLang.current)
@@ -192,16 +193,16 @@ export function CodeEditor({
   const lineCount = Math.max(20, editorCode.split("\n").length)
 
   return (
-    <div className="h-full flex flex-col bg-[#141414]">
+    <div className="h-full flex flex-col bg-background">
 
       {/* 탭바 */}
-      <div className="flex items-center border-b border-zinc-800/80 bg-[#1a1a1a] shrink-0">
+      <div className="flex items-center border-b border-border/80 bg-card shrink-0">
         <div
-          className="flex items-center gap-2 px-4 py-2 border-r border-zinc-800 bg-[#141414] group"
+          className="flex items-center gap-2 px-4 py-2 border-r border-border bg-background group"
           style={{ borderBottom: `2px solid ${BRAND}` }}
           onDoubleClick={() => !editingName && startEditingName()}
         >
-          <FileCode className="h-3 w-3 text-zinc-400 shrink-0" />
+          <FileCode className="h-3 w-3 text-muted-foreground shrink-0" />
 
           {editingName ? (
             <div className="flex items-center">
@@ -221,11 +222,11 @@ export function CodeEditor({
                 style={{ color: "#FAFAFA" }}
               />
               {/* 확장자는 항상 고정 표시 — 언어 바뀌면 ext도 자동으로 따라감 */}
-              <span className="font-code text-[13px] text-zinc-500 select-none">.{ext}</span>
+              <span className="font-code text-[13px] text-muted-foreground select-none">.{ext}</span>
             </div>
           ) : (
             <span
-              className="font-code text-[13px] text-zinc-300 cursor-text select-none group-hover:text-zinc-100 transition-colors"
+              className="font-code text-[13px] text-foreground/80 cursor-text select-none group-hover:text-foreground transition-colors"
               title="더블클릭해서 이름 변경"
             >
               {fileName || "untitled"}.{ext}
@@ -241,7 +242,7 @@ export function CodeEditor({
         <div className="flex font-code text-[13px] min-h-full">
 
           {/* 줄번호 */}
-          <div className="sticky left-0 bg-[#141414] select-none shrink-0 border-r border-zinc-800/60 pt-4 pb-4 z-10">
+          <div className="sticky left-0 bg-background select-none shrink-0 border-r border-border/60 pt-4 pb-4 z-10">
             <div className="px-4 text-right min-w-[48px]">
               {Array.from({ length: lineCount }, (_, i) => (
                 <div key={i} className="leading-[1.625rem] text-zinc-700 text-[12px]">{i + 1}</div>
@@ -256,7 +257,7 @@ export function CodeEditor({
             <div className="absolute inset-0 px-4 pt-4 pb-4 pointer-events-none overflow-hidden">
               <Highlight
                 prism={Prism as any}
-                theme={themes.vsDark}
+                theme={typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? themes.vsDark : themes.vsLight}
                 code={editorCode || " "}
                 language={prismLang}
               >
@@ -291,7 +292,7 @@ export function CodeEditor({
                   }
                 }
                 setEditorCode(newCode)
-                onUserEdit?.() 
+                onUserEdit?.()
               }}
               onKeyDown={handleKeyDown}
               spellCheck={false}
@@ -312,10 +313,10 @@ export function CodeEditor({
         {/* AI 코칭 툴팁 */}
         {aiCoaching && editorCode.trim() && !hasAnalyzed && (
           <div className="absolute left-4 bottom-6 z-20 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-3 shadow-xl max-w-xs">
+            <div className="bg-card border border-border rounded-xl p-3 shadow-xl max-w-xs">
               <div className="flex items-start gap-2">
                 <Lightbulb className="h-3.5 w-3.5 text-amber-400 mt-0.5 shrink-0" />
-                <p className="font-ko text-[13px] text-zinc-300 leading-relaxed">
+                <p className="font-ko text-[13px] text-foreground/80 leading-relaxed">
                   <span className="text-amber-300">Tip:</span> 코드 작성 완료 후 Run Analysis를 눌러보세요!
                 </p>
               </div>
@@ -325,25 +326,25 @@ export function CodeEditor({
       </div>
 
       {/* 상태바 */}
-      <div className="h-6 bg-[#1a1a1a] border-t border-zinc-800/60 flex items-center px-4 gap-4 shrink-0">
-        <span className="font-ko text-[10px] text-zinc-600">{editorCode.split("\n").length} lines</span>
-        <span className="font-ko text-[10px] text-zinc-600">{editorCode.length} chars</span>
-        <span className="font-ko text-[10px] text-zinc-600 ml-auto">{language.toUpperCase()}</span>
+      <div className="h-6 bg-card border-t border-border/60 flex items-center px-4 gap-4 shrink-0">
+        <span className="font-ko text-[10px] text-muted-foreground">{editorCode.split("\n").length} lines</span>
+        <span className="font-ko text-[10px] text-muted-foreground">{editorCode.length} chars</span>
+        <span className="font-ko text-[10px] text-muted-foreground ml-auto">{language.toUpperCase()}</span>
       </div>
 
       <AlertDialog open={langConfirmOpen} onOpenChange={setLangConfirmOpen}>
-        <AlertDialogContent className="bg-[#17171b] border-white/10">
+        <AlertDialogContent className="bg-card outline-none ring-0">
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-syne text-white">
+            <AlertDialogTitle className="font-syne text-foreground">
               언어를 변경할까요?
             </AlertDialogTitle>
-            <AlertDialogDescription className="font-ko text-zinc-400 leading-relaxed">
+            <AlertDialogDescription className="font-ko text-muted-foreground leading-relaxed">
               언어를 변경하면 현재 작성한 코드가 초기화돼요.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel
-              className="bg-transparent border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100 font-ko text-xs"
+              className="bg-transparent border-zinc-200 dark:border-zinc-700 text-foreground/80 hover:bg-muted hover:text-foreground font-ko text-xs outline-none"
               onClick={() => {
                 pendingLangRef.current = null
                 setLangConfirmOpen(false)

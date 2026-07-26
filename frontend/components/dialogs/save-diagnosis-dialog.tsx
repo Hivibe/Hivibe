@@ -68,9 +68,9 @@ export function SaveDiagnosisDialog({
       })
 
       if (response.ok) {
-        const saveData = await response.json()          
+        const saveData = await response.json()
         if (saveData.tierUp) onTierUp?.(saveData.tierUp)
-          
+
         // 뱃지 체크 — 새로 딴 뱃지(isNew=true)만 골라서 부모에 전달
         let newlyUnlocked: any[] = []
         try {
@@ -104,34 +104,34 @@ export function SaveDiagnosisDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-zinc-900 border-zinc-800 text-zinc-100 sm:max-w-md">
+      <DialogContent className="bg-card border-border text-foreground sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="font-ko flex items-center gap-2" style={{ color: BRAND }}>
             <Save className="h-4 w-4" />진단 결과 저장
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
-          <p className="font-ko text-[13px] text-zinc-400 leading-relaxed">현재 코드와 분석 결과를 저장합니다.</p>
+          <p className="font-ko text-[13px] text-muted-foreground leading-relaxed">현재 코드와 분석 결과를 저장합니다.</p>
           <div className="space-y-2">
-            <label className="font-ko text-[11px] text-zinc-400 uppercase tracking-wider">저장 이름</label>
+            <label className="font-ko text-[11px] text-muted-foreground uppercase tracking-wider">저장 이름</label>
             <Input
               value={fileName}
               onChange={e => setFileName(e.target.value)}
               placeholder="파일명 입력..."
-              className="bg-zinc-950 border-zinc-800 text-zinc-200 text-sm font-code" />
+              className="bg-background border-border text-foreground text-sm font-code" />
           </div>
-          <div className="bg-zinc-950 rounded-lg border border-zinc-800 p-3 space-y-1.5">
+          <div className="bg-background rounded-lg border border-border p-3 space-y-1.5">
             {["코드 원본", "진단 결과 (점수, 복잡도)", `언어 설정 (${language})`].map(item => (
               <div key={item} className="flex items-center gap-2">
                 <Check className="h-3 w-3 text-emerald-400" />
-                <span className="font-ko text-[13px] text-zinc-400">{item}</span>
+                <span className="font-ko text-[13px] text-muted-foreground">{item}</span>
               </div>
             ))}
           </div>
         </div>
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline" size="sm" className="border-zinc-800 text-zinc-400 font-ko text-xs">취소</Button>
+            <Button variant="outline" size="sm" className="border-border text-muted-foreground font-ko text-xs">취소</Button>
           </DialogClose>
           <Button
             size="sm"

@@ -61,26 +61,26 @@ export function DiagnosisPanel({ hasAnalyzed, isAnalyzing, aiResult, onCancel }:
             ))}
           </div>
           <div>
-            <p className="font-ko text-sm font-semibold text-zinc-300">AI가 코드를 분석 중입니다...</p>
-            <p className="font-ko text-[13px] text-zinc-500 mt-1.5 leading-relaxed">잠시만 기다려 주세요!</p>
+            <p className="font-ko text-sm font-semibold text-foreground/80">AI가 코드를 분석 중입니다...</p>
+            <p className="font-ko text-[13px] text-muted-foreground mt-1.5 leading-relaxed">잠시만 기다려 주세요!</p>
           </div>
           {onCancel && (
             <button
               onClick={onCancel}
-              className="mt-2 font-ko text-xs text-zinc-500 hover:text-zinc-300 border border-zinc-800 hover:border-zinc-600 px-4 py-1.5 rounded-lg transition-colors">
+              className="mt-2 font-ko text-xs text-muted-foreground hover:text-foreground/80 border border-border hover:border-border px-4 py-1.5 rounded-lg transition-colors">
               취소
             </button>
           )}
         </div>
       ) : !hasAnalyzed ? (
         <div className="flex flex-col items-center justify-center h-[56vh] gap-4 text-center px-6">
-          <div className="w-14 h-14 rounded-full border border-zinc-800 flex items-center justify-center"
+          <div className="w-14 h-14 rounded-full border border-border flex items-center justify-center"
             style={{ background: `${BRAND}08` }}>
             <ActivityIcon className="h-6 w-6" style={{ color: `${BRAND}55` }} />
           </div>
           <div>
-            <p className="font-ko text-sm font-semibold text-zinc-300">코드를 입력하고 분석을 시작하세요</p>
-            <p className="font-ko text-[13px] text-zinc-500 mt-1.5 leading-relaxed">
+            <p className="font-ko text-sm font-semibold text-foreground/80">코드를 입력하고 분석을 시작하세요</p>
+            <p className="font-ko text-[13px] text-muted-foreground mt-1.5 leading-relaxed">
               오른쪽 에디터에 코드를 붙여넣고<br />Run Analysis를 눌러 주세요
             </p>
           </div>
@@ -88,23 +88,23 @@ export function DiagnosisPanel({ hasAnalyzed, isAnalyzing, aiResult, onCancel }:
       ) : (
         <>
           {/* AI Analysis Result */}
-          <Card className="bg-zinc-900 border-zinc-800">
+          <Card className="bg-card border-border">
             <CardHeader className="pb-2 pt-5 px-6">
-              <CardTitle className="font-syne text-sm font-bold text-zinc-100 flex items-center gap-2">
+              <CardTitle className="font-syne text-sm font-bold text-foreground flex items-center gap-2">
                 <Sparkles className="h-4 w-4" style={{ color: BRAND }} />AI Analysis Result
               </CardTitle>
             </CardHeader>
             <CardContent className="px-6 pb-6">
-              <div className="font-ko text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">
+              <div className="font-ko text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">
                 {data.summary}
               </div>
             </CardContent>
           </Card>
 
           {/* Code Quality Score */}
-          <Card className="bg-zinc-900 border-zinc-800">
+          <Card className="bg-card border-border">
             <CardHeader className="pb-2 pt-5 px-6">
-              <CardTitle className="font-syne text-sm font-bold text-zinc-100 flex items-center gap-2">
+              <CardTitle className="font-syne text-sm font-bold text-foreground flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-amber-400" />Code Quality Score
               </CardTitle>
             </CardHeader>
@@ -112,14 +112,14 @@ export function DiagnosisPanel({ hasAnalyzed, isAnalyzing, aiResult, onCancel }:
               <div className="flex items-center gap-6">
                 <div className="relative w-28 h-28 shrink-0">
                   <svg className="w-28 h-28 -rotate-90">
-                    <circle cx="56" cy="56" r="46" stroke="#27272a" strokeWidth="9" fill="none" />
+                    <circle cx="56" cy="56" r="46" stroke="var(--border)" strokeWidth="9" fill="none" />
                     <circle cx="56" cy="56" r="46" stroke="#f59e0b" strokeWidth="9" fill="none"
                       strokeDasharray={`${(data.totalScore / 100) * 289} 289`}
                       style={{ filter: "drop-shadow(0 0 6px #f59e0b88)", transition: "stroke-dasharray 1s ease-out" }} />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <span className="font-syne text-3xl font-bold text-amber-400">{getGrade(data.totalScore)}</span>
-                    <span className="font-space text-xs text-zinc-400 mt-0.5">{data.totalScore}/100</span>
+                    <span className="font-space text-xs text-muted-foreground mt-0.5">{data.totalScore}/100</span>
                   </div>
                 </div>
                 <div className="flex-1 space-y-3.5">
@@ -131,10 +131,10 @@ export function DiagnosisPanel({ hasAnalyzed, isAnalyzing, aiResult, onCancel }:
                   ].map(s => (
                     <div key={s.l}>
                       <div className="flex justify-between mb-1.5">
-                        <span className="font-space text-xs text-zinc-400">{s.l}</span>
-                        <span className="font-space text-xs text-zinc-300">{s.v}/100</span>
+                        <span className="font-space text-xs text-muted-foreground">{s.l}</span>
+                        <span className="font-space text-xs text-foreground/80">{s.v}/100</span>
                       </div>
-                      <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                         <div className={`h-full ${s.c} rounded-full transition-all duration-1000`} style={{ width: `${s.v}%` }} />
                       </div>
                     </div>
@@ -145,10 +145,10 @@ export function DiagnosisPanel({ hasAnalyzed, isAnalyzing, aiResult, onCancel }:
           </Card>
 
           {/* Score Breakdown */}
-          <Card className="bg-zinc-900 border-zinc-800">
+          <Card className="bg-card border-border">
             <CardHeader className="pb-2 pt-5 px-6">
-              <CardTitle className="font-syne text-sm font-bold text-zinc-100 flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-zinc-400" />Score Breakdown
+              <CardTitle className="font-syne text-sm font-bold text-foreground flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-muted-foreground" />Score Breakdown
               </CardTitle>
             </CardHeader>
             <CardContent className="px-6 pb-6 space-y-5">
@@ -160,20 +160,20 @@ export function DiagnosisPanel({ hasAnalyzed, isAnalyzing, aiResult, onCancel }:
               ].map(item => (
                 <div key={item.label} className="space-y-1.5">
                   <div className="flex justify-between items-baseline">
-                    <span className="font-syne text-sm font-bold text-zinc-100">{item.label}</span>
-                    <span className="font-space text-xs text-zinc-500">{item.score}/100</span>
+                    <span className="font-syne text-sm font-bold text-foreground">{item.label}</span>
+                    <span className="font-space text-xs text-muted-foreground">{item.score}/100</span>
                   </div>
-                  <p className="font-ko text-sm text-zinc-400 leading-relaxed">{item.reason}</p>
+                  <p className="font-ko text-sm text-muted-foreground leading-relaxed">{item.reason}</p>
                 </div>
               ))}
             </CardContent>
           </Card>
 
           {/* Current Complexity */}
-          <Card className="bg-zinc-900 border-zinc-800">
+          <Card className="bg-card border-border">
             <CardHeader className="pb-2 pt-5 px-6">
               <div className="flex items-center justify-between">
-                <CardTitle className="font-syne text-sm font-bold text-zinc-100 flex items-center gap-2">
+                <CardTitle className="font-syne text-sm font-bold text-foreground flex items-center gap-2">
                   <TrendingUp className="h-4 w-4 text-rose-400" />Current Complexity
                 </CardTitle>
                 <span className="font-space text-xs px-2.5 py-1 rounded border bg-rose-500/15 text-rose-400 border-rose-500/25">
@@ -184,16 +184,21 @@ export function DiagnosisPanel({ hasAnalyzed, isAnalyzing, aiResult, onCancel }:
             <CardContent className="px-6 pb-6">
               <div className="h-48">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={getComplexityData(data.complexity)} margin={{ top: 5, right: 5, left: -25, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#27272a" opacity={0.4} />
-                    <XAxis dataKey="n" stroke="#52525b" tick={{ fill: "#71717a", fontSize: 11 }}
-                      label={{ value: "Input (N)", position: "insideBottom", offset: -4, fill: "#71717a", fontSize: 11 }} />
-                    <YAxis stroke="#52525b" tick={{ fill: "#71717a", fontSize: 11 }} />
+                  <LineChart data={getComplexityData(data.complexity)} margin={{ top: 5, right: 10, left: 10, bottom: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.4} vertical={false} />
+                    <XAxis dataKey="n" stroke="var(--muted-foreground)"
+                      tick={{ fill: "var(--muted-foreground)", fontSize: 10, fontFamily: 'Space Mono' }}
+                      tickLine={false} axisLine={false}
+                      label={{ value: "Input (N)", position: "insideBottom", offset: -10, fill: "var(--muted-foreground)", fontSize: 10 }} />
+                    <YAxis stroke="var(--muted-foreground)"
+                      tick={{ fill: "var(--muted-foreground)", fontSize: 10, fontFamily: 'Space Mono' }}
+                      tickLine={false} axisLine={false}
+                      width={45} />
                     <RechartsTooltip
-                      contentStyle={{ backgroundColor: "#18181b", border: "1px solid #27272a", borderRadius: "8px", fontSize: "12px" }}
-                      labelStyle={{ color: "#d4d4d8" }} />
+                      contentStyle={{ backgroundColor: "var(--card)", border: "1px solid var(--border)", borderRadius: "8px", fontSize: "11px" }}
+                      labelStyle={{ color: "var(--muted-foreground)", fontFamily: 'Space Mono', marginBottom: '4px' }} />
                     <Line type="monotone" dataKey="time" stroke="#f43f5e" strokeWidth={2.5}
-                      dot={{ fill: "#f43f5e", r: 3 }} name="Time"
+                      dot={{ fill: "var(--card)", stroke: "#f43f5e", strokeWidth: 2, r: 3 }} name="Time"
                       style={{ filter: "drop-shadow(0 0 5px rgba(244,63,94,0.5))" }} />
                   </LineChart>
                 </ResponsiveContainer>

@@ -13,7 +13,7 @@ interface SuccessDialogProps {
   confirmText?: string
   /** 자동으로 닫히는 시간(ms). 지정하면 그 시간 뒤 자동 onClose. 미지정 시 수동 확인만 */
   autoCloseMs?: number
-  actionText?: string 
+  actionText?: string
   onAction?: () => void
 }
 
@@ -90,7 +90,7 @@ export function SuccessDialog({
         <button
           onClick={onClose}
           autoFocus
-          className="mt-5 w-full h-10 rounded-lg font-space text-sm font-bold text-white transition-opacity hover:opacity-90"
+          className="mt-5 w-full h-10 rounded-lg font-ko text-sm font-bold text-white transition-opacity hover:opacity-90"
           style={{ background: BRAND }}
         >
           {confirmText}
