@@ -79,7 +79,7 @@ export default function LoginPage() {
             <Button
               variant="outline"
               className="w-full h-11 bg-muted border-border hover:bg-accent hover:text-foreground flex items-center gap-3 font-ko text-sm"
-              onClick={() => window.location.href = `${process.env.NEXT_PUBLIC_API_URL ?? 'https://hivibe-production.up.railway.app'}/oauth2/authorization/google`}
+              onClick={() => window.location.href = `${process.env.NEXT_PUBLIC_API_URL ?? 'https://hivibe.cloud'}/oauth2/authorization/google`}
             >
               <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" aria-hidden="true">
                 <path fill="#EA4335" d="M12.0003 4.75C13.7703 4.75 15.3553 5.36002 16.6053 6.54998L20.0303 3.125C17.9502 1.19 15.2353 0 12.0003 0C7.31028 0 3.25527 2.69 1.28027 6.60998L5.27028 9.70498C6.21525 6.86002 8.87028 4.75 12.0003 4.75Z" />

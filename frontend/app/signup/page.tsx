@@ -45,7 +45,7 @@ export default function SignupPage() {
 
       if (!res.ok) { const msg = await res.text(); setError(msg); return; }
 
-      const loginRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'https://hivibe-production.up.railway.app'}/api/users/login`, {
+      const loginRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'https://hivibe.cloud'}/api/users/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lgnId: email, lgnPwsd: password }),
@@ -68,7 +68,7 @@ export default function SignupPage() {
     if (!email) return;
     setCheckingEmail(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'https://hivibe-production.up.railway.app'}/api/users/check-email?userEmail=${email}`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'https://hivibe.cloud'}/api/users/check-email?userEmail=${email}`);
       const isDuplicate = await res.json();
       setEmailDuplicate(isDuplicate);
     } catch {
