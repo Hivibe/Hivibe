@@ -301,7 +301,7 @@ export function MyPage({ onProfileUpdated, onNavigate }: {
                 <div className="relative w-16 h-16 shrink-0 group cursor-pointer"
                   onClick={() => imgRef.current?.click()}>
                   {profile.userPhoto ? (
-                    <img src={`http://localhost:8080${profile.userPhoto}`} alt="프로필"
+                    <img src={`https://hivibe.cloud${profile.userPhoto}`} alt="프로필"
                       className="w-16 h-16 rounded-full object-cover border-2"
                       style={{ borderColor: `${BRAND}44` }} />
                   ) : (

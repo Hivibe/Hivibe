@@ -100,7 +100,7 @@ export function Sidebar({ activeNav, sidebarExp, setSidebarExp, onNavClick, refr
               className={`w-full flex items-center rounded-lg transition-colors hover:bg-accent ${sidebarExp ? "gap-3 px-2 py-2" : "justify-center py-1"}`}>
               <Avatar className="h-7 w-7 shrink-0">
                 {user?.userPhoto && (
-                  <AvatarImage src={`http://localhost:8080${user.userPhoto}`} alt={user.userNm} />
+                  <AvatarImage src={`https://hivibe.cloud${user.userPhoto}`} alt={user.userNm} />
                 )}
                 <AvatarFallback className="bg-muted text-muted-foreground text-xs">{initial}</AvatarFallback>
               </Avatar>

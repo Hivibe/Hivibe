@@ -37,7 +37,7 @@ export default function SignupPage() {
     if (emailDuplicate === true) { setError("이미 사용 중인 이메일입니다."); return; }
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'}/api/users/signup`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'https://hivibe.cloud'}/api/users/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ lgnId: email, lgnPwsd: password, userNm: name, userEmail: email, mktgAgreeYn: false }),
