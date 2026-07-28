@@ -577,14 +577,13 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
 
   /** 빈칸 input 스타일 (채점 상태에 따라) */
   const inputClass = (idx0: number) => {
-    const base = "bg-card rounded px-2 py-0.5 text-[12px] font-code w-32 focus:outline-none transition-colors"
+    const base = "bg-card rounded px-2 py-0.5 text-[12px] font-code focus:outline-none transition-colors resize-none overflow-hidden align-middle whitespace-pre-wrap break-words"
     if (!isGraded) {
       return `${base} border border-emerald-500/50 focus:border-emerald-400 text-emerald-300`
     }
     const r = results![idx0]
     if (!r) return `${base} border border-border text-muted-foreground`
 
-    // S: 완전정답 초록 / A: 애매정답 노랑 / N: 오답 빨강
     if (r.grdMethod === "S") return `${base} border-2 border-emerald-500 text-emerald-300 cursor-default`
     if (r.grdMethod === "A") return `${base} border-2 border-amber-500 text-amber-300 cursor-default`
     return `${base} border-2 border-rose-500 text-rose-300 cursor-default`
@@ -967,14 +966,22 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
 
                           return (
                             <span key={ti} className="inline-flex items-center gap-1 mx-0.5 align-middle">
-                              <input
-                                type="text"
+                              <textarea
+                                rows={1}
                                 value={answers[idx0] ?? ""}
-                                onChange={(e) => setAnswers(prev => ({ ...prev, [idx0]: e.target.value }))}
+                                onChange={(e) => {
+                                  setAnswers(prev => ({ ...prev, [idx0]: e.target.value }))
+                                  e.target.style.height = 'auto'
+                                  e.target.style.height = `${e.target.scrollHeight}px`
+                                }}
                                 onFocus={() => handleBlankFocus(idx0)}
                                 readOnly={isGraded || isGrading}
                                 placeholder={`#${idx0 + 1}`}
                                 className={inputClass(idx0)}
+                                style={{
+                                  width: `${Math.min(Math.max((answers[idx0] ?? "").length * 0.62, 6), 30)}em`,
+                                  maxWidth: '100%',
+                                }}
                               />
                               {result && <ResultPopover result={result} />}
                             </span>

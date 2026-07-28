@@ -52,7 +52,7 @@ export function SuccessDialog({
       onClick={onClose}
     >
       <div
-        className="relative w-[320px] bg-[#17171b] border border-white/10 rounded-2xl shadow-2xl px-8 py-9 flex flex-col items-center text-center animate-[sd-pop_220ms_cubic-bezier(0.34,1.56,0.64,1)]"
+        className="relative w-[320px] bg-card border border-border rounded-2xl shadow-2xl px-8 py-9 flex flex-col items-center text-center animate-[sd-pop_220ms_cubic-bezier(0.34,1.56,0.64,1)]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* 체크 아이콘 (원 + 링 펄스 + 그려지는 체크) */}
@@ -82,9 +82,9 @@ export function SuccessDialog({
           </span>
         </div>
 
-        <h2 className="font-syne text-lg font-bold text-white mb-1.5">{title}</h2>
+        <h2 className="font-syne text-lg font-bold text-foreground mb-1.5">{title}</h2>
         {message && (
-          <p className="font-ko text-[13px] text-zinc-400 leading-relaxed mb-1">{message}</p>
+          <p className="font-ko text-[13px] text-muted-foreground leading-relaxed mb-1">{message}</p>
         )}
 
         <button
@@ -99,7 +99,7 @@ export function SuccessDialog({
         {actionText && onAction && (
           <button
             onClick={onAction}
-            className="mt-3 font-ko text-xs text-zinc-500 hover:text-zinc-300 underline transition-colors"
+            className="mt-3 font-ko text-xs text-muted-foreground hover:text-foreground underline transition-colors"
           >
             {actionText}
           </button>

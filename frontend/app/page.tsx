@@ -307,6 +307,7 @@ export default function HomePage() {
                 Hi, your code.
                 <br />
                 <span
+                  className="whitespace-nowrap"
                   style={{
                     background: `linear-gradient(135deg, #fff 0%, ${BRAND} 60%)`,
                     WebkitBackgroundClip: "text",
