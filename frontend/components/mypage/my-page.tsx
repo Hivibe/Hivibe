@@ -9,10 +9,13 @@ import { Switch } from "@/components/ui/switch"
 import { apiFetch } from "@/lib/api"
 import {
   User, Settings, Star, Flame, FolderOpen, BookOpen,
-  Edit2, Check, X, Bell, Shield, Smartphone, Camera,
+  Edit2, Check, X, Bell, Shield, Smartphone, Camera, Code,  // ← Code 추가
 } from "lucide-react"
 import type { Note } from "@/types"
 import { useRouter } from "next/navigation"
+import { Sun, Moon } from "lucide-react"
+import { useTheme } from "next-themes"
+
 
 const BRAND = "#63C1ED"
 
@@ -40,17 +43,25 @@ interface Badge {
   achievedAt: string | null
 }
 
+interface MyPageProps {
+  onNavigate?: (tab: string, noteId?: number) => void  // ← 추가
+}
+
 const TIERS = [
-  { key: "BRONZE",   name: "Bronze",   color: "#CD7F32", min: 3   },
-  { key: "SILVER",   name: "Silver",   color: "#C0C0C0", min: 10  },
-  { key: "GOLD",     name: "Gold",     color: "#FFD700", min: 25  },
-  { key: "PLATINUM", name: "Platinum", color: BRAND,     min: 50  },
-  { key: "DIAMOND",  name: "Diamond",  color: "#a78bfa", min: 100 },
+  { key: "BRONZE", name: "Bronze", color: "#CD7F32", min: 3 },
+  { key: "SILVER", name: "Silver", color: "#C0C0C0", min: 10 },
+  { key: "GOLD", name: "Gold", color: "#FFD700", min: 25 },
+  { key: "PLATINUM", name: "Platinum", color: BRAND, min: 50 },
+  { key: "DIAMOND", name: "Diamond", color: "#a78bfa", min: 100 },
 ]
 
-export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) {
-  const [activeTab, setActiveTab] = useState<"profile" | "settings">("profile")
 
+export function MyPage({ onProfileUpdated, onNavigate }: {
+  onProfileUpdated?: () => void
+  onNavigate?: (tab: string, noteId?: number) => void  // ← 추가
+}) {
+  const [activeTab, setActiveTab] = useState<"profile" | "settings">("profile")
+  const { theme, setTheme } = useTheme()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [badges, setBadges] = useState<Badge[]>([])
   const [notes, setNotes] = useState<Note[]>([])
@@ -72,12 +83,19 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
   const [marketingSms, setMarketingSms] = useState(false)
   const [reviewAlarm, setReviewAlarm] = useState(true)
   const [savingSettings, setSavingSettings] = useState(false)
+  const [selectedLangs, setSelectedLangs] = useState<string[]>([])
 
   const router = useRouter()
 
   const handleLogout = () => {
     localStorage.removeItem("accessToken")
     localStorage.removeItem("refreshToken")
+    // 진단 상태 초기화
+    localStorage.removeItem("hivibe_code")
+    localStorage.removeItem("hivibe_lang")
+    localStorage.removeItem("hivibe_filename")
+    localStorage.removeItem("hivibe_airesult")
+    localStorage.removeItem("hivibe_analyzed")
     router.push("/login")
   }
 
@@ -119,6 +137,13 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
     Promise.all([fetchProfile(), fetchBadges(), fetchNotes()])
       .finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => {
+    const langs = Array.from(new Set(notes.map(n => n.lang).filter(Boolean))).slice(0, 3) as string[]
+    if (selectedLangs.length === 0 && langs.length > 0) {
+      setSelectedLangs(langs)
+    }
+  }, [notes])
 
   /* ── 이름 수정 ── */
   const saveName = async () => {
@@ -216,7 +241,7 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
   if (loading) {
     return (
       <div className="h-full flex items-center justify-center">
-        <p className="font-ko text-sm text-zinc-500">불러오는 중...</p>
+        <p className="font-ko text-sm text-muted-foreground">불러오는 중...</p>
       </div>
     )
   }
@@ -224,7 +249,7 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
   if (!profile) {
     return (
       <div className="h-full flex items-center justify-center">
-        <p className="font-ko text-sm text-zinc-500">프로필을 불러올 수 없어요</p>
+        <p className="font-ko text-sm text-muted-foreground">프로필을 불러올 수 없어요</p>
       </div>
     )
   }
@@ -240,16 +265,16 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
     .slice(0, 3)
 
   // 현재 티어 인덱스. BASIC이면 -1 (아직 브론즈 미달)
-    const currentTierIdx = TIERS.findIndex(t => t.key === profile.userGrd?.toUpperCase())
-    const nextTier = currentTierIdx + 1 < TIERS.length ? TIERS[currentTierIdx + 1] : null
-    const actCnt = profile.actCnt ?? 0
-    const remaining = nextTier ? Math.max(0, nextTier.min - actCnt) : 0
+  const currentTierIdx = TIERS.findIndex(t => t.key === profile.userGrd?.toUpperCase())
+  const nextTier = currentTierIdx + 1 < TIERS.length ? TIERS[currentTierIdx + 1] : null
+  const actCnt = profile.actCnt ?? 0
+  const remaining = nextTier ? Math.max(0, nextTier.min - actCnt) : 0
 
   return (
-    <div className="h-full flex flex-col bg-zinc-950 overflow-hidden">
+    <div className="h-full flex flex-col bg-background overflow-hidden">
 
       {/* 탭 */}
-      <div className="border-b border-zinc-800 px-6 flex items-center gap-1 shrink-0 bg-[#0a0a0a]">
+      <div className="border-b border-border px-6 flex items-center gap-1 shrink-0 bg-background">
         {[
           { id: "profile", label: "프로필", icon: User },
           { id: "settings", label: "설정", icon: Settings },
@@ -258,7 +283,7 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
             className="flex items-center gap-1.5 px-4 py-3 font-ko text-[13px] tracking-wider border-b-2 transition-all"
             style={activeTab === id
               ? { borderColor: BRAND, color: BRAND }
-              : { borderColor: "transparent", color: "#71717a" }}>
+              : { borderColor: "transparent", color: "var(--muted-foreground)" }}>
             <Icon className="h-3.5 w-3.5" />
             {label}
           </button>
@@ -272,11 +297,11 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
           {activeTab === "profile" && (
             <>
               {/* 프로필 카드 */}
-              <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex items-center gap-5">
+              <div className="bg-card border border-border rounded-2xl p-6 flex items-center gap-5">
                 <div className="relative w-16 h-16 shrink-0 group cursor-pointer"
                   onClick={() => imgRef.current?.click()}>
                   {profile.userPhoto ? (
-                    <img src={`http://localhost:8080${profile.userPhoto}`} alt="프로필"
+                    <img src={`https://hivibe.cloud${profile.userPhoto}`} alt="프로필"
                       className="w-16 h-16 rounded-full object-cover border-2"
                       style={{ borderColor: `${BRAND}44` }} />
                   ) : (
@@ -299,26 +324,26 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
                   {editingName ? (
                     <div className="flex items-center gap-2">
                       <Input value={tempName} onChange={e => setTempName(e.target.value)}
-                        className="h-9 bg-zinc-950 border-zinc-700 text-zinc-200 text-base font-ko w-44" />
+                        className="h-9 bg-background border-border text-foreground text-base font-ko w-44" />
                       <button onClick={saveName}
                         className="h-8 w-8 flex items-center justify-center rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors">
                         <Check className="h-4 w-4" />
                       </button>
                       <button onClick={() => setEditingName(false)}
-                        className="h-8 w-8 flex items-center justify-center rounded bg-zinc-800 text-zinc-400 hover:bg-zinc-700 transition-colors">
+                        className="h-8 w-8 flex items-center justify-center rounded bg-muted text-muted-foreground hover:bg-accent transition-colors">
                         <X className="h-4 w-4" />
                       </button>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <span className="font-ko text-xl font-bold text-zinc-100">{profile.userNm}</span>
+                      <span className="font-ko text-xl font-bold text-foreground">{profile.userNm}</span>
                       <button onClick={() => { setTempName(profile.userNm); setEditingName(true) }}
-                        className="h-7 w-7 flex items-center justify-center rounded text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition-colors">
+                        className="h-7 w-7 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
                         <Edit2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   )}
-                  <p className="font-ko text-sm text-zinc-400 mt-1">{profile.userEmail}</p>
+                  <p className="font-ko text-sm text-muted-foreground mt-1">{profile.userEmail}</p>
                   {usedLangs.length > 0 && (
                     <div className="flex gap-1.5 mt-2.5">
                       {usedLangs.map(l => (
@@ -332,7 +357,7 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
                 </div>
 
                 <div className="flex flex-col items-end gap-1 shrink-0">
-                  <span className="font-ko text-[12px] text-zinc-500 tracking-widest uppercase">TIER</span>
+                  <span className="font-ko text-[12px] text-muted-foreground tracking-widest uppercase">TIER</span>
                   <span className="font-syne text-2xl font-bold" style={{ color: BRAND }}>
                     {profile.userGrd || "BASIC"}
                   </span>
@@ -341,54 +366,54 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
 
               {/* 통계 */}
               <div className="grid grid-cols-4 gap-2">
-                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+                <div className="bg-card border border-border rounded-xl p-5">
                   <div className="mb-2.5"><FolderOpen className="h-4 w-4" style={{ color: BRAND }} /></div>
-                  <p className="font-syne text-2xl font-bold text-zinc-100">{profile.diagnosisCount}</p>
-                  <p className="font-ko text-xs text-zinc-400 mt-1">총 진단 수</p>
+                  <p className="font-syne text-2xl font-bold text-foreground">{profile.diagnosisCount}</p>
+                  <p className="font-ko text-xs text-muted-foreground mt-1">총 진단 수</p>
                 </div>
-                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+                <div className="bg-card border border-border rounded-xl p-5">
                   <div className="mb-2.5"><Star className="h-4 w-4 text-amber-400" /></div>
-                  <p className="font-syne text-2xl font-bold text-zinc-100">{profile.avgGrade ?? "—"}</p>
-                  <p className="font-ko text-xs text-zinc-400 mt-1">평균 등급</p>
+                  <p className="font-syne text-2xl font-bold text-foreground">{profile.avgGrade ?? "—"}</p>
+                  <p className="font-ko text-xs text-muted-foreground mt-1">평균 등급</p>
                 </div>
-                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+                <div className="bg-card border border-border rounded-xl p-5">
                   <div className="mb-2.5"><Flame className="h-4 w-4 text-orange-400" /></div>
-                  <p className="font-syne text-2xl font-bold text-zinc-500">—</p>
-                  <p className="font-ko text-xs text-zinc-400 mt-1">연속 일수<br /><span className="text-zinc-600">(연동 예정)</span></p>
+                  <p className="font-syne text-2xl font-bold text-muted-foreground">—</p>
+                  <p className="font-ko text-xs text-muted-foreground mt-1">연속 일수<br /><span className="text-muted-foreground">(연동 예정)</span></p>
                 </div>
-                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+                <div className="bg-card border border-border rounded-xl p-5">
                   <div className="mb-2.5"><BookOpen className="h-4 w-4 text-violet-400" /></div>
-                  <p className="font-syne text-2xl font-bold text-zinc-100">{notes.length}</p>
-                  <p className="font-ko text-xs text-zinc-400 mt-1">저장된 노트</p>
+                  <p className="font-syne text-2xl font-bold text-foreground">{notes.length}</p>
+                  <p className="font-ko text-xs text-muted-foreground mt-1">저장된 노트</p>
                 </div>
               </div>
 
               {/* 티어 트랙 */}
-              <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+              <div className="bg-card border border-border rounded-2xl p-6">
                 <p className="font-ko text-[10px] tracking-widest mb-1.5" style={{ color: BRAND }}>// TIER TRACK</p>
-                <p className="font-ko text-base font-bold text-zinc-100 mb-6">성장 현황</p>
+                <p className="font-ko text-base font-bold text-foreground mb-6">성장 현황</p>
 
                 <div className="relative flex items-start justify-between">
-                  <div className="absolute top-4 left-4 right-4 h-px bg-zinc-800 z-0" />
+                  <div className="absolute top-4 left-4 right-4 h-px bg-muted z-0" />
                   {TIERS.map((tier, i) => {
                     const done = i < currentTierIdx
                     const current = i === currentTierIdx
                     const locked = i > currentTierIdx
                     return (
                       <div key={tier.key} className="flex flex-col items-center gap-2 z-10 flex-1">
-                        <div className="w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs bg-zinc-950"
+                        <div className="w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs bg-background"
                           style={current
                             ? { borderColor: tier.color, color: tier.color, boxShadow: `0 0 0 4px ${tier.color}15` }
                             : done
                               ? { borderColor: `${tier.color}66`, color: tier.color }
-                              : { borderColor: "#27272a", color: "#3f3f46" }}>
+                              : { borderColor: "var(--border)", color: "var(--muted-foreground)" }}>
                           {done ? <Check className="h-3.5 w-3.5" /> : locked ? "🔒" : "👑"}
                         </div>
                         <span className="font-ko text-xs"
-                          style={{ color: current ? tier.color : done ? "#a1a1aa" : "#52525b" }}>
+                          style={{ color: current ? tier.color : done ? "var(--muted-foreground)" : "var(--muted-foreground)" }}>
                           {tier.name}
                         </span>
-                        <span className="font-ko text-[10px] text-zinc-600">{tier.min}회</span>
+                        <span className="font-ko text-[10px] text-muted-foreground">{tier.min}회</span>
                       </div>
                     )
                   })}
@@ -398,7 +423,7 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
                 {nextTier && (
                   <div className="mt-6">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-ko text-xs text-zinc-400">
+                      <span className="font-ko text-xs text-muted-foreground">
                         다음 <span className="font-bold" style={{ color: nextTier.color }}>{nextTier.name}</span>까지
                       </span>
                       <span className="font-ko text-xs" style={{ color: BRAND }}>
@@ -406,7 +431,7 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
                       </span>
                     </div>
 
-                    <div className="h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+                    <div className="h-1.5 rounded-full bg-muted overflow-hidden">
                       <div className="h-full rounded-full transition-all duration-500"
                         style={{
                           width: `${Math.min(100, (actCnt / nextTier.min) * 100)}%`,
@@ -416,7 +441,7 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
                   </div>
                 )}
 
-                <p className="font-ko text-xs text-zinc-500 mt-5">
+                <p className="font-ko text-xs text-muted-foreground mt-5">
                   {nextTier
                     ? <>진단 또는 학습을 {remaining}회 더 하면 <span className="font-bold" style={{ color: nextTier.color }}>{nextTier.name}</span> 등급에 도달해요.</>
                     : "최고 등급에 도달했어요!"}
@@ -426,18 +451,18 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
               {/* 뱃지 */}
               <div>
                 <p className="font-ko text-[10px] tracking-widest mb-1.5" style={{ color: BRAND }}>// BADGES</p>
-                <p className="font-ko text-lg font-bold text-zinc-100 mb-3">획득한 뱃지 ({achievedBadges.length} / {badges.length})</p>
+                <p className="font-ko text-lg font-bold text-foreground mb-3">획득한 뱃지 ({achievedBadges.length} / {badges.length})</p>
                 <div className="grid grid-cols-4 gap-3">
                   {badges.map(b => (
                     <div key={b.key}
-                      className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-2.5 flex flex-col items-center gap-1.5 text-center"
+                      className="bg-card/60 border border-border rounded-xl p-2.5 flex flex-col items-center gap-1.5 text-center"
                       style={{ opacity: b.achieved ? 1 : 0.4 }}>
                       <div className="w-9 h-9 rounded-lg flex items-center justify-center text-lg"
                         style={{ background: b.achieved ? `${BRAND}15` : "#27272a" }}>
                         {b.icon}
                       </div>
-                      <p className="font-syne text-xs font-bold text-zinc-100 leading-tight">{b.name}</p>
-                      <p className="font-ko text-xs text-zinc-400 leading-relaxed">{b.desc}</p>
+                      <p className="font-syne text-xs font-bold text-foreground leading-tight">{b.name}</p>
+                      <p className="font-ko text-xs text-muted-foreground leading-relaxed">{b.desc}</p>
                       <p className="font-ko text-xs" style={{ color: b.achieved ? BRAND : "#52525b" }}>
                         {b.achieved && b.achievedAt
                           ? new Date(b.achievedAt).toLocaleDateString("ko-KR")
@@ -451,14 +476,17 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
               {/* 최근 분석 (Learning 노트 기준) */}
               <div>
                 <p className="font-ko text-[10px] tracking-widest mb-1.5" style={{ color: BRAND }}>// RECENT</p>
-                <p className="font-ko text-lg font-bold text-zinc-100 mb-3">최근 학습 노트</p>
+                <p className="font-ko text-lg font-bold text-foreground mb-3">최근 학습 노트</p>
                 {recentLearningNotes.length > 0 ? (
                   <div className="space-y-2">
                     {recentLearningNotes.map(n => (
-                      <div key={n.noteId} className="bg-zinc-900 border border-zinc-800 rounded-xl px-5 py-4 flex items-center gap-4">
-                        <BookOpen className="h-4 w-4 text-violet-400 shrink-0" />
-                        <span className="font-ko text-sm text-zinc-300 flex-1 truncate">{n.noteName}</span>
-                        <span className="font-ko text-xs text-zinc-400 flex items-center gap-1.5 shrink-0">
+                      <div
+                        key={n.noteId}
+                        onClick={() => onNavigate?.("notes", n.noteId)}   // ← 추가
+                        className="bg-card border border-border rounded-xl px-5 py-4 flex items-center gap-4 cursor-pointer hover:bg-muted transition-colors">
+                        <BookOpen className="h-4 w-4 shrink-0" style={{ color: BRAND }} />
+                        <span className="font-ko text-sm text-foreground/80 flex-1 truncate">{n.noteName}</span>
+                        <span className="font-ko text-xs text-muted-foreground flex items-center gap-1.5 shrink-0">
                           <span className="w-1.5 h-1.5 rounded-full" style={{ background: BRAND }} />
                           {n.lang} · {new Date(n.createdAt).toLocaleDateString("ko-KR")}
                         </span>
@@ -466,7 +494,7 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
                     ))}
                   </div>
                 ) : (
-                  <p className="font-ko text-sm text-zinc-500">아직 학습 노트가 없어요.</p>
+                  <p className="font-ko text-sm text-muted-foreground">아직 학습 노트가 없어요.</p>
                 )}
               </div>
             </>
@@ -477,52 +505,85 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
             <div className="space-y-4">
 
               {/* 계정 정보 */}
-              <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+              <div className="bg-card border border-border rounded-2xl p-6">
                 <div className="flex items-center gap-2 mb-5">
                   <User className="h-4 w-4" style={{ color: BRAND }} />
-                  <p className="font-ko text-base font-bold text-zinc-100">계정 정보</p>
+                  <p className="font-ko text-base font-bold text-foreground">계정 정보</p>
                 </div>
                 <div className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className="font-ko text-xs text-zinc-500 uppercase tracking-wider">이름</label>
+                    <label className="font-ko text-xs text-muted-foreground uppercase tracking-wider">이름</label>
                     {editingName ? (
                       <div className="flex items-center gap-2">
                         <Input value={tempName} onChange={e => setTempName(e.target.value)}
                           autoFocus
-                          className="h-10 bg-zinc-950 border-zinc-700 text-zinc-200 text-sm font-ko" />
+                          className="h-10 bg-background border-border text-foreground text-sm font-ko" />
                         <button onClick={saveName}
                           className="h-10 w-10 flex items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors shrink-0">
                           <Check className="h-4 w-4" />
                         </button>
                         <button onClick={() => setEditingName(false)}
-                          className="h-10 w-10 flex items-center justify-center rounded-lg border border-zinc-700 text-zinc-400 hover:bg-zinc-800 transition-colors shrink-0">
+                          className="h-10 w-10 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-muted transition-colors shrink-0">
                           <X className="h-4 w-4" />
                         </button>
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
                         <Input value={profile.userNm} readOnly
-                          className="h-10 bg-zinc-950 border-zinc-800 text-zinc-300 text-sm font-ko" />
+                          className="h-10 bg-background border-border text-foreground/80 text-sm font-ko" />
                         <button onClick={() => { setTempName(profile.userNm); setEditingName(true) }}
-                          className="h-10 px-4 rounded-lg border border-zinc-700 font-ko text-sm text-zinc-300 hover:bg-zinc-800 transition-colors shrink-0">
+                          className="h-10 px-4 rounded-lg border border-border font-ko text-sm text-foreground/80 hover:bg-muted transition-colors shrink-0">
                           수정
                         </button>
                       </div>
                     )}
                   </div>
                   <div className="space-y-1.5">
-                    <label className="font-ko text-xs text-zinc-500 uppercase tracking-wider">이메일</label>
+                    <label className="font-ko text-xs text-muted-foreground uppercase tracking-wider">이메일</label>
                     <Input value={profile.userEmail} readOnly
-                      className="h-10 bg-zinc-950 border-zinc-800 text-zinc-500 text-sm font-ko" />
+                      className="h-10 bg-background border-border text-muted-foreground text-sm font-ko" />
                   </div>
                 </div>
               </div>
 
+              <div className="bg-card border border-border rounded-2xl p-6">
+                <div className="flex items-center gap-2 mb-5">
+                  <Code className="h-4 w-4" style={{ color: BRAND }} />
+                  <p className="font-ko text-base font-bold text-foreground">주요 사용 언어</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {["Java", "Python", "JavaScript", "TypeScript", "C", "C++"].map(lang => {
+                    const selected = selectedLangs.includes(lang)
+                    return (
+                      <button
+                        key={lang}
+                        onClick={() => {
+                          setSelectedLangs(prev =>
+                            prev.includes(lang)
+                              ? prev.filter(l => l !== lang)
+                              : prev.length < 3 ? [...prev, lang] : prev
+                          )
+                        }}
+                        className="font-ko text-xs px-3 py-1.5 rounded-full border transition-all"
+                        style={selected
+                          ? { background: `${BRAND}20`, color: BRAND, borderColor: `${BRAND}50` }
+                          : { background: "transparent", color: "#71717a", borderColor: "#afafaf" }
+                        }
+                      >
+                        {lang}
+                      </button>
+                    )
+                  })}
+                </div>
+                <p className="font-ko text-xs text-muted-foreground mt-3">최대 3개 선택</p>
+              </div>
+
+
               {/* 휴대폰 번호 */}
-              <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+              <div className="bg-card border border-border rounded-2xl p-6">
                 <div className="flex items-center gap-2 mb-5">
                   <Smartphone className="h-4 w-4" style={{ color: BRAND }} />
-                  <p className="font-ko text-base font-bold text-zinc-100">휴대폰 번호</p>
+                  <p className="font-ko text-base font-bold text-foreground">휴대폰 번호</p>
                   {phoneVerified && (
                     <span className="font-ko text-xs px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 ml-auto">
                       인증 완료
@@ -535,12 +596,12 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
                       <Input
                         value={profile.userPhone ? formatPhone(profile.userPhone) : ""}
                         readOnly placeholder="휴대폰 번호를 등록해주세요"
-                        className="h-10 bg-zinc-950 border-zinc-800 text-zinc-300 text-sm font-ko placeholder:text-zinc-600" />
+                        className="h-10 bg-background border-border text-foreground/80 text-sm font-ko placeholder:text-muted-foreground" />
                       <button onClick={() => {
                         setTempPhone(profile.userPhone ? formatPhone(profile.userPhone) : "")
                         setEditingPhone(true)
                       }}
-                        className="h-10 px-4 rounded-lg border border-zinc-700 font-ko text-sm text-zinc-300 hover:bg-zinc-800 transition-colors shrink-0">
+                        className="h-10 px-4 rounded-lg border border-border font-ko text-sm text-foreground/80 hover:bg-muted transition-colors shrink-0">
                         {profile.userPhone ? "변경" : "등록"}
                       </button>
                     </div>
@@ -549,14 +610,14 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
                       <div className="flex items-center gap-2">
                         <Input value={tempPhone} onChange={handlePhoneInput}
                           placeholder="010-0000-0000"
-                          className="h-10 bg-zinc-950 border-zinc-800 text-zinc-200 text-sm font-ko placeholder:text-zinc-600" />
+                          className="h-10 bg-background border-border text-foreground text-sm font-ko placeholder:text-muted-foreground" />
                         <button onClick={() => setShowVerify(true)}
                           className="h-10 px-4 rounded-lg font-ko text-sm text-white shrink-0 transition-colors"
                           style={{ background: BRAND }}>
                           인증번호 발송
                         </button>
                         <button onClick={() => { setEditingPhone(false); setShowVerify(false) }}
-                          className="h-10 w-10 flex items-center justify-center rounded-lg border border-zinc-700 text-zinc-400 hover:bg-zinc-800 transition-colors shrink-0">
+                          className="h-10 w-10 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-muted transition-colors shrink-0">
                           <X className="h-4 w-4" />
                         </button>
                       </div>
@@ -564,14 +625,14 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
                         <div className="flex items-center gap-2">
                           <Input value={verifyCode} onChange={e => setVerifyCode(e.target.value)}
                             placeholder="인증번호 6자리" maxLength={6}
-                            className="h-10 bg-zinc-950 border-zinc-800 text-zinc-200 text-sm font-ko placeholder:text-zinc-600" />
+                            className="h-10 bg-background border-border text-foreground text-sm font-ko placeholder:text-muted-foreground" />
                           <button onClick={confirmPhone}
                             className="h-10 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 font-ko text-sm text-white shrink-0 transition-colors">
                             확인
                           </button>
                         </div>
                       )}
-                      <p className="font-ko text-xs text-zinc-400 leading-relaxed">
+                      <p className="font-ko text-xs text-muted-foreground leading-relaxed">
                         SMS 인증 발송은 추후 연동될 예정이에요. 지금은 인증번호 입력 없이 확인을 눌러도 번호가 저장돼요.
                       </p>
                     </div>
@@ -580,15 +641,15 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
               </div>
 
               {/* 알림 설정 */}
-              <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+              <div className="bg-card border border-border rounded-2xl p-6">
                 <div className="flex items-center gap-2 mb-5">
                   <Bell className="h-4 w-4" style={{ color: BRAND }} />
-                  <p className="font-ko text-base font-bold text-zinc-100">알림 설정</p>
+                  <p className="font-ko text-base font-bold text-foreground">알림 설정</p>
                 </div>
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="font-ko text-sm text-zinc-200">복습 알림</p>
-                    <p className="font-ko text-xs text-zinc-400 mt-1 leading-relaxed">
+                    <p className="font-ko text-sm text-foreground">복습 알림</p>
+                    <p className="font-ko text-xs text-muted-foreground mt-1 leading-relaxed">
                       저장한 노트의 복습 시기가 되면 알림을 보내 드려요.
                     </p>
                   </div>
@@ -598,19 +659,19 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
               </div>
 
               {/* 마케팅 수신 동의 */}
-              <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+              <div className="bg-card border border-border rounded-2xl p-6">
                 <div className="flex items-center gap-2 mb-1.5">
                   <Shield className="h-4 w-4" style={{ color: BRAND }} />
-                  <p className="font-ko text-base font-bold text-zinc-100">마케팅 수신 동의</p>
+                  <p className="font-ko text-base font-bold text-foreground">마케팅 수신 동의</p>
                 </div>
-                <p className="font-ko text-xs text-zinc-400 mb-5 leading-relaxed">
+                <p className="font-ko text-xs text-muted-foreground mb-5 leading-relaxed">
                   동의 시 HiVibe의 새로운 기능, 이벤트, 혜택 정보를 받아볼 수 있어요. 언제든지 철회 가능해요.
                 </p>
                 <div className="space-y-4">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="font-ko text-sm text-zinc-200">이메일 마케팅 수신 동의</p>
-                      <p className="font-ko text-xs text-zinc-400 mt-1 leading-relaxed">
+                      <p className="font-ko text-sm text-foreground">이메일 마케팅 수신 동의</p>
+                      <p className="font-ko text-xs text-muted-foreground mt-1 leading-relaxed">
                         이벤트, 프로모션, 신규 기능 안내 이메일을 받아요.
                       </p>
                     </div>
@@ -620,12 +681,12 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
 
                   <div className="flex items-start justify-between gap-4" style={{ opacity: phoneVerified ? 1 : 0.4 }}>
                     <div>
-                      <p className="font-ko text-sm text-zinc-200">SMS 마케팅 수신 동의</p>
-                      <p className="font-ko text-xs text-zinc-400 mt-1 leading-relaxed">
+                      <p className="font-ko text-sm text-foreground">SMS 마케팅 수신 동의</p>
+                      <p className="font-ko text-xs text-muted-foreground mt-1 leading-relaxed">
                         이벤트, 프로모션 문자를 받아요. 휴대폰 번호 등록 필요.
                       </p>
                       {!phoneVerified && (
-                        <p className="font-ko text-xs text-zinc-500 mt-1">휴대폰 번호를 먼저 등록해 주세요.</p>
+                        <p className="font-ko text-xs text-muted-foreground mt-1">휴대폰 번호를 먼저 등록해 주세요.</p>
                       )}
                     </div>
                     <Switch checked={marketingSms}
@@ -635,7 +696,24 @@ export function MyPage({ onProfileUpdated }: { onProfileUpdated?: () => void }) 
                   </div>
                 </div>
               </div>
-
+              {/* 테마 설정 */}
+              <div className="bg-card border border-border rounded-2xl p-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {theme === "dark"
+                      ? <Moon className="h-4 w-4 text-muted-foreground" />
+                      : <Sun className="h-4 w-4 text-muted-foreground" />}
+                    <div>
+                      <p className="font-ko text-sm font-semibold text-foreground">다크 모드</p>
+                      <p className="font-ko text-xs text-muted-foreground mt-0.5">화면 색상 테마 설정</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={theme === "dark"}
+                    onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+                    className="data-[state=checked]:bg-[#63C1ED] shrink-0" />
+                </div>
+              </div>
               {/* 저장 버튼 */}
               <Button onClick={saveSettings} disabled={savingSettings}
                 className="w-full h-11 font-ko font-semibold text-white text-sm"

@@ -92,7 +92,8 @@ public class SecurityConfig {
                 CorsConfiguration config = new CorsConfiguration();
                 config.setAllowedOrigins(List.of(
                                 "http://localhost:3000",
-                                "https://hivibe-production-a5f6.up.railway.app"));
+                                "https://hivibe-production-a5f6.up.railway.app",
+                                "https://hivibe.cloud"));
                 config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
                 config.setAllowedHeaders(List.of("*"));
                 config.setAllowCredentials(true);

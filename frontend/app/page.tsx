@@ -150,7 +150,7 @@ const FEATURES = [
     en: "My Archive",
     desc: "분석한 코드를 아카이브로 저장하고, 3일 후 복습 알림을 받아요.",
     badge: "Spaced Repetition",
-    badgeColor: "border-zinc-700 text-zinc-400 bg-zinc-800/50",
+    badgeColor: "border-border text-muted-foreground bg-muted/50",
   },
 ];
 
@@ -237,9 +237,9 @@ export default function HomePage() {
         }
       `}</style>
 
-      <div className="font-ko min-h-screen bg-zinc-950 text-zinc-100 overflow-x-hidden">
+      <div className="font-ko min-h-screen bg-background text-foreground overflow-x-hidden">
         {/* ── NAV ── */}
-        <nav className="fixed top-0 left-0 right-0 z-50 border-b border-zinc-800/50 bg-zinc-950/80 backdrop-blur-md">
+        <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-md">
           <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
             <span
               className="font-syne text-lg font-bold"
@@ -250,17 +250,17 @@ export default function HomePage() {
             <div className="flex items-center gap-6">
               <Link
                 href="#features"
-                className="font-ko text-sm text-zinc-400 hover:text-zinc-200 transition-colors"
+                className="font-ko text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 Feature
               </Link>
               <Link
                 href="#how"
-                className="font-ko text-sm text-zinc-400 hover:text-zinc-200 transition-colors"
+                className="font-ko text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 How it works
               </Link>
-              <Link href={isLoggedIn ? "/main" : "/login"} className="font-ko text-sm text-zinc-400 hover:text-zinc-200 transition-colors">
+              <Link href={isLoggedIn ? "/main" : "/login"} className="font-ko text-sm text-muted-foreground hover:text-foreground transition-colors">
                 {isLoggedIn ? "Dashboard" : "Log in"}
               </Link>
               <Link href={isLoggedIn ? "/main" : "/login"} className="font-ko text-sm px-4 py-1.5 rounded-full text-white font-semibold transition-all hover:opacity-90" style={{ background: BRAND }}>
@@ -304,23 +304,21 @@ export default function HomePage() {
               <h1
                 className={`font-syne text-5xl lg:text-6xl font-bold leading-tight mb-6 ${visible ? "anim-1" : "opacity-0"}`}
               >
-                Understand
+                Hi, your code.
                 <br />
                 <span
+                  className="whitespace-nowrap"
                   style={{
                     background: `linear-gradient(135deg, #fff 0%, ${BRAND} 60%)`,
                     WebkitBackgroundClip: "text",
                     WebkitTextFillColor: "transparent",
                   }}
                 >
-                  Your Code,
+                  High, your vibe.
                 </span>
-                <br />
-                Don't Just Run It.
               </h1>
-
               <p
-                className={`font-ko text-base text-zinc-400 leading-relaxed mb-8 ${visible ? "anim-2" : "opacity-0"}`}
+                className={`font-ko text-base text-muted-foreground leading-relaxed mb-8 ${visible ? "anim-2" : "opacity-0"}`}
               >
                 주니어 개발자를 위한 AI 코드 분석 도우미
                 <br />
@@ -342,7 +340,7 @@ export default function HomePage() {
                 </Link>
                 <Link
                   href="#how"
-                  className="flex items-center gap-2 px-6 py-3 rounded-full border border-zinc-800 text-zinc-300 font-ko text-sm hover:bg-zinc-900 transition-all"
+                  className="flex items-center gap-2 px-6 py-3 rounded-full border border-border text-zinc-500 font-ko text-sm hover:bg-card transition-all"
                 >
                   <Play className="h-3.5 w-3.5" />
                   어떻게 동작하나요?
@@ -357,7 +355,7 @@ export default function HomePage() {
                   {["SH", "JH", "KM", "YR", "BJ"].map((n, i) => (
                     <div
                       key={i}
-                      className="h-7 w-7 rounded-full border-2 border-zinc-950 flex items-center justify-center text-[9px] font-bold text-zinc-300"
+                      className="h-7 w-7 rounded-full flex items-center justify-center text-[9px] font-bold text-foreground"
                       style={{
                         background:
                           [
@@ -382,7 +380,7 @@ export default function HomePage() {
                       />
                     ))}
                   </div>
-                  <p className="font-ko text-[10px] text-zinc-500 mt-0.5">
+                  <p className="font-ko text-[10px] text-muted-foreground mt-0.5">
                     2,400+ 개발자가 사용 중
                   </p>
                 </div>
@@ -395,22 +393,22 @@ export default function HomePage() {
             >
               <div className="relative">
                 {/* before / after card */}
-                <div className="rounded-2xl border border-zinc-800 bg-[#0d0d0d] overflow-hidden shadow-2xl shadow-black/60">
+                <div className="rounded-2xl border overflow-hidden shadow-2xl" style={{ borderColor: `${BRAND}30`, background: `${BRAND}05` }}>
                   {/* window chrome */}
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 bg-zinc-900/50">
+                  <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: `${BRAND}20`, background: `${BRAND}08` }}>
                     <div className="flex gap-1.5">
                       <div className="h-2.5 w-2.5 rounded-full bg-rose-500/70" />
                       <div className="h-2.5 w-2.5 rounded-full bg-amber-500/70" />
                       <div className="h-2.5 w-2.5 rounded-full bg-emerald-500/70" />
                     </div>
-                    <span className="font-ko text-[10px] text-zinc-600">
+                    <span className="font-ko text-[10px] text-muted-foreground">
                       Solution.java
                     </span>
                     <div className="flex items-center gap-1.5">
                       <span className="font-ko text-[9px] px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-400 border border-rose-500/20">
                         O(n²)
                       </span>
-                      <ArrowRight className="h-3 w-3 text-zinc-600" />
+                      <ArrowRight className="h-3 w-3 text-muted-foreground" />
                       <span
                         className="font-ko text-[9px] px-1.5 py-0.5 rounded border"
                         style={{
@@ -427,9 +425,9 @@ export default function HomePage() {
                   {/* split code view */}
                   <div className="flex text-[11px] font-code">
                     {/* original */}
-                    <div className="flex-1 border-r border-zinc-800">
-                      <div className="px-3 py-1.5 border-b border-zinc-800/50">
-                        <span className="text-[9px] text-zinc-600 tracking-widest uppercase">
+                    <div className="flex-1 border-r" style={{ borderColor: `${BRAND}20` }}>
+                      <div className="px-3 py-1.5 border-b" style={{ borderColor: `${BRAND}15` }}>
+                        <span className="text-[9px] text-muted-foreground tracking-widest uppercase">
                           Original
                         </span>
                       </div>
@@ -444,7 +442,7 @@ export default function HomePage() {
 
                     {/* optimized */}
                     <div className="flex-1">
-                      <div className="px-3 py-1.5 border-b border-zinc-800/50">
+                      <div className="px-3 py-1.5 border-b" style={{ borderColor: `${BRAND}15` }}>
                         <span
                           className="text-[9px] tracking-widest uppercase"
                           style={{ color: BRAND }}
@@ -468,9 +466,9 @@ export default function HomePage() {
                   </div>
 
                   {/* bottom bar */}
-                  <div className="flex items-center justify-between px-4 py-2.5 border-t border-zinc-800 bg-zinc-900/30">
+                  <div className="flex items-center justify-between px-4 py-2.5 border-t" style={{ borderColor: `${BRAND}20`, background: `${BRAND}08` }}>
                     <div className="flex items-center gap-3">
-                      <span className="font-ko text-[10px] text-zinc-500">
+                      <span className="font-ko text-[10px] text-muted-foreground">
                         Score
                       </span>
                       <span className="font-ko text-[10px] font-bold text-amber-400">
@@ -487,7 +485,7 @@ export default function HomePage() {
                 </div>
 
                 {/* floating badge */}
-                <div className="absolute -top-4 -right-4 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 shadow-xl">
+                <div className="absolute -top-4 -right-4 bg-card border border-border rounded-xl px-3 py-2 shadow-xl">
                   <div className="flex items-center gap-2">
                     <div
                       className="h-6 w-6 rounded-full flex items-center justify-center"
@@ -496,10 +494,10 @@ export default function HomePage() {
                       <Zap className="h-3.5 w-3.5" style={{ color: BRAND }} />
                     </div>
                     <div>
-                      <p className="font-ko text-xs font-bold text-zinc-100">
+                      <p className="font-ko text-xs font-bold text-foreground">
                         분석 완료
                       </p>
-                      <p className="font-ko text-[9px] text-zinc-500">
+                      <p className="font-ko text-[9px] text-muted-foreground">
                         3가지 최적화 발견
                       </p>
                     </div>
@@ -511,7 +509,7 @@ export default function HomePage() {
         </section>
 
         {/* ── FEATURES ── */}
-        <section id="features" className="py-28 border-t border-zinc-800/50">
+        <section id="features" className="py-28 border-t border-border/50">
           <div className="max-w-6xl mx-auto px-6">
             <div className="text-center mb-16">
               <p
@@ -520,10 +518,10 @@ export default function HomePage() {
               >
                 // FEATURE
               </p>
-              <h2 className="font-syne text-4xl font-bold text-zinc-100 mb-4">
+              <h2 className="font-syne text-4xl font-bold text-foreground mb-4">
                 Your Personal Code Mentor
               </h2>
-              <p className="font-ko text-base text-zinc-400">
+              <p className="font-ko text-base text-muted-foreground">
                 AI-powered insights로 개발 실력 Level Up!
               </p>
             </div>
@@ -532,7 +530,7 @@ export default function HomePage() {
               {FEATURES.map((f, i) => (
                 <div
                   key={i}
-                  className="group relative bg-zinc-900/60 border border-zinc-800 rounded-2xl p-6 hover:border-zinc-700 transition-all cursor-pointer overflow-hidden"
+                  className="group relative bg-card/60 border border-border rounded-2xl p-6 hover:border-border transition-all cursor-pointer overflow-hidden"
                 >
                   {/* hover glow */}
                   <div
@@ -549,10 +547,10 @@ export default function HomePage() {
                     {f.icon}
                   </div>
 
-                  <h3 className="font-syne text-lg font-bold text-zinc-100 mb-1">
+                  <h3 className="font-syne text-lg font-bold text-foreground mb-1">
                     {f.title}
                   </h3>
-                  <p className="font-ko text-sm text-zinc-500 leading-relaxed mb-4">
+                  <p className="font-ko text-sm text-muted-foreground leading-relaxed mb-4">
                     {f.desc}
                   </p>
 
@@ -568,7 +566,7 @@ export default function HomePage() {
         </section>
 
         {/* ── HOW IT WORKS ── */}
-        <section id="how" className="py-28 border-t border-zinc-800/50">
+        <section id="how" className="py-28 border-t border-border/50">
           <div className="max-w-4xl mx-auto px-6">
             <div className="text-center mb-16">
               <p
@@ -577,23 +575,23 @@ export default function HomePage() {
               >
                 // HOW IT WORKS
               </p>
-              <h2 className="font-syne text-4xl font-bold text-zinc-100 mb-4">
+              <h2 className="font-syne text-4xl font-bold text-foreground mb-4">
                 4단계로 실력 완성
               </h2>
-              <p className="font-ko text-base text-zinc-400">
+              <p className="font-ko text-base text-muted-foreground">
                 복잡한 설정 없이, 코드 한 줄부터 시작하세요
               </p>
             </div>
 
             <div className="relative max-w-lg mx-auto">
               {/* vertical line - 원 중앙 기준 */}
-              <div className="absolute left-7 top-0 bottom-0 w-px bg-zinc-800" />
+              <div className="absolute left-7 top-0 bottom-0 w-px bg-muted" />
 
               <div className="space-y-12">
                 {STEPS.map((step, i) => (
                   <div key={i} className="flex gap-8 items-start">
                     <div
-                      className="relative z-10 w-14 h-14 rounded-full border-2 flex items-center justify-center shrink-0 bg-zinc-950"
+                      className="relative z-10 w-14 h-14 rounded-full border-2 flex items-center justify-center shrink-0 bg-background"
                       style={{ borderColor: `${BRAND}66` }}
                     >
                       <span
@@ -604,10 +602,10 @@ export default function HomePage() {
                       </span>
                     </div>
                     <div className="pt-3.5">
-                      <h3 className="font-syne text-xl font-bold text-zinc-100 mb-1.5">
+                      <h3 className="font-syne text-xl font-bold text-foreground mb-1.5">
                         {step.title}
                       </h3>
-                      <p className="font-ko text-sm text-zinc-400 leading-relaxed">
+                      <p className="font-ko text-sm text-muted-foreground leading-relaxed">
                         {step.desc}
                       </p>
                     </div>
@@ -619,9 +617,9 @@ export default function HomePage() {
         </section>
 
         {/* ── CTA ── */}
-        <section className="py-28 border-t border-zinc-800/50">
+        <section className="py-28 border-t border-border/50">
           <div className="max-w-2xl mx-auto px-6 text-center">
-            <div className="relative rounded-3xl border border-zinc-800 p-12 bg-zinc-900/40 overflow-hidden">
+            <div className="relative rounded-3xl border border-border p-12 bg-card/40 overflow-hidden">
               {/* glow */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div
@@ -638,12 +636,12 @@ export default function HomePage() {
               >
                 // GET STARTED
               </p>
-              <h2 className="font-syne text-4xl font-bold text-zinc-100 mb-4">
+              <h2 className="font-syne text-4xl font-bold text-foreground mb-4">
                 코드를 이해하는
                 <br />
                 개발자가 되도록
               </h2>
-              <p className="font-ko text-sm text-zinc-400 mb-8 leading-relaxed">
+              <p className="font-ko text-sm text-muted-foreground mb-8 leading-relaxed">
                 지금 바로 코드를 넣고 AI 진단을 받아 보세요.
                 <br />
               </p>
@@ -660,7 +658,7 @@ export default function HomePage() {
         </section>
 
         {/* ── FOOTER ── */}
-        <footer className="border-t border-zinc-800/50 py-8">
+        <footer className="border-t border-border/50 py-8">
           <div className="max-w-6xl mx-auto px-6 flex items-center justify-between">
             <span
               className="font-syne text-base font-bold"
@@ -668,19 +666,19 @@ export default function HomePage() {
             >
               HiVibe
             </span>
-            <p className="font-ko text-[10px] text-zinc-600">
+            <p className="font-ko text-[10px] text-muted-foreground">
               © 2025 HiVibe. All rights reserved.
             </p>
             <div className="flex items-center gap-3">
               <a
                 href="#"
-                className="text-zinc-500 hover:text-zinc-300 transition-colors"
+                className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Github className="h-4 w-4" />
               </a>
               <a
                 href="#"
-                className="text-zinc-500 hover:text-zinc-300 transition-colors"
+                className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Twitter className="h-4 w-4" />
               </a>

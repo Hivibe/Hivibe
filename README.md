@@ -11,7 +11,7 @@
 | 환경 | URL |
 |---|---|
 | 프론트엔드 | https://hivibe-production-a5f6.up.railway.app |
-| 백엔드 | https://hivibe-production.up.railway.app |
+| 백엔드 | https://hivibe.cloud |
 
 ---
 

@@ -25,7 +25,7 @@ interface SidebarProps {
   sidebarExp: boolean
   setSidebarExp: (v: boolean) => void
   onNavClick: (id: string) => void
-  refreshKey?: number   // 마이페이지에서 프로필 수정 시 올려서 재조회 트리거
+  refreshKey?: number
 }
 
 interface SidebarUser {
@@ -47,16 +47,18 @@ export function Sidebar({ activeNav, sidebarExp, setSidebarExp, onNavClick, refr
   const initial = user?.userNm?.[0] ?? "?"
 
   return (
-    <div className={`h-full flex flex-col bg-[#0d0d0d] border-r border-zinc-800/50 transition-all duration-300 shrink-0 ${sidebarExp ? "w-52" : "w-14"}`}>
+    <div className={`h-full flex flex-col bg-background border-r border-border transition-all duration-300 shrink-0 ${sidebarExp ? "w-52" : "w-14"}`}>
 
       {/* 로고 + 토글 */}
       <div className={`flex items-center h-14 px-4 ${sidebarExp ? "justify-between" : "justify-center"}`}>
         {sidebarExp && (
-          <span className="font-syne text-lg font-bold" style={{ color: BRAND }}>HiVibe</span>
+          <span className="font-syne text-lg font-bold" style={{ color: BRAND }}>
+            Hi<span style={{ color: BRAND }}>V</span>ibe
+          </span>
         )}
         <button
           onClick={() => setSidebarExp(!sidebarExp)}
-          className="h-7 w-7 flex items-center justify-center rounded text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition-colors">
+          className="h-7 w-7 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
           <PanelLeft className="h-4 w-4" />
         </button>
       </div>
@@ -80,7 +82,7 @@ export function Sidebar({ activeNav, sidebarExp, setSidebarExp, onNavClick, refr
                 </button>
               </TooltipTrigger>
               {!sidebarExp && (
-                <TooltipContent side="right" className="bg-zinc-800 border-zinc-700 text-zinc-200">
+                <TooltipContent side="right" className="bg-popover border-border text-popover-foreground overflow-hidden">
                   {label}
                 </TooltipContent>
               )}
@@ -90,32 +92,31 @@ export function Sidebar({ activeNav, sidebarExp, setSidebarExp, onNavClick, refr
       </nav>
 
       {/* 유저 정보 */}
-      <div className="border-t border-zinc-800/50 p-3">
+      <div className="border-t border-border p-3">
         <Tooltip>
           <TooltipTrigger asChild>
             <button
               onClick={() => onNavClick("mypage")}
-              className={`w-full flex items-center rounded-lg transition-colors hover:bg-zinc-800/60 ${sidebarExp ? "gap-3 px-2 py-2" : "justify-center py-1"
-                }`}>
+              className={`w-full flex items-center rounded-lg transition-colors hover:bg-accent ${sidebarExp ? "gap-3 px-2 py-2" : "justify-center py-1"}`}>
               <Avatar className="h-7 w-7 shrink-0">
                 {user?.userPhoto && (
-                  <AvatarImage src={`http://localhost:8080${user.userPhoto}`} alt={user.userNm} />
+                  <AvatarImage src={`https://hivibe.cloud${user.userPhoto}`} alt={user.userNm} />
                 )}
-                <AvatarFallback className="bg-zinc-800 text-zinc-300 text-xs">{initial}</AvatarFallback>
+                <AvatarFallback className="bg-muted text-muted-foreground text-xs">{initial}</AvatarFallback>
               </Avatar>
               {sidebarExp && (
                 <div className="flex-1 min-w-0 text-left">
-                  <p className="text-xs font-medium text-zinc-200 truncate">{user?.userNm ?? "..."}</p>
-                  <p className="font-ko text-[10px] text-zinc-500 truncate">{user?.userEmail ?? ""}</p>
+                  <p className="text-xs font-medium text-foreground truncate">{user?.userNm ?? "..."}</p>
+                  <p className="font-ko text-[10px] text-muted-foreground truncate">{user?.userEmail ?? ""}</p>
                 </div>
               )}
               {sidebarExp && (
-                <Settings className="h-3.5 w-3.5 text-zinc-500 shrink-0" />
+                <Settings className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
               )}
             </button>
           </TooltipTrigger>
           {!sidebarExp && (
-            <TooltipContent side="right" className="bg-zinc-800 border-zinc-700 text-zinc-200">
+            <TooltipContent side="right" className="bg-popover border-border text-popover-foreground overflow-hidden">
               마이페이지
             </TooltipContent>
           )}

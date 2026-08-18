@@ -156,21 +156,21 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
   if (!noteId)
     return (
       <div className="h-full flex items-center justify-center">
-        <p className="font-ko text-sm text-zinc-500">노트를 선택해주세요</p>
+        <p className="font-ko text-sm text-muted-foreground">노트를 선택해 주세요</p>
       </div>
     );
 
   if (loading)
     return (
       <div className="h-full flex items-center justify-center">
-        <p className="font-ko text-sm text-zinc-500">불러오는 중...</p>
+        <p className="font-ko text-sm text-muted-foreground">불러오는 중...</p>
       </div>
     );
 
   if (!note)
     return (
       <div className="h-full flex items-center justify-center">
-        <p className="font-ko text-sm text-zinc-500">노트를 찾을 수 없어요</p>
+        <p className="font-ko text-sm text-muted-foreground">노트를 찾을 수 없어요</p>
       </div>
     );
 
@@ -183,7 +183,7 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
         {/* 헤더 */}
         <div className="flex justify-between items-start gap-4">
           <div className="flex-1 min-w-0">
-            <p className="font-ko text-xs tracking-widest mb-2 text-zinc-500">
+            <p className="font-ko text-xs tracking-widest mb-2 text-muted-foreground">
               // {note.category} · {note.lang}
             </p>
 
@@ -192,15 +192,15 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
                 value={editName}
                 onChange={e => setEditName(e.target.value)}
                 autoFocus
-                className="font-ko text-2xl font-bold bg-zinc-900 border-zinc-700 text-zinc-100 h-auto py-1.5"
+                className="font-ko text-2xl font-bold bg-card border-border text-foreground h-auto py-1.5"
               />
             ) : (
-              <h1 className="font-ko text-3xl font-bold text-zinc-100 leading-tight">
+              <h1 className="font-ko text-3xl font-bold text-foreground leading-tight">
                 {note.noteName}
               </h1>
             )}
 
-            <p className="font-ko text-xs text-zinc-500 mt-2">
+            <p className="font-ko text-xs text-muted-foreground mt-2">
               {new Date(note.createdAt).toLocaleDateString("ko-KR")}
             </p>
           </div>
@@ -223,7 +223,7 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
                   variant="outline"
                   onClick={cancelEditing}
                   disabled={isSaving}
-                  className="h-9 border-zinc-700 bg-zinc-900 text-zinc-300 text-sm gap-1.5 font-ko px-4"
+                  className="h-9 border-border bg-card text-foreground/80 text-sm gap-1.5 font-ko px-4"
                 >
                   <X className="h-3.5 w-3.5" />
                   취소
@@ -235,7 +235,7 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
                   size="sm"
                   variant="outline"
                   onClick={startEditing}
-                  className="h-9 border-zinc-700 bg-zinc-900 text-zinc-300 text-sm gap-1.5 px-4"
+                  className="h-9 border-border bg-card text-foreground/80 text-sm gap-1.5 px-4"
                 >
                   <Edit2 className="h-3.5 w-3.5" />
                   Edit
@@ -243,7 +243,7 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-9 border-zinc-700 bg-zinc-900 text-zinc-300 text-sm gap-1.5 px-4"
+                  className="h-9 border-border bg-card text-foreground/80 text-sm gap-1.5 px-4"
                   onClick={async () => {
                     if (navigator.share) {
                       try {
@@ -263,24 +263,24 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="h-9 w-9 p-0 border-rose-900/50 bg-rose-500/10 text-rose-500"
+                      className="h-9 w-9 p-0 border-border bg-transparent text-muted-foreground hover:text-rose-500 hover:border-rose-500/50"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </AlertDialogTrigger>
-                  <AlertDialogContent className="bg-[#17171b] border-white/10">
+                  <AlertDialogContent className="bg-card border-border">
                     <AlertDialogHeader>
                       <AlertDialogTitle className="font-syne text-white">
                         노트를 삭제할까요?
                       </AlertDialogTitle>
-                      <AlertDialogDescription className="font-ko text-zinc-400 leading-relaxed">
-                        <span className="text-zinc-200 font-bold">{note?.noteName}</span>
+                      <AlertDialogDescription className="font-ko text-muted-foreground leading-relaxed">
+                        <span className="text-foreground font-bold">{note?.noteName}</span>
                         <br />
                         삭제된 노트는 되돌릴 수 없어요.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel className="bg-transparent border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100 font-ko text-xs">
+                      <AlertDialogCancel className="bg-transparent border-border text-foreground/80 hover:bg-muted hover:text-foreground font-ko text-xs">
                         취소
                       </AlertDialogCancel>
                       <AlertDialogAction
@@ -300,7 +300,7 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
         {/* AI 요약 (Learning 노트만) */}
         {note.noteType === "LEARNING" && note.aiSummary && (
           <Card
-            className="border-zinc-800"
+            className="border-border"
             style={{ background: `${BRAND}08`, borderColor: `${BRAND}25` }}
           >
             <CardContent className="p-6">
@@ -311,7 +311,7 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
                 <Sparkles className="h-3.5 w-3.5" />
                 // AI SUMMARY
               </p>
-              <p className="font-ko text-sm text-zinc-300 leading-relaxed">
+              <p className="font-ko text-sm text-foreground/80 leading-relaxed">
                 {note.aiSummary}
               </p>
             </CardContent>
@@ -320,7 +320,7 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
 
         {/* 메모 */}
         {(note.noteMemo || isEditing) && (
-          <Card className="bg-zinc-900 border-zinc-800">
+          <Card className="bg-card border-border">
             <CardContent className="p-6">
               <p
                 className="font-ko text-xs tracking-widest mb-3"
@@ -333,10 +333,10 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
                   value={editMemo}
                   onChange={e => setEditMemo(e.target.value)}
                   placeholder="메모를 입력하세요"
-                  className="font-ko w-full min-h-[100px] rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 text-sm p-3.5 resize-none outline-none"
+                  className="font-ko w-full min-h-[100px] rounded-lg bg-background border border-border text-foreground text-sm p-3.5 resize-none outline-none"
                 />
               ) : (
-                <p className="font-ko text-sm text-zinc-300 leading-relaxed whitespace-pre-line">
+                <p className="font-ko text-sm text-foreground/80 leading-relaxed whitespace-pre-line">
                   {note.noteMemo}
                 </p>
               )}
@@ -346,7 +346,7 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
 
         {/* 태그 (수정 모드일 때만 노출) */}
         {isEditing && (
-          <Card className="bg-zinc-900 border-zinc-800">
+          <Card className="bg-card border-border">
             <CardContent className="p-6">
               <p
                 className="font-ko text-xs tracking-widest mb-3"
@@ -358,7 +358,7 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
                 value={editTag}
                 onChange={e => setEditTag(e.target.value)}
                 placeholder="#DP #Graph (공백으로 구분)"
-                className="bg-zinc-950 border-zinc-800 text-zinc-200 text-sm font-ko"
+                className="bg-background border-border text-foreground text-sm font-ko"
               />
             </CardContent>
           </Card>
@@ -366,7 +366,7 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
 
         {/* 코드 스냅샷 / 코드 수정 (자유 노트만) */}
         {isEditing && note.noteType !== "LEARNING" ? (
-          <Card className="bg-zinc-900 border-zinc-800 overflow-hidden">
+          <Card className="bg-card border-border overflow-hidden">
             <CardHeader className="pb-0 pt-5 px-6">
               <CardTitle
                 className="font-ko text-xs tracking-widest flex items-center gap-2"
@@ -397,12 +397,12 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
                   });
                 }}
                 placeholder="코드를 입력하세요"
-                className="font-code placeholder-ko w-full h-48 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 text-sm p-3.5 resize-none outline-none"
+                className="font-code placeholder-ko w-full h-48 rounded-lg bg-background border border-border text-foreground text-sm p-3.5 resize-none outline-none"
               />
             </CardContent>
           </Card>
         ) : code && (
-          <Card className="bg-zinc-900 border-zinc-800 overflow-hidden">
+          <Card className="bg-card border-border overflow-hidden">
             <CardHeader className="pb-0 pt-5 px-6 flex flex-row items-center justify-between">
               <CardTitle
                 className="font-ko text-xs tracking-widest flex items-center gap-2"
@@ -411,43 +411,43 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
                 <Code2 className="h-4 w-4" />
                 Code Snapshot
               </CardTitle>
-              <span className="font-ko text-xs px-2.5 py-1 rounded border border-zinc-700 text-zinc-300">
+              <span className="font-ko text-xs px-2.5 py-1 rounded border border-border text-foreground/80">
                 {detectedLang}
               </span>
             </CardHeader>
             <CardContent className="px-0 pb-0 pt-4">
-              <div className="flex items-center border-t border-b border-zinc-800/80 bg-[#1a1a1a]">
+              <div className="flex items-center border-t border-b border-border/80 bg-card">
                 <div
-                  className="flex items-center gap-2 px-4 py-2.5 border-r border-zinc-800 bg-[#141414]"
+                  className="flex items-center gap-2 px-4 py-2.5 border-r border-border bg-background"
                   style={{ borderBottom: `2px solid ${BRAND}` }}
                 >
-                  <FileCode className="h-3.5 w-3.5 text-zinc-500" />
-                  <span className="font-code text-xs text-zinc-300">
+                  <FileCode className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="font-code text-xs text-foreground/80">
                     {note.noteName?.toLowerCase().replace(/ /g, "_") || "untitled"}.
                     {getFileExtension(detectedLang)}
                   </span>
                 </div>
                 <div className="ml-auto flex items-center gap-3 px-4">
-                  <span className="font-ko text-xs text-zinc-500">
+                  <span className="font-ko text-xs text-muted-foreground">
                     {code.split("\n").length} lines
                   </span>
                   <button
                     onClick={() => navigator.clipboard.writeText(code)}
-                    className="font-ko text-xs text-zinc-500 hover:text-zinc-200 transition-colors flex items-center gap-1"
+                    className="font-ko text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
                   >
                     <Copy className="h-3.5 w-3.5" />
                     copy
                   </button>
                 </div>
               </div>
-              <div className="bg-[#141414] font-code text-sm overflow-x-auto">
+              <div className="bg-background font-code text-sm overflow-x-auto">
                 <div className="flex">
-                  <div className="select-none shrink-0 border-r border-zinc-800/60 py-4">
+                  <div className="select-none shrink-0 border-r border-border/60 py-4">
                     <div className="px-4 text-right min-w-[48px]">
                       {code.split("\n").map((_: string, i: number) => (
                         <div
                           key={i}
-                          className="leading-[1.625rem] text-zinc-600 text-xs"
+                          className="leading-[1.625rem] text-muted-foreground text-xs"
                         >
                           {i + 1}
                         </div>
@@ -459,23 +459,23 @@ export function NoteDetail({ noteId, onDeleted, onUpdated }: NoteDetailProps) {
                   </div>
                 </div>
               </div>
-              <div className="h-7 bg-[#1a1a1a] border-t border-zinc-800/60 flex items-center px-4 gap-4">
-                <span className="font-ko text-xs text-zinc-500">
+              <div className="h-7 bg-card border-t border-border/60 flex items-center px-4 gap-4">
+                <span className="font-ko text-xs text-muted-foreground">
                   {detectedLang}
                 </span>
-                <span className="font-ko text-xs text-zinc-500">
+                <span className="font-ko text-xs text-muted-foreground">
                   UTF-8
                 </span>
 
                 {/* 여기에 저장 시간(년.월.일 시간) 추가 */}
-                <span className="font-ko text-xs text-zinc-500">
+                <span className="font-ko text-xs text-muted-foreground">
                   {new Date(note.createdAt).toLocaleString("ko-KR", {
                     year: '2-digit', month: '2-digit', day: '2-digit',
                     hour: '2-digit', minute: '2-digit'
                   })}
                 </span>
 
-                <span className="font-ko text-xs text-zinc-500 ml-auto">
+                <span className="font-ko text-xs text-muted-foreground ml-auto">
                   {code.length} chars
                 </span>
               </div>

@@ -26,11 +26,11 @@ export function NoteCard({
       style={
         selNote === n.noteId
           ? { borderColor: `${BRAND}55`, background: `${BRAND}0d` }
-          : { borderColor: "#27272a", background: "#18181b" }
+          : {}
       }
     >
       <div className="flex justify-between items-start mb-1.5 gap-2">
-        <h3 className="font-ko text-sm font-bold text-zinc-100 leading-snug flex-1">
+        <h3 className="font-ko text-sm font-bold text-foreground leading-snug flex-1">
           {n.noteName}
         </h3>
         <div className="flex items-center gap-2 shrink-0">
@@ -39,7 +39,7 @@ export function NoteCard({
               e.stopPropagation();
               toggleNoteFav(n.noteId);
             }}
-            className="h-6 w-6 flex items-center justify-center rounded transition-colors hover:bg-zinc-800"
+            className="h-6 w-6 flex items-center justify-center rounded transition-colors hover:bg-accent"
             style={{ color: n.bkmkYn === "Y" ? "#f59e0b" : "#71717a" }}
           >
             <Star
@@ -48,7 +48,7 @@ export function NoteCard({
           </button>
         </div>
       </div>
-      <p className="font-ko text-xs text-zinc-500 mb-2.5">
+      <p className="font-ko text-xs text-muted-foreground mb-2.5">
         {new Date(n.createdAt).toLocaleDateString("ko-KR")}
       </p>
       <div className="flex flex-wrap gap-1.5">
@@ -58,7 +58,7 @@ export function NoteCard({
           .map((t) => (
             <span
               key={t}
-              className="font-ko text-[11px] px-2 py-0.5 rounded-full border border-zinc-700 text-zinc-400"
+              className="font-ko text-[11px] px-1 py-0.5 rounded-full border border-border text-muted-foreground"
             >
               {t}
             </span>

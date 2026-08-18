@@ -33,7 +33,7 @@ export function TierUpDialog({ tier, onClose }: TierUpDialogProps) {
   return (
     <Dialog open={!!tier} onOpenChange={(open) => { if (!open) onClose() }}>
       <DialogContent
-        className="bg-zinc-900 border-zinc-800 text-zinc-100 sm:max-w-sm text-center overflow-hidden"
+        className="bg-card border-border text-foreground sm:max-w-sm text-center overflow-hidden"
         showCloseButton={false}
       >
         <DialogTitle className="sr-only">등급 상승</DialogTitle>
@@ -57,7 +57,7 @@ export function TierUpDialog({ tier, onClose }: TierUpDialogProps) {
 
           <div>
             <p className="font-syne text-lg font-bold" style={{ color }}>{tier.name}</p>
-            <p className="font-ko text-sm text-zinc-400 mt-1 leading-relaxed">
+            <p className="font-ko text-sm text-muted-foreground mt-1 leading-relaxed">
               축하해요! {tier.label} 등급으로 올라갔어요.
             </p>
           </div>
