@@ -621,6 +621,7 @@ export function LeetCodeIDE() {
         optCdId: content?.optCdId ?? null,
         noteName: noteTitle,
         noteMemo: noteMemo,
+        noteCn: content?.optimizedCode?.content ?? "",
         tag: noteTags.join(","),
         lang: currentSession?.language ?? language,
       })
