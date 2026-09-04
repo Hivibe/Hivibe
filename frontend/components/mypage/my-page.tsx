@@ -32,6 +32,7 @@ interface Profile {
   reviewAlarmYn: string
   diagnosisCount: number
   avgGrade: string | null
+  streakDays: number
 }
 
 interface Badge {
@@ -378,8 +379,12 @@ export function MyPage({ onProfileUpdated, onNavigate }: {
                 </div>
                 <div className="bg-card border border-border rounded-xl p-5">
                   <div className="mb-2.5"><Flame className="h-4 w-4 text-orange-400" /></div>
-                  <p className="font-syne text-2xl font-bold text-muted-foreground">—</p>
-                  <p className="font-ko text-xs text-muted-foreground mt-1">연속 일수<br /><span className="text-muted-foreground">(연동 예정)</span></p>
+                  <p className="font-syne text-2xl font-bold text-foreground">
+                    {profile.streakDays ?? 0}
+                  </p>
+                  <p className="font-ko text-xs text-muted-foreground mt-1">
+                    연속 일수
+                  </p>
                 </div>
                 <div className="bg-card border border-border rounded-xl p-5">
                   <div className="mb-2.5"><BookOpen className="h-4 w-4 text-violet-400" /></div>
