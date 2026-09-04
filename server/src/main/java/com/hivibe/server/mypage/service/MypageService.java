@@ -16,6 +16,15 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
+import com.hivibe.server.domain.entity.Dgns;
+import com.hivibe.server.domain.entity.Lrn;
+import com.hivibe.server.repository.LrnRepository;
+
+import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
+import java.time.ZoneId;
+
 @Service
 @RequiredArgsConstructor
 public class MypageService {
@@ -24,6 +33,7 @@ public class MypageService {
 
     private final UserRepository userRepository;
     private final DgnsRepository dgnsRepository;
+    private final LrnRepository lrnRepository;
 
     // 공통 조회 헬퍼 - 5번 반복되던 orElseThrow 패턴 통합
     private User getUserOrThrow(String lgnId) {
@@ -45,11 +55,60 @@ public class MypageService {
         return "F";
     }
 
+    private int calculateStreak(Set<LocalDate> activityDates) {
+        if (activityDates.isEmpty()) {
+            return 0;
+        }
+
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
+
+        // 오늘 활동했으면 오늘부터 계산
+        // 오늘 아직 활동하지 않았다면 어제까지의 streak 유지
+        LocalDate currentDate = activityDates.contains(today)
+                ? today
+                : today.minusDays(1);
+
+        int streak = 0;
+
+        while (activityDates.contains(currentDate)) {
+            streak++;
+            currentDate = currentDate.minusDays(1);
+        }
+
+        return streak;
+    }
+
     private UserProfileResponseDto toResponseDto(User user) {
         long diagnosisCount = dgnsRepository.countByUser_Id(user.getId());
         Double avgScore = dgnsRepository.findAvgScoreByUserId(user.getId());
         String avgGrade = avgScore != null ? scoreToGrade(avgScore) : null;
-        return new UserProfileResponseDto(user, diagnosisCount, avgGrade);
+
+        Set<LocalDate> activityDates = new HashSet<>();
+
+        // 진단 날짜
+        List<Dgns> diagnoses = dgnsRepository.findByUser_IdOrderByDgnsDtAsc(user.getId());
+
+        for (Dgns dgns : diagnoses) {
+            if (dgns.getDgnsDt() != null) {
+                activityDates.add(dgns.getDgnsDt().toLocalDate());
+            }
+        }
+
+        // 학습 날짜
+        List<Lrn> learnings = lrnRepository.findByUser_IdOrderByCreatedAtDesc(user.getId());
+
+        for (Lrn lrn : learnings) {
+            if (lrn.getCreatedAt() != null) {
+                activityDates.add(lrn.getCreatedAt().toLocalDate());
+            }
+        }
+        int streakDays = calculateStreak(activityDates);
+
+        return new UserProfileResponseDto(
+                user,
+                diagnosisCount,
+                avgGrade,
+                streakDays);
     }
 
     // 마이페이지 조회

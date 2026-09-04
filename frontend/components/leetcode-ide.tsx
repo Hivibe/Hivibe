@@ -353,6 +353,15 @@ export function LeetCodeIDE() {
       const data = await response.json()
       setAiResult(data)
       setHasAnalyzed(true)
+
+      try {
+        await apiFetch("/api/activity?eventType=DIAGNOSIS_COMPLETED", {
+          method: "POST",
+        })
+      } catch (e) {
+        console.warn("진단 활동 로그 저장 실패", e)
+      }
+
     } catch (error: any) {
       if (error.name === "AbortError") {
         toast.info("분석을 취소했어요")
@@ -458,6 +467,14 @@ export function LeetCodeIDE() {
         })),
         blanks: aiLearn.blanks,
       }, controller.signal);
+
+      try {
+        await apiFetch("/api/activity?eventType=LEARNING_COMPLETED", {
+          method: "POST",
+        })
+      } catch (e) {
+        console.warn("학습 활동 로그 저장 실패", e)
+      }
 
 
       const lrnId = lrnRes.id;
