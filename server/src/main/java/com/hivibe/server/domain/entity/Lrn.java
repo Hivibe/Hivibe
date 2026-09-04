@@ -123,4 +123,8 @@ public class Lrn {
         this.nextReviewAt = nextDue;
         this.reviewCnt = completedCnt;
     }
+
+    /** 해제된 개념 ID 목록 (JSON 배열 문자열, 예: "[1,3,7]") */
+    @Column(name = "UNLOCKED_CONC_IDS", columnDefinition = "TEXT")
+    private String unlockedConcIds;
 }

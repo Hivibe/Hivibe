@@ -43,4 +43,5 @@ public interface DgnsRepository extends JpaRepository<Dgns, Long> {
     // S등급 달성 여부 (Grade S 뱃지용)
     @Query("SELECT COUNT(d) > 0 FROM Dgns d WHERE d.user.id = :userId AND d.anls.cdGrd = :grade")
     boolean existsByUserIdAndGrade(Long userId, String grade);
+    
 }

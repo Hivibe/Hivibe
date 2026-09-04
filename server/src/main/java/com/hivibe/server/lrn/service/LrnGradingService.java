@@ -114,6 +114,7 @@ public class LrnGradingService {
             lrnSubmRepository.save(subm);
 
             Concept concept = blank.getConcept();
+            boolean isUnlocked = graded.correct(); // 정답 맞췄을 때만 개념 정보 포함
 
             results.add(new BlankResultDto(
                     blank.getBlankId(),
@@ -125,9 +126,9 @@ public class LrnGradingService {
                     graded.diffNote(),
                     graded.recommend(),
                     graded.securityNote(),
-                    concept != null ? concept.getConcTitle() : null,
-                    concept != null ? concept.getConcDesc() : null));
-        }
+                    isUnlocked && concept != null ? concept.getConcTitle() : null,   // 조건 추가
+                    isUnlocked && concept != null ? concept.getConcDesc() : null));  // 조건 추가
+                    }
 
         // 6. 진행률/상태 갱신
         int totalBlanks = blanks.size();
