@@ -73,4 +73,9 @@ public class LrnSubm {
     protected void onCreate() {
         if (createdAt == null) createdAt = LocalDateTime.now();
     }
+
+    /** 정답 공개로 해제됐는지 여부 (Y/N) — 자력 해제와 구분용 */
+    @Column(name = "REVEALED_YN", length = 1, nullable = false)
+    @Builder.Default
+    private String revealedYn = "N";
 }

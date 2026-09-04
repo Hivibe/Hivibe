@@ -34,9 +34,22 @@ public class AiService {
 
                                  너는 알고리즘 코드 리뷰 전문 시니어 개발자야. 반드시 결정론적으로 채점해. 같은 코드에는 항상 같은 점수를 내려야 해.
 
+                                 [중요 분석 원칙]
+                                - 제공된 코드에 실제로 존재하는 문제만 지적한다.
+                                - 코드에서 확인할 수 없는 문제를 추측하지 않는다.
+                                - 해당 코드와 관련 없는 채점 기준은 적용하지 않는다.
+                                - 문제 여부가 불확실한 경우 감점하지 않는다.
+                                - 모든 점수는 0 이상 100 이하의 정수로 작성한다.
+                                - 감점 근거는 반드시 입력 코드에서 확인 가능한 내용이어야 한다.
+                                - 존재하지 않는 변수, 함수, 라이브러리, API를 임의로 만들어내지 않는다.
+                                - optimizedCode는 원본 코드의 기능을 임의로 변경하지 않는다.
+
                                 [채점 기준]
-                                 - accuracy: 엣지 케이스(null, 빈 배열) 미처리 시 -20점씩.
-                                 정수 오버플로우 가능한 mid 계산((left+right)/2) 사용 시 -15점 추가.
+                                 - 해당 코드에서 실제로 발생 가능한 엣지 케이스만 평가한다.
+                                 - 배열 또는 컬렉션 입력이 존재하는 경우에만 빈 배열 처리를 평가한다.
+                                 - null 가능성이 있는 참조형 입력이 존재하는 경우에만 null 처리를 평가한다.
+                                 - 중앙 인덱스 계산이 존재하는 경우에만 정수 오버플로우 가능성을 평가한다.
+                                 - 코드에 존재하지 않는 문제를 추측하여 감점하지 않는다.
                                  최대 감점 합산 적용.
                                  - efficiency (효율성, 0~100): O(n) 이하 100점, O(n log n) 80점, O(n²) 50점, O(n³) 이상 20점 이하.
                                  더 효율적인 자료구조(HashMap, HashSet 등)로 개선 가능한데 안 쓴 경우 추가 -10점.
@@ -47,7 +60,10 @@ public class AiService {
                                  * 주석에 사용할 필요 없는 비속어/은어/이모티콘을 사용하거나(사용한 말을 직접 알려 줄 필요는 없음.), 의미 없는 주석 처리 시 -15점
                                  * 매직 넘버(의미 없는 상수 직접 사용) 시 -10점
                                  * 불필요한 중첩 조건문(else if 대신 early return 가능한 경우) 시 -10점
-                                 * 언어 네이밍 컨벤션 미준수(Java인데 snake_case 사용 등) 시 -15점
+                                 - 변수와 함수 이름은 역할을 명확하게 알 수 있는 이름을 사용해야 한다.
+                                - cnt, res, tmp, val, obj 등 의미를 축약한 이름을 불필요하게 사용하면 감점한다.
+                                - count, result, temporaryValue처럼 의미가 명확한 이름을 권장한다.
+                                - 단, i, j, k 같은 짧은 반복문 인덱스와 ID, URL, API처럼 일반적으로 통용되는 약어는 허용한다.
                                  * 감점 합산 후 0점 미만이면 0점으로 처리
                                  - totalScore: accuracy*0.4 + efficiency*0.3 + readability*0.15 + style*0.15
                                  단, 어느 항목이든 40점 이하인 항목이 있으면 totalScore에 추가 -10점 페널티.
@@ -72,12 +88,13 @@ public class AiService {
                                  "readabilityReason": "변수명이 명확하고 early return을 적절히 사용함.",
                                  "style": 85,
                                  "styleReason": "네이밍 컨벤션을 잘 준수했으나 사용하지 않는 import가 존재함.",
-                                 "complexity": "O(n²)"
+                                 "complexity": "O(n²)",
                                  "optimizedCode": "최적화된 전체 코드를 문자열로. 마크다운 금지, 순수 코드만."
                                  }
 
                                  [분석할 코드]
-                                 """ + userCode;
+                                 """
+                                + userCode;
                 Map<String, Object> requestBody = Map.of(
                                 "contents", new Object[] {
                                                 Map.of("parts", new Object[] {
@@ -108,7 +125,8 @@ public class AiService {
 
                         AiResponseDto result = objectMapper.readValue(aiJsonText, AiResponseDto.class);
 
-                        return result;
+                        // 검증한 뒤 반환
+                        return validateAndNormalize(result);
 
                 } catch (Exception e) {
                         System.err.println("에러 발생: " + e.getMessage());
@@ -116,5 +134,68 @@ public class AiService {
                                         "AI 분석 중 서버 오류가 발생했습니다.",
                                         0, 0, "-", 0, "-", 0, "-", 0, "-", "O(1)", "");
                 }
+        }
+
+        private AiResponseDto validateAndNormalize(AiResponseDto result) {
+
+                int accuracy = clamp(result.accuracy());
+                int efficiency = clamp(result.efficiency());
+                int readability = clamp(result.readability());
+                int style = clamp(result.style());
+
+                double calculated = accuracy * 0.4 +
+                                efficiency * 0.3 +
+                                readability * 0.15 +
+                                style * 0.15;
+
+                if (accuracy <= 40 ||
+                                efficiency <= 40 ||
+                                readability <= 40 ||
+                                style <= 40) {
+                        calculated -= 10;
+                }
+
+                int totalScore = clamp((int) Math.round(calculated));
+
+                String complexity = normalizeComplexity(result.complexity());
+
+                return new AiResponseDto(
+                                safeText(result.summary(), "분석 결과를 생성하지 못했습니다."),
+                                totalScore,
+                                accuracy,
+                                safeText(result.accuracyReason(), "분석 근거 없음"),
+                                efficiency,
+                                safeText(result.efficiencyReason(), "분석 근거 없음"),
+                                readability,
+                                safeText(result.readabilityReason(), "분석 근거 없음"),
+                                style,
+                                safeText(result.styleReason(), "분석 근거 없음"),
+                                complexity,
+                                result.optimizedCode() == null ? "" : result.optimizedCode());
+        }
+
+        private int clamp(int score) {
+                return Math.max(0, Math.min(100, score));
+        }
+
+        private String safeText(String value, String defaultValue) {
+                if (value == null || value.isBlank()) {
+                        return defaultValue;
+                }
+                return value;
+        }
+
+        private String normalizeComplexity(String complexity) {
+                if (complexity == null || complexity.isBlank()) {
+                        return "O(?)";
+                }
+
+                String trimmed = complexity.trim();
+
+                if (!trimmed.matches("O\\(.+\\)")) {
+                        return "O(?)";
+                }
+
+                return trimmed;
         }
 }

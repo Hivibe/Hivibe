@@ -58,7 +58,7 @@ export function NoteCard({
           .map((t) => (
             <span
               key={t}
-              className="font-ko text-[11px] px-1 py-0.5 rounded-full border border-border text-muted-foreground"
+              className="font-ko text-[11px] px-2 py-0.5 rounded-full border border-border text-muted-foreground"
             >
               {t}
             </span>
