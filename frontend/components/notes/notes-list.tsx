@@ -10,6 +10,13 @@ import { Search, Star, X } from "lucide-react"
 import { NoteCard } from "@/components/notes/note-card"
 import { apiFetch } from "@/lib/api"
 import type { Note } from "@/types"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 const BRAND = "#63C1ED"
 
@@ -23,6 +30,7 @@ export function NotesList({ selNote, setSelNote, refreshKey }: NotesListProps) {
   const [notes, setNotes] = useState<Note[]>([])
   const [search, setSearch] = useState("")
   const [langFilter, setLangFilter] = useState("All")
+  const [noteTypeFilter, setNoteTypeFilter] = useState("ALL")
   const [loading, setLoading] = useState(true)
   const [newNoteOpen, setNewNoteOpen] = useState(false)
 
@@ -80,6 +88,17 @@ export function NotesList({ selNote, setSelNote, refreshKey }: NotesListProps) {
   const filtered = (list: Note[]) =>
     list
       .filter(n => langFilter === "All" || n.lang === langFilter)
+      .filter(n => {
+        if (noteTypeFilter === "LEARNING") {
+          return n.noteType === "LEARNING"
+        }
+
+        if (noteTypeFilter === "PERSONAL") {
+          return n.noteType !== "LEARNING"
+        }
+
+        return true
+      })
       .filter(n =>
         search === "" ||
         n.noteName?.toLowerCase().includes(search.toLowerCase()) ||
@@ -110,7 +129,7 @@ export function NotesList({ selNote, setSelNote, refreshKey }: NotesListProps) {
       </div>
 
       {/* 언어 필터 */}
-      <div className="flex gap-1.5 mb-4 flex-wrap">
+      <div className="flex gap-1.5 mb-2 flex-wrap">
         {["All", "Java", "Python", "JavaScript", "C++"].map(l => (
           <button key={l} onClick={() => setLangFilter(l)}
             className="font-ko text-[10px] px-2.5 py-1 rounded-full border transition-all"
@@ -120,6 +139,51 @@ export function NotesList({ selNote, setSelNote, refreshKey }: NotesListProps) {
             {l}
           </button>
         ))}
+      </div>
+
+      {/* 노트 종류 필터 */}
+      <div className="mb-4">
+        <Select
+          value={noteTypeFilter}
+          onValueChange={setNoteTypeFilter}
+        >
+          <SelectTrigger
+            className="
+        w-[150px] h-8
+        rounded-lg
+        border border-border/60
+        bg-muted/30
+        px-3
+        font-ko text-[11px]
+        text-foreground/80
+        shadow-none
+        focus:ring-1
+        focus:ring-sky-400/30
+      "
+          >
+            <SelectValue placeholder="전체 노트" />
+          </SelectTrigger>
+
+          <SelectContent
+            className="
+        bg-popover
+        border-border/60
+        rounded-lg
+        shadow-lg
+        font-ko
+      "
+          >
+            <SelectItem value="ALL" className="text-xs">
+              전체 노트
+            </SelectItem>
+            <SelectItem value="LEARNING" className="text-xs">
+              학습 노트
+            </SelectItem>
+            <SelectItem value="PERSONAL" className="text-xs">
+              개인 노트
+            </SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <ScrollArea className="flex-1 min-h-0">

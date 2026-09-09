@@ -17,6 +17,7 @@ import { useRouter } from "next/navigation"
 import { Sun, Moon } from "lucide-react"
 import { useTheme } from "next-themes"
 import { toPng } from "html-to-image"
+import { toast } from "sonner"
 
 
 const BRAND = "#63C1ED"
@@ -356,7 +357,7 @@ export function MyPage({ onProfileUpdated, onNavigate }: {
 
   const handleCopyAchievement = async () => {
     if (!navigator.clipboard || typeof ClipboardItem === "undefined") {
-      alert("이 브라우저에서는 이미지 복사를 지원하지 않아요.")
+      toast.error("이 브라우저에서는 이미지 복사를 지원하지 않아요.")
       return
     }
 
@@ -371,10 +372,14 @@ export function MyPage({ onProfileUpdated, onNavigate }: {
         }),
       ])
 
-      alert("성과 카드 이미지가 복사됐어요! Ctrl+V로 붙여넣을 수 있어요.")
+      toast.success("성과 카드 이미지가 복사됐어요!", {
+        description: "Ctrl+V로 원하는 곳에 붙여넣을 수 있어요.",
+      })
     } catch (e) {
       console.error("성과 카드 복사 실패:", e)
-      alert("이미지 복사에 실패했어요. HTTPS 또는 브라우저 권한을 확인해 주세요.")
+      toast.error("이미지 복사에 실패했어요.", {
+        description: "HTTPS 또는 브라우저 권한을 확인해 주세요.",
+      })
     }
   }
 
