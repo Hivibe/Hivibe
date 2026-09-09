@@ -85,8 +85,9 @@ type LearningContent = {
   lrnId: number
   optCdId?: number
   optimizedCode: AiLearningResponse["optimizedCode"]
-  concepts: AiLearningResponse["concepts"]
+  concepts: (AiLearningResponse["concepts"][number] & { id?: number })[]
   previousSubmission?: SubmissionResponse | null
+  unlockedConceptIds?: number[]
 }
 
 /* 언어 표기 통일 (java → Java) */
@@ -260,12 +261,14 @@ export function LeetCodeIDE() {
         optCdId: detail.optCdId,
         optimizedCode: detail.optimizedCode,
         concepts: detail.concepts.map(c => ({
+          id: c.id,
           type: c.type,
           title: c.title,
           description: c.description,
           referenceUrl: c.referenceUrl,
         })),
         previousSubmission: latestSubm,
+        unlockedConceptIds: detail.unlockedConceptIds ?? [], 
       }));
       setAnalyzedCodeMap(prev => new Map(prev).set(lrnId, detail.originalCode));
     } catch (e: any) {
@@ -483,6 +486,7 @@ export function LeetCodeIDE() {
         lrnId,
         optimizedCode: aiLearn.optimizedCode,
         concepts: aiLearn.concepts,
+        unlockedConceptIds: [],
       }));
       setAnalyzedCodeMap(prev => new Map(prev).set(lrnId, editorCode));
 

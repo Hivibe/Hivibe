@@ -22,7 +22,8 @@ public record LearningDetailResponseDto(
     String originalCode,
     Long optCdId,
     OptimizedCodeDto optimizedCode,
-    List<ConceptDto> concepts
+    List<ConceptDto> concepts,
+    List<Long> unlockedConceptIds
 ) {
     public record OptimizedCodeDto(
         String lang,
@@ -32,6 +33,7 @@ public record LearningDetailResponseDto(
     ) {}
 
     public record ConceptDto(
+        Long id, 
         String type,
         String title,
         String description,

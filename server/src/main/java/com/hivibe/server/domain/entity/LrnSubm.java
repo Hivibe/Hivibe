@@ -51,6 +51,11 @@ public class LrnSubm {
     @Builder.Default
     private Integer hintUsedLv = 0;
 
+    /** 정답 공개(포기)로 해제됐는지 여부 — 자력 해제와 구분용 */  // ← 추가
+    @Column(name = "REVEALED_YN", length = 1, nullable = false)
+    @Builder.Default
+    private String revealedYn = "N";
+
     /** 정답과의 차이점 설명 (AI 채점 시) */
     @Lob
     @Column(name = "DIFF_NOTE", columnDefinition = "LONGTEXT")
@@ -73,9 +78,4 @@ public class LrnSubm {
     protected void onCreate() {
         if (createdAt == null) createdAt = LocalDateTime.now();
     }
-
-    /** 정답 공개로 해제됐는지 여부 (Y/N) — 자력 해제와 구분용 */
-    @Column(name = "REVEALED_YN", length = 1, nullable = false)
-    @Builder.Default
-    private String revealedYn = "N";
 }

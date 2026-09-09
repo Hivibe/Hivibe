@@ -109,6 +109,19 @@ public class Lrn {
     @Column(name = "OVERALL_COMMENT", columnDefinition = "LONGTEXT")
     private String overallComment;
 
+    /** RvwSched 기준으로 캐시 필드 동기화 */
+    public void syncReviewCache(LocalDateTime nextDue, int completedCnt) {
+        this.nextReviewAt = nextDue;
+        this.reviewCnt = completedCnt;
+    }
+
+    // ─────────── [확장] 개념 잠금 해제 ───────────  ← 추가
+
+    /** 해제된 개념 ID 목록 (JSON 배열 문자열, 예: "[1,3,7]") */
+    @Lob
+    @Column(name = "UNLOCKED_CONC_IDS", columnDefinition = "LONGTEXT")
+    private String unlockedConcIds;
+
     /**
      * INSERT 직전 실행
      * createdAt 이 null 이면 현재 시간으로 자동 세팅
@@ -117,14 +130,4 @@ public class Lrn {
     protected void onCreate() {
         if (createdAt == null) createdAt = LocalDateTime.now();
     }
-
-    /** RvwSched 기준으로 캐시 필드 동기화 */
-    public void syncReviewCache(LocalDateTime nextDue, int completedCnt) {
-        this.nextReviewAt = nextDue;
-        this.reviewCnt = completedCnt;
-    }
-
-    /** 해제된 개념 ID 목록 (JSON 배열 문자열, 예: "[1,3,7]") */
-    @Column(name = "UNLOCKED_CONC_IDS", columnDefinition = "TEXT")
-    private String unlockedConcIds;
 }

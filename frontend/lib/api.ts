@@ -236,12 +236,14 @@ export type LearningDetail = {
     timeComplexity: string
   }
   concepts: {
+    id: number
     type: string
     title: string
     description: string
     referenceUrl: string
     sortOrder: number
   }[]
+  unlockedConceptIds: number[]
 }
 
 export type NoteSaveRequest = {

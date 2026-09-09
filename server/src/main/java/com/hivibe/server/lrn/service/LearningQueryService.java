@@ -1,5 +1,6 @@
 package com.hivibe.server.lrn.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivibe.server.domain.entity.Concept;
 import com.hivibe.server.domain.entity.Lrn;
 import com.hivibe.server.domain.entity.OptCd;
@@ -17,9 +18,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
-/**f
+/**
  * 학습 조회 서비스
  * - 아카이브 목록 / 학습 상세
  * - AI 호출 없음
@@ -33,10 +36,8 @@ public class LearningQueryService {
     private final ConceptRepository conceptRepository;
     private final LrnBlankRepository lrnBlankRepository;
     private final LrnSubmRepository lrnSubmRepository;
+    private final ObjectMapper objectMapper;   // ← 추가 (RequiredArgsConstructor가 자동 주입)
 
-    /**
-     * 아카이브 목록 (최신순)
-     */
     @Transactional(readOnly = true)
     public List<LearningListItemDto> findAll(User currentUser) {
         List<Lrn> lrns = lrnRepository.findByUser_IdOrderByCreatedAtDesc(currentUser.getId());
@@ -59,11 +60,6 @@ public class LearningQueryService {
             .toList();
     }
 
-    /**
-     * 학습 등급 결정
-     * - 진단 등급(OPT_CD → ANLS.cdGrd)을 우선 사용
-     * - 값이 없으면 Lrn.grade(채점 등급) 폴백
-     */
     private String resolveGrade(Lrn lrn) {
         try {
             OptCd optCd = lrn.getOptCd();
@@ -76,12 +72,12 @@ public class LearningQueryService {
         } catch (Exception e) {
             log.warn("진단 등급 조회 실패 lrnId={}: {}", lrn.getLrnId(), e.getMessage());
         }
-        return lrn.getGrade();  // 폴백
+        return lrn.getGrade();
     }
 
     /**
      * 학습 상세
-     * - 빈칸 코드 + 개념 + 원본 코드
+     * - 빈칸 코드 + 개념 + 원본 코드 + 해제된 개념 목록
      */
     @Transactional(readOnly = true)
     public LearningDetailResponseDto findDetail(Long lrnId, User currentUser) {
@@ -99,6 +95,7 @@ public class LearningQueryService {
 
         List<LearningDetailResponseDto.ConceptDto> conceptDtos = concepts.stream()
             .map(c -> new LearningDetailResponseDto.ConceptDto(
+                c.getConcId(),
                 c.getCdType(),
                 c.getConcTitle(),
                 c.getConcDesc(),
@@ -106,6 +103,10 @@ public class LearningQueryService {
                 c.getSortOrd()
             ))
             .toList();
+
+        // ▼▼▼ 여기 안으로 이동 (findDetail 메서드 안, return 전) ▼▼▼
+        List<Long> unlockedConceptIds = parseUnlockedIds(lrn.getUnlockedConcIds());
+        // ▲▲▲
 
         return new LearningDetailResponseDto(
             lrn.getLrnId(),
@@ -126,13 +127,25 @@ public class LearningQueryService {
                 optCd.getBlank(),
                 optCd.getTimeComp()
             ),
-            conceptDtos
+            conceptDtos,
+            unlockedConceptIds   // ← 추가된 인자
         );
     }
 
-    /**
-     * 즐겨찾기 토글
-     */
+    /** unlockedConcIds(JSON 문자열) → List<Long> 파싱 */
+    private List<Long> parseUnlockedIds(String json) {
+        if (json == null || json.isBlank()) {
+            return List.of();
+        }
+        try {
+            Long[] ids = objectMapper.readValue(json, Long[].class);
+            return List.of(ids);
+        } catch (Exception e) {
+            log.warn("unlockedConcIds 파싱 실패, 빈 목록으로 처리: {}", json, e);
+            return List.of();
+        }
+    }
+
     @Transactional
     public boolean toggleBookmark(Long lrnId, User currentUser) {
         Lrn lrn = lrnRepository.findById(lrnId)
@@ -147,12 +160,6 @@ public class LearningQueryService {
         return next;
     }
 
-    /**
-     * 학습 세션 삭제
-     * - 삭제 순서: LrnSubm → LrnBlank → Concept → Lrn
-     *   (LrnSubm이 LrnBlank를 참조, LrnBlank가 Concept를 참조하므로 역순)
-     * - OptCd/OrnCd/Anls/Dgns는 진단 소유라 남겨둠
-     */
     @Transactional
     public void delete(Long lrnId, User currentUser) {
         Lrn lrn = lrnRepository.findById(lrnId)
@@ -170,9 +177,6 @@ public class LearningQueryService {
         log.info("학습 세션 삭제 완료. lrnId={}", lrnId);
     }
 
-    /**
-     * 학습 이름 수정
-     */
     @Transactional
     public void rename(Long lrnId, String newName, User currentUser) {
         Lrn lrn = lrnRepository.findById(lrnId)
@@ -187,6 +191,6 @@ public class LearningQueryService {
             throw new IllegalArgumentException("학습 이름은 비워둘 수 없습니다.");
         }
         lrn.setLrnName(trimmed);
-        lrnRepository.save(lrn);   // ← 명시적 저장 추가
+        lrnRepository.save(lrn);
     }
 }
