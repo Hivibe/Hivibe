@@ -16,14 +16,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Set; 
+import java.util.Set;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Arrays;
+import com.hivibe.server.user.service.UserGrdService;
 
 /**
  * 학습 채점 서비스
@@ -38,6 +40,7 @@ public class LrnGradingService {
 
     private static final int REVIEW_DAYS_AFTER_COMPLETION = 3;
 
+    private final UserGrdService userGrdService;
     private final LrnRepository lrnRepository;
     private final LrnBlankRepository lrnBlankRepository;
     private final LrnSubmRepository lrnSubmRepository;
@@ -106,7 +109,7 @@ public class LrnGradingService {
 
             if (graded.correct() && blank.getConcept() != null) {
                 Long concId = blank.getConcept().getConcId();
-                if (addUnlockedConcept(lrn, concId)) {      // 새로 해제된 경우만 true
+                if (addUnlockedConcept(lrn, concId)) { // 새로 해제된 경우만 true
                     newlyUnlockedConceptIds.add(concId);
                 }
             }
@@ -141,7 +144,7 @@ public class LrnGradingService {
                     graded.securityNote(),
                     unlocked && concept != null ? concept.getConcTitle() : null,
                     unlocked && concept != null ? concept.getConcDesc() : null));
-                    }
+        }
 
         // 6. 진행률/상태 갱신
         int totalBlanks = blanks.size();
@@ -167,7 +170,18 @@ public class LrnGradingService {
         String overallComment = aiSummarizer.summarize(lang, results, correctCount, totalBlanks);
         lrn.setOverallComment(overallComment);
 
-        log.info("채점 완료 lrnId={}, attemptNo={}, {}/{} 정답", lrnId, attemptNo, correctCount, totalBlanks);
+        log.info(
+                "채점 완료 lrnId={}, attemptNo={}, {}/{} 정답",
+                lrnId,
+                attemptNo,
+                correctCount,
+                totalBlanks);
+
+        lrnRepository.flush();
+
+        if (allCorrect) {
+            userGrdService.recalculate(currentUser.getId());
+        }
 
         return new SubmissionResponseDto(
                 lrn.getLrnId(),
@@ -237,7 +251,7 @@ public class LrnGradingService {
             lrn.setUnlockedConcIds(toJson(unlocked));
             return true;
         }
-        return false;   // 이미 해제되어 있던 개념 → 새로 해제된 게 아님
+        return false; // 이미 해제되어 있던 개념 → 새로 해제된 게 아님
     }
 
     private Set<Long> parseUnlockedIds(String json) {
@@ -317,8 +331,8 @@ public class LrnGradingService {
                     s.getDiffNote(),
                     s.getRecommend(),
                     s.getSecurityNote(),
-                    unlocked && concept != null ? concept.getConcTitle() : null, 
-                    unlocked && concept != null ? concept.getConcDesc() : null)); 
+                    unlocked && concept != null ? concept.getConcTitle() : null,
+                    unlocked && concept != null ? concept.getConcDesc() : null));
         }
 
         int totalBlanks = blanks.size();
