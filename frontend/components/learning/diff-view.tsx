@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useRef, Fragment } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { TrendingUp, HelpCircle, Check, X, MessageSquare, ExternalLink, Loader2, RotateCcw, Eye, EyeOff, Sparkles, ChevronLeft, ChevronRight, Play, Pause, Pencil } from "lucide-react"
+import { TrendingUp, HelpCircle, Check, X, MessageSquare, ExternalLink, Loader2, RotateCcw, Eye, EyeOff, Sparkles, ChevronLeft, ChevronRight, Play, Pause, Pencil, Lock } from "lucide-react"
 import {
   ResponsiveContainer, AreaChart, Area,
   Line, CartesianGrid,
@@ -43,7 +43,7 @@ const complexityComparisonData = [
 type LearningContent = {
   lrnId: number
   optimizedCode: AiLearningResponse["optimizedCode"]
-  concepts: AiLearningResponse["concepts"]
+  concepts: (AiLearningResponse["concepts"][number] & { id?: number })[]
   previousSubmission?: {
     correctCount: number
     totalBlanks: number
@@ -51,6 +51,7 @@ type LearningContent = {
     overallComment: string | null
     results: BlankResult[]
   } | null
+  unlockedConceptIds?: number[]
 }
 
 interface DiffViewProps {
@@ -432,6 +433,7 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
   const optimizedConcepts = concepts.filter(c => c.type === "P")
   const originalLines = useMemo(() => analyzedCode.split("\n"), [analyzedCode])
 
+  const unlockedConceptIds = new Set(learningContent?.unlockedConceptIds ?? [])
   const filledCount = Object.values(answers).filter(v => v?.trim().length > 0).length
   const allFilled = blankCount > 0 && filledCount === blankCount
 
@@ -762,63 +764,58 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
                 {originalConcepts.length === 0 ? (
                   <p className="font-ko text-xs text-muted-foreground italic">개념 정보가 없습니다.</p>
                 ) : (
-                  originalConcepts.map((c, i) => (
-                    <div key={i} className="mb-4 last:mb-0">
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <div className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" />
-                        <span className="font-ko text-[13px] text-foreground font-bold">{c.title}</span>
+                  originalConcepts.map((c, i) => {
+                    const isUnlocked = c.id != null && unlockedConceptIds.has(c.id)
+
+                    if (isUnlocked) {
+                      return (
+                        <div key={i} className="mb-4 last:mb-0">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <div className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" />
+                            <span className="font-ko text-[13px] text-foreground font-bold">{c.title}</span>
+                          </div>
+                          <p className="font-ko text-xs text-muted-foreground leading-relaxed pl-3.5">{c.description}</p>
+                          {c.referenceUrl && (
+                            <a href={c.referenceUrl} target="_blank" rel="noopener noreferrer"
+                              className="font-ko text-[11px] text-rose-400/80 hover:text-rose-300 underline pl-3.5 mt-1.5 inline-flex items-center gap-1">
+                              참고 링크 <ExternalLink className="h-2.5 w-2.5" />
+                            </a>
+                          )}
+                        </div>
+                      )
+                    }
+
+                    // 잠긴 상태 — 박스 전체 모자이크 + 중앙 잠금 오버레이
+                    return (
+                      <div key={i} className="mb-4 last:mb-0">
+                        <div className="relative rounded-lg overflow-hidden bg-background/40 border border-border/50">
+                          {/* 실제 콘텐츠 — 블러 처리, 클릭/선택 불가 */}
+                          <div className="p-3 blur-[6px] select-none pointer-events-none opacity-70">
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <div className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" />
+                              <span className="font-ko text-[13px] text-foreground font-bold">{c.title}</span>
+                            </div>
+                            <p className="font-ko text-xs text-muted-foreground leading-relaxed">{c.description}</p>
+                          </div>
+
+                          {/* 잠금 오버레이 */}
+                          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-background/60 backdrop-blur-[2px]">
+                            <div className="h-8 w-8 rounded-full bg-card border border-border/70 flex items-center justify-center shadow-sm">
+                              <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+                            </div>
+                            <p className="font-ko text-[10px] text-muted-foreground text-center px-4 leading-relaxed">
+                              이 빈칸을 정답으로 채우면<br />개념이 공개돼요
+                            </p>
+                          </div>
+                        </div>
                       </div>
-                      <p className="font-ko text-xs text-muted-foreground leading-relaxed pl-3.5">{c.description}</p>
-                      {c.referenceUrl && (
-                        <a
-                          href={c.referenceUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-ko text-[11px] text-rose-400/80 hover:text-rose-300 underline pl-3.5 mt-1.5 inline-flex items-center gap-1"
-                        >
-                          참고 링크 <ExternalLink className="h-2.5 w-2.5" />
-                        </a>
-                      )}
-                    </div>
-                  ))
+                    )
+                  })
                 )}
               </CardContent>
             </Card>
 
-            <Card className="border-white/5" style={{ background: `${BRAND}08`, borderColor: `${BRAND}20` }}>
-              <CardContent className="p-5">
-                <p className="font-ko text-[10px] tracking-widest mb-3" style={{ color: BRAND }}>// OPTIMIZED CONCEPTS</p>
-                <p className="font-ko text-xs text-muted-foreground mb-4 leading-relaxed">
-                  아래 개념을 사용하면 코드를 최적화할 수 있어요.
-                </p>
-                {optimizedConcepts.length === 0 ? (
-                  <p className="font-ko text-xs text-muted-foreground italic">개념 정보가 없습니다.</p>
-                ) : (
-                  optimizedConcepts.map((c, i) => (
-                    <div key={i} className="mb-4 last:mb-0">
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <div className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: BRAND }} />
-                        <span className="font-ko text-[13px] text-foreground font-bold">{c.title}</span>
-                      </div>
-                      <p className="font-ko text-xs text-muted-foreground leading-relaxed pl-3.5">{c.description}</p>
-                      {c.referenceUrl && (
-                        <a
-                          href={c.referenceUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-ko text-[11px] hover:underline pl-3.5 mt-1.5 inline-flex items-center gap-1"
-                          style={{ color: BRAND }}
-                        >
-                          참고 링크 <ExternalLink className="h-2.5 w-2.5" />
-                        </a>
-                      )}
-                    </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-
-            <Card className="bg-card border-white/5">
+                        <Card className="bg-card border-white/5">
               <CardHeader className="pb-2 pt-5 px-5">
                 <CardTitle className="font-syne text-sm font-bold text-foreground flex items-center gap-2">
                   <TrendingUp className="h-4 w-4" style={{ color: BRAND }} /> Performance Comparison
@@ -865,6 +862,39 @@ export function DiffView({ session, analyzedCode, learningContent, onBack, onBad
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-white/5" style={{ background: `${BRAND}08`, borderColor: `${BRAND}20` }}>
+              <CardContent className="p-5">
+                <p className="font-ko text-[10px] tracking-widest mb-3" style={{ color: BRAND }}>// OPTIMIZED CONCEPTS</p>
+                <p className="font-ko text-xs text-muted-foreground mb-4 leading-relaxed">
+                  아래 개념을 사용하면 코드를 최적화할 수 있어요.
+                </p>
+                {optimizedConcepts.length === 0 ? (
+                  <p className="font-ko text-xs text-muted-foreground italic">개념 정보가 없습니다.</p>
+                ) : (
+                  optimizedConcepts.map((c, i) => (
+                    <div key={i} className="mb-4 last:mb-0">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <div className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: BRAND }} />
+                        <span className="font-ko text-[13px] text-foreground font-bold">{c.title}</span>
+                      </div>
+                      <p className="font-ko text-xs text-muted-foreground leading-relaxed pl-3.5">{c.description}</p>
+                      {c.referenceUrl && (
+                        <a
+                          href={c.referenceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-ko text-[11px] hover:underline pl-3.5 mt-1.5 inline-flex items-center gap-1"
+                          style={{ color: BRAND }}
+                        >
+                          참고 링크 <ExternalLink className="h-2.5 w-2.5" />
+                        </a>
+                      )}
+                    </div>
+                  ))
+                )}
               </CardContent>
             </Card>
           </div>

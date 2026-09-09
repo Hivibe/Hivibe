@@ -1,5 +1,6 @@
 package com.hivibe.server.lrn.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivibe.server.badge.service.BadgeService;
 import com.hivibe.server.domain.entity.*;
 import com.hivibe.server.lrn.dto.AiGradeResult;
@@ -18,8 +19,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Set; 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Arrays;
 
 /**
  * 학습 채점 서비스
@@ -40,6 +44,7 @@ public class LrnGradingService {
     private final AnswerNormalizer normalizer;
     private final AiGrader aiGrader;
     private final AiSummarizer aiSummarizer;
+    private final ObjectMapper objectMapper;
 
     @Transactional
     public SubmissionResponseDto submit(Long lrnId, SubmissionRequestDto request, User currentUser) {
@@ -85,6 +90,7 @@ public class LrnGradingService {
         String codeContext = lrn.getOptCd().getBlank();
 
         List<BlankResultDto> results = new ArrayList<>();
+        List<Long> newlyUnlockedConceptIds = new ArrayList<>();
         int correctCount = 0;
 
         for (AnswerItem ans : request.answers()) {
@@ -97,6 +103,13 @@ public class LrnGradingService {
             GradeResult graded = gradeOne(lang, blank, ans.userAns(), codeContext);
             if (graded.correct())
                 correctCount++;
+
+            if (graded.correct() && blank.getConcept() != null) {
+                Long concId = blank.getConcept().getConcId();
+                if (addUnlockedConcept(lrn, concId)) {      // 새로 해제된 경우만 true
+                    newlyUnlockedConceptIds.add(concId);
+                }
+            }
 
             // 제출 이력 저장
             LrnSubm subm = LrnSubm.builder()
@@ -114,6 +127,7 @@ public class LrnGradingService {
             lrnSubmRepository.save(subm);
 
             Concept concept = blank.getConcept();
+            boolean unlocked = graded.correct(); // 정답 맞췄을 때만 개념 정보 포함
 
             results.add(new BlankResultDto(
                     blank.getBlankId(),
@@ -125,9 +139,9 @@ public class LrnGradingService {
                     graded.diffNote(),
                     graded.recommend(),
                     graded.securityNote(),
-                    concept != null ? concept.getConcTitle() : null,
-                    concept != null ? concept.getConcDesc() : null));
-        }
+                    unlocked && concept != null ? concept.getConcTitle() : null,
+                    unlocked && concept != null ? concept.getConcDesc() : null));
+                    }
 
         // 6. 진행률/상태 갱신
         int totalBlanks = blanks.size();
@@ -166,7 +180,8 @@ public class LrnGradingService {
                 lrn.getGrade(),
                 lrn.getNextReviewAt(),
                 overallComment,
-                results);
+                results,
+                newlyUnlockedConceptIds);
     }
 
     // ─────────── 내부 ───────────
@@ -216,6 +231,37 @@ public class LrnGradingService {
             String securityNote) {
     }
 
+    private boolean addUnlockedConcept(Lrn lrn, Long concId) {
+        Set<Long> unlocked = parseUnlockedIds(lrn.getUnlockedConcIds());
+        if (unlocked.add(concId)) {
+            lrn.setUnlockedConcIds(toJson(unlocked));
+            return true;
+        }
+        return false;   // 이미 해제되어 있던 개념 → 새로 해제된 게 아님
+    }
+
+    private Set<Long> parseUnlockedIds(String json) {
+        if (json == null || json.isBlank()) {
+            return new HashSet<>();
+        }
+        try {
+            Long[] ids = objectMapper.readValue(json, Long[].class);
+            return new HashSet<>(Arrays.asList(ids));
+        } catch (Exception e) {
+            log.warn("unlockedConcIds 파싱 실패, 빈 목록으로 초기화: {}", json, e);
+            return new HashSet<>();
+        }
+    }
+
+    private String toJson(Set<Long> ids) {
+        try {
+            return objectMapper.writeValueAsString(ids);
+        } catch (Exception e) {
+            log.warn("unlockedConcIds 직렬화 실패", e);
+            return "[]";
+        }
+    }
+
     /**
      * 마지막 채점 결과 조회
      * - 아카이브에서 이미 푼 학습을 다시 열 때 답/피드백 복원용
@@ -259,6 +305,7 @@ public class LrnGradingService {
 
             LrnBlank blank = blankById.get(s.getBlank().getBlankId());
             Concept concept = blank != null ? blank.getConcept() : null;
+            boolean unlocked = correct; // 정답 맞췄을 때만 개념 정보 포함
 
             results.add(new BlankResultDto(
                     s.getBlank().getBlankId(),
@@ -270,8 +317,8 @@ public class LrnGradingService {
                     s.getDiffNote(),
                     s.getRecommend(),
                     s.getSecurityNote(),
-                    concept != null ? concept.getConcTitle() : null,
-                    concept != null ? concept.getConcDesc() : null));
+                    unlocked && concept != null ? concept.getConcTitle() : null, 
+                    unlocked && concept != null ? concept.getConcDesc() : null)); 
         }
 
         int totalBlanks = blanks.size();
@@ -288,6 +335,7 @@ public class LrnGradingService {
                 lrn.getGrade(),
                 lrn.getNextReviewAt(),
                 lrn.getOverallComment(),
-                results);
+                results,
+                List.of());
     }
 }

@@ -6,4 +6,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface OrnCdRepository extends JpaRepository<OrnCd, Long> {
+
+    long countByUser_Id(Long userId);
 }

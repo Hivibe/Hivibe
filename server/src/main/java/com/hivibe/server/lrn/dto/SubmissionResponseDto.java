@@ -17,7 +17,8 @@ public record SubmissionResponseDto(
     String grade,
     LocalDateTime nextReviewAt,
     String overallComment,
-    List<BlankResultDto> results
+    List<BlankResultDto> results,
+    List<Long> newlyUnlockedConceptIds
 ) {
     /**
      * 빈칸별 채점 결과
