@@ -710,18 +710,40 @@ export function LeetCodeIDE() {
   }, [selSession, analyzedCodeMap]);
 
   /* 채점 완료 → 아카이브 목록의 grade와 캐시된 previousSubmission 동시 갱신 */
-  const handleLearningGraded = useCallback((lrnId: number, res: SubmissionResponse) => {
-    setSessions(prev => prev.map(s =>
-      s.id === lrnId ? { ...s, grade: res.grade ?? s.grade } : s
-    ));
-    setLearnings(prev => {
-      const existing = prev.get(lrnId);
-      if (!existing) return prev;
-      const next = new Map(prev);
-      next.set(lrnId, { ...existing, previousSubmission: res });
-      return next;
-    });
-  }, []);
+  const handleLearningGraded = useCallback(
+    (lrnId: number, res: SubmissionResponse) => {
+      setSessions(prev =>
+        prev.map(s =>
+          s.id === lrnId
+            ? { ...s, grade: res.grade ?? s.grade }
+            : s
+        )
+      )
+
+      setLearnings(prev => {
+        const existing = prev.get(lrnId)
+        if (!existing) return prev
+
+        const next = new Map(prev)
+
+        const unlockedConceptIds = Array.from(
+          new Set([
+            ...(existing.unlockedConceptIds ?? []),
+            ...(res.newlyUnlockedConceptIds ?? []),
+          ])
+        )
+
+        next.set(lrnId, {
+          ...existing,
+          unlockedConceptIds,
+          previousSubmission: res,
+        })
+
+        return next
+      })
+    },
+    []
+  )
 
   const handleLearningRenamed = useCallback((lrnId: number, newName: string) => {
     // 아카이브 목록 갱신

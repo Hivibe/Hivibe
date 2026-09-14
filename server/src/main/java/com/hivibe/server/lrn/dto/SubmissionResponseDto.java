@@ -7,19 +7,20 @@ import java.util.List;
  * 채점 응답
  */
 public record SubmissionResponseDto(
-    Long lrnId,
-    Integer attemptNo,
-    Integer totalBlanks,
-    Integer correctCount,
-    Integer progRt,
-    String stat,
-    Boolean allCorrect,
-    String grade,
-    LocalDateTime nextReviewAt,
-    String overallComment,
-    List<BlankResultDto> results,
-    List<Long> newlyUnlockedConceptIds
+        Long lrnId,
+        Integer attemptNo,
+        Integer totalBlanks,
+        Integer correctCount,
+        Integer progRt,
+        String stat,
+        Boolean allCorrect,
+        String grade,
+        LocalDateTime nextReviewAt,
+        String overallComment,
+        List<BlankResultDto> results,
+        List<Long> newlyUnlockedConceptIds
 ) {
+
     /**
      * 빈칸별 채점 결과
      *
@@ -29,19 +30,20 @@ public record SubmissionResponseDto(
      * @param recommend     개선 추천사항
      * @param securityNote  보안/안정성 지적
      * @param conceptTitle  연결된 개념 제목
-     * @param conceptDesc   연결된 개념 설명 (S 판정 시 코멘트로 활용)
+     * @param conceptDesc   연결된 개념 설명
      */
     public record BlankResultDto(
-        Long blankId,
-        Integer blankOrd,
-        String userAns,
-        Boolean correct,
-        String grdMethod,
-        String expAns,
-        String diffNote,
-        String recommend,
-        String securityNote,
-        String conceptTitle,
-        String conceptDesc
+            Long blankId,
+            Integer blankOrd,
+            String userAns,
+            Boolean correct,
+            String grdMethod,
+            String expAns,
+            String diffNote,
+            String recommend,
+            String securityNote,
+            String conceptTitle,
+            String conceptDesc
     ) {}
+
 }
