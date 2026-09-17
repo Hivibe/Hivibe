@@ -22,7 +22,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="ko" className="dark">
+    <html lang="ko" className="dark" suppressHydrationWarning>
       <head>
         {/* ── 폰트 preconnect (성능 최적화) ── */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />

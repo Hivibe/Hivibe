@@ -39,7 +39,13 @@ export interface DiagnosisSaveRequest {
   readabilityReason: string
   style: number
   styleReason: string
+
+  // 원본 코드 시간복잡도
   timeComplexity: string
+
+  // AI 최적화 코드 시간복잡도
+  optimizedTimeComplexity: string
+
   optimizedCode: string
 }
 
@@ -265,6 +271,7 @@ export type LearningDetail = {
   tag: string | null
   overallComment: string | null
   originalCode: string
+  originalComplexity: string
   optCdId: number
   optimizedCode: {
     lang: string

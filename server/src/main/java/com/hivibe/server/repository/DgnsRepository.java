@@ -30,18 +30,22 @@ public interface DgnsRepository extends JpaRepository<Dgns, Long> {
 
     // 유저별 사용 언어 DISTINCT (Polyglot 뱃지용)
     @Query("SELECT DISTINCT d.anls.ornCd.lang FROM Dgns d WHERE d.user.id = :userId")
-    List<String> findDistinctLangByUserId(Long userId);
+    List<String> findDistinctLangByUserId(@Param("userId") Long userId);
 
     // 유저별 최고 점수 (Speed Optimizer, Perfectionist 뱃지용)
     @Query("SELECT MAX(d.anls.cdScr) FROM Dgns d WHERE d.user.id = :userId")
-    Integer findMaxScoreByUserId(Long userId);
+    Integer findMaxScoreByUserId(
+            @Param("userId") Long userId);
 
     // 유저별 평균 점수 (마이페이지 평균 등급용)
     @Query("SELECT AVG(d.anls.cdScr) FROM Dgns d WHERE d.user.id = :userId")
-    Double findAvgScoreByUserId(Long userId);
+    Double findAvgScoreByUserId(
+            @Param("userId") Long userId);
 
     // S등급 달성 여부 (Grade S 뱃지용)
     @Query("SELECT COUNT(d) > 0 FROM Dgns d WHERE d.user.id = :userId AND d.anls.cdGrd = :grade")
-    boolean existsByUserIdAndGrade(Long userId, String grade);
-    
+    boolean existsByUserIdAndGrade(
+            @Param("userId") Long userId,
+            @Param("grade") String grade);
+
 }

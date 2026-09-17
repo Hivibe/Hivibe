@@ -91,6 +91,11 @@ public class LearningQueryService {
         OptCd optCd = lrn.getOptCd();
         OrnCd ornCd = lrn.getOrnCd();
 
+        String originalComplexity =
+            optCd.getAnls() != null
+                ? optCd.getAnls().getTimeComp()
+                : "O(?)";
+
         List<Concept> concepts = conceptRepository.findByLrn_LrnIdOrderBySortOrdAsc(lrnId);
 
         List<LearningDetailResponseDto.ConceptDto> conceptDtos = concepts.stream()
@@ -120,13 +125,15 @@ public class LearningQueryService {
             lrn.getTag(),
             lrn.getOverallComment(),
             ornCd.getCdCn(),
+            originalComplexity,
             optCd.getOptCdId(),
+            
             new LearningDetailResponseDto.OptimizedCodeDto(
-                optCd.getLang(),
-                optCd.getCdCn(),
-                optCd.getBlank(),
-                optCd.getTimeComp()
-            ),
+            optCd.getLang(),
+            optCd.getCdCn(),
+            optCd.getBlank(),
+            optCd.getTimeComp()
+        ),
             conceptDtos,
             unlockedConceptIds   // ← 추가된 인자
         );

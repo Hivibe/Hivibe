@@ -268,7 +268,7 @@ export function LeetCodeIDE() {
           referenceUrl: c.referenceUrl,
         })),
         previousSubmission: latestSubm,
-        unlockedConceptIds: detail.unlockedConceptIds ?? [], 
+        unlockedConceptIds: detail.unlockedConceptIds ?? [],
       }));
       setAnalyzedCodeMap(prev => new Map(prev).set(lrnId, detail.originalCode));
     } catch (e: any) {
@@ -353,7 +353,14 @@ export function LeetCodeIDE() {
         }),
         signal: controller.signal,   // ← 추가
       })
+
       const data = await response.json()
+
+      console.log("AI RESULT", data)
+      console.log("original complexity", data.complexity)
+      console.log("optimized complexity", data.optimizedComplexity)
+      console.log("optimized code", data.optimizedCode)
+
       setAiResult(data)
       setHasAnalyzed(true)
 
@@ -405,8 +412,11 @@ export function LeetCodeIDE() {
       readabilityReason: aiResult.readabilityReason ?? "",
       style: aiResult.style ?? 0,
       styleReason: aiResult.styleReason ?? "",
-      timeComplexity: aiResult.complexity ?? "",
-      optimizedCode: aiResult.optimizedCode ?? "",
+
+      timeComplexity: aiResult?.complexity ?? "O(?)",
+      optimizedTimeComplexity:
+        aiResult?.optimizedComplexity ?? "O(?)",
+      optimizedCode: aiResult?.optimizedCode ?? "",
     };
   };
 

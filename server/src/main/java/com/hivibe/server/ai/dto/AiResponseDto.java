@@ -12,6 +12,7 @@ public record AiResponseDto(
     int style,
     String styleReason,
     String complexity,
+    String optimizedComplexity,
     String optimizedCode
 ) {
     // totalScore 기준으로 등급 자동 계산

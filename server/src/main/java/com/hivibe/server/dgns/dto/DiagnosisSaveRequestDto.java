@@ -17,5 +17,7 @@ public record DiagnosisSaveRequestDto(
     int style,
     String styleReason,
     String timeComplexity,
+    String optimizedTimeComplexity,
     String optimizedCode
-) {}
+
+    ) {}

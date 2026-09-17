@@ -179,32 +179,7 @@ function complexityValue(
   }
 }
 
-/*
- * 사용자가 아직 제출하지 않았을 때
- * 기존 Original / Optimized 비교 그래프
- */
-const initialComplexityComparisonData = [
-  {
-    name: "10",
-    original: 100,
-    optimized: 10,
-  },
-  {
-    name: "25",
-    original: 625,
-    optimized: 25,
-  },
-  {
-    name: "50",
-    original: 2500,
-    optimized: 50,
-  },
-  {
-    name: "100",
-    original: 10000,
-    optimized: 100,
-  },
-]
+
 
 /* =========================================================
    TYPES
@@ -791,16 +766,27 @@ export function DiffView({
     string | null
   >(null)
 
+  const [
+    localUnlockedConceptIds,
+    setLocalUnlockedConceptIds,
+  ] = useState<number[]>([])
+
   /* -------------------------------------------------------
-     PERFORMANCE
-  ------------------------------------------------------- */
+   PERFORMANCE
+------------------------------------------------------- */
+
+  const [
+    basePerformance,
+    setBasePerformance,
+  ] = useState<{
+    originalComplexity: string
+    optimizedComplexity: string
+  } | null>(null)
 
   const [
     performanceComparison,
     setPerformanceComparison,
-  ] = useState<PerformanceComparison | null>(
-    null
-  )
+  ] = useState<PerformanceComparison | null>(null)
 
   const [
     isAnalyzingPerformance,
@@ -808,24 +794,188 @@ export function DiffView({
   ] = useState(false)
 
   const [
+    isAnalyzingBasePerformance,
+    setIsAnalyzingBasePerformance,
+  ] = useState(false)
+
+  const [
     performanceError,
     setPerformanceError,
-  ] = useState<string | null>(
-    null
-  )
+  ] = useState<string | null>(null)
 
   /*
-   * Optimized Concept 즉시 해금용
+   * lrnId별 Original / Optimized 복잡도 최초 1회 분석 + 저장
+   * 기존 제출 결과도 같이 복원
    */
-  const [
-    localUnlockedConceptIds,
-    setLocalUnlockedConceptIds,
-  ] = useState<number[]>([])
+  useEffect(() => {
+    const currentLrnId =
+      learningContent?.lrnId
+
+    const optimizedCode =
+      learningContent?.optimizedCode?.content
+
+    if (
+      !currentLrnId ||
+      !optimizedCode
+    ) {
+      return
+    }
+
+    const baseKey =
+      `performance-base-${currentLrnId}`
+
+    const submissionKey =
+      `performance-${currentLrnId}`
+
+    let hasSavedBase = false
+
+    try {
+      /*
+       * 1. 고정 Original / Optimized 복원
+       */
+      const savedBase =
+        localStorage.getItem(baseKey)
+
+      if (savedBase) {
+        setBasePerformance(
+          JSON.parse(savedBase)
+        )
+
+        hasSavedBase = true
+      }
+
+      /*
+       * 2. 마지막 My Submission 복원
+       */
+      const savedSubmission =
+        localStorage.getItem(
+          submissionKey
+        )
+
+      if (savedSubmission) {
+        const parsed:
+          PerformanceComparison =
+          JSON.parse(savedSubmission)
+
+        setPerformanceComparison(
+          parsed
+        )
+
+        /*
+         * 예전 저장 데이터는 있는데
+         * base 데이터가 아직 없는 경우
+         * 기존 값으로 최초 base 생성
+         */
+        if (!hasSavedBase) {
+          const migratedBase = {
+            originalComplexity:
+              parsed.originalComplexity,
+
+            optimizedComplexity:
+              parsed.optimizedComplexity,
+          }
+
+          setBasePerformance(
+            migratedBase
+          )
+
+          localStorage.setItem(
+            baseKey,
+            JSON.stringify(
+              migratedBase
+            )
+          )
+
+          hasSavedBase = true
+        }
+      }
+    } catch {
+      localStorage.removeItem(
+        baseKey
+      )
+
+      localStorage.removeItem(
+        submissionKey
+      )
+    }
+
+    /*
+     * 이미 기준값이 있으면
+     * 다시 AI 분석하지 않음
+     */
+    if (hasSavedBase) {
+      return
+    }
+
+    /*
+     * 최초 1회만
+     * Original / Optimized 분석
+     */
+    setIsAnalyzingBasePerformance(
+      true
+    )
+
+    setPerformanceError(null)
+
+    void analyzeComplexity({
+      originalCode:
+        analyzedCode,
+
+      optimizedCode,
+
+      language:
+        learningContent
+          .optimizedCode
+          .lang ?? "unknown",
+
+      answers: [],
+    })
+      .then(result => {
+        const base = {
+          originalComplexity:
+            result.originalComplexity,
+
+          optimizedComplexity:
+            result.optimizedComplexity,
+        }
+
+        setBasePerformance(
+          base
+        )
+
+        localStorage.setItem(
+          baseKey,
+          JSON.stringify(base)
+        )
+      })
+      .catch((error: unknown) => {
+        console.error(
+          "Base performance analysis failed:",
+          error
+        )
+
+        setPerformanceError(
+          error instanceof Error
+            ? error.message
+            : "기준 시간복잡도 분석에 실패했습니다."
+        )
+      })
+      .finally(() => {
+        setIsAnalyzingBasePerformance(
+          false
+        )
+      })
+  }, [
+    learningContent?.lrnId,
+    learningContent?.optimizedCode?.content,
+    learningContent?.optimizedCode?.lang,
+    analyzedCode,
+  ])
 
   const complexityComparisonData =
     useMemo(() => {
-      if (!performanceComparison) {
-        return initialComplexityComparisonData
+      if (!basePerformance) {
+        return []
       }
 
       return PERFORMANCE_INPUT_SIZES.map(
@@ -834,24 +984,36 @@ export function DiffView({
 
           original:
             complexityValue(
-              performanceComparison.originalComplexity,
+              basePerformance
+                .originalComplexity,
               n
             ),
 
           optimized:
             complexityValue(
-              performanceComparison.optimizedComplexity,
+              basePerformance
+                .optimizedComplexity,
               n
             ),
 
-          submitted:
-            complexityValue(
-              performanceComparison.submittedComplexity,
-              n
-            ),
+          ...(performanceComparison
+            ?.submittedComplexity
+            ? {
+              submitted:
+                complexityValue(
+                  performanceComparison
+                    .submittedComplexity,
+                  n
+                ),
+            }
+            : {}),
         })
       )
-    }, [performanceComparison])
+    }, [
+      basePerformance,
+      performanceComparison
+        ?.submittedComplexity,
+    ])
 
   /* -------------------------------------------------------
      LIVE COACHING
@@ -1270,18 +1432,12 @@ export function DiffView({
           previous.overallComment,
       })
 
-      setPerformanceComparison(null)
-
       draftLoadedRef.current =
         true
     } else {
       setAnswers({})
       setResults(null)
       setSummary(null)
-
-      setPerformanceComparison(
-        null
-      )
 
       if (lrnId) {
         fetchDraft(lrnId)
@@ -1973,6 +2129,7 @@ export function DiffView({
     )
   }, [focusedBlank])
 
+
   /* =========================================================
      SUBMIT
   ========================================================= */
@@ -2017,6 +2174,19 @@ export function DiffView({
         overallComment: response.overallComment,
       })
 
+      console.log(
+        "newlyUnlockedConceptIds",
+        response.newlyUnlockedConceptIds
+      )
+
+      console.log(
+        "optimized concepts",
+        optimizedConcepts.map(c => ({
+          id: c.id,
+          title: c.title,
+        }))
+      )
+
       setLocalUnlockedConceptIds(
         previous =>
           Array.from(
@@ -2034,7 +2204,6 @@ export function DiffView({
 
       /* 2. 모든 빈칸을 작성했을 때만 성능 분석 */
       if (allFilled) {
-        setPerformanceComparison(null)
         setPerformanceError(null)
         setIsAnalyzingPerformance(true)
 
@@ -2052,8 +2221,63 @@ export function DiffView({
             userAns: answer.userAns,
           })),
         })
-          .then((result: PerformanceComparison) => {
-            setPerformanceComparison(result)
+          .then(result => {
+            const currentLrnId =
+              learningContent.lrnId
+
+            /*
+             * 이미 저장된 base를 우선 사용.
+             * 혹시 최초 분석이 끝나기 전에 제출한 경우만
+             * 이번 결과를 최초 base로 사용.
+             */
+            const fixedBase =
+              basePerformance ?? {
+                originalComplexity:
+                  result.originalComplexity,
+
+                optimizedComplexity:
+                  result.optimizedComplexity,
+              }
+
+            if (!basePerformance) {
+              setBasePerformance(
+                fixedBase
+              )
+
+              localStorage.setItem(
+                `performance-base-${currentLrnId}`,
+                JSON.stringify(
+                  fixedBase
+                )
+              )
+            }
+
+            /*
+             * Original / Optimized는 고정.
+             * Submitted만 이번 분석 결과로 변경.
+             */
+            const nextPerformance:
+              PerformanceComparison = {
+              originalComplexity:
+                fixedBase.originalComplexity,
+
+              optimizedComplexity:
+                fixedBase.optimizedComplexity,
+
+              submittedComplexity:
+                result.submittedComplexity,
+            }
+
+            setPerformanceComparison(
+              nextPerformance
+            )
+
+            localStorage.setItem(
+              `performance-${currentLrnId}`,
+              JSON.stringify(
+                nextPerformance
+              )
+            )
           })
           .catch((error: unknown) => {
             console.error(
@@ -2071,7 +2295,6 @@ export function DiffView({
             setIsAnalyzingPerformance(false)
           })
       } else {
-        setPerformanceComparison(null)
         setPerformanceError(null)
         setIsAnalyzingPerformance(false)
       }
@@ -2162,10 +2385,6 @@ export function DiffView({
     setResults(null)
     setSummary(null)
     setGradeError(null)
-
-    setPerformanceComparison(
-      null
-    )
 
     setPerformanceError(
       null
@@ -2776,130 +2995,119 @@ export function DiffView({
                   <TrendingUp
                     className="h-4 w-4"
                     style={{
-                      color:
-                        BRAND,
+                      color: BRAND,
                     }}
                   />
 
-                  Performance
-                  Comparison
+                  Performance Comparison
                 </CardTitle>
               </CardHeader>
 
               <CardContent className="px-5 pb-5">
+                {/* 제출 전 안내 */}
                 {!allFilled &&
                   !performanceComparison &&
                   !isAnalyzingPerformance && (
                     <div className="py-2 mb-2">
                       <p className="font-ko text-[10px] text-muted-foreground leading-relaxed">
-                        모든 빈칸을
-                        완성하고
-                        제출하면 내
-                        코드의
-                        시간복잡도도
-                        함께 비교할
-                        수 있어요.
+                        모든 빈칸을 완성하고 제출하면 내 코드의
+                        시간복잡도도 함께 비교할 수 있어요.
                       </p>
                     </div>
                   )}
 
+                {/* 기준 복잡도 최초 분석 중 */}
+                {isAnalyzingBasePerformance && (
+                  <div className="mb-4 rounded-md border border-border bg-muted/30 px-3 py-2 flex items-center gap-2">
+                    <Loader2 className="h-3 w-3 animate-spin shrink-0" />
+
+                    <p className="font-ko text-[11px] text-muted-foreground">
+                      Original / Optimized 시간복잡도를 분석하고 있어요...
+                    </p>
+                  </div>
+                )}
+
+                {/* 제출 코드 분석 중 */}
                 {isAnalyzingPerformance && (
                   <div className="mb-4 rounded-md border border-border bg-muted/30 px-3 py-2 flex items-center gap-2">
                     <Loader2 className="h-3 w-3 animate-spin shrink-0" />
 
                     <p className="font-ko text-[11px] text-muted-foreground">
-                      제출한 코드의
-                      시간복잡도를
-                      분석하고
-                      있어요...
+                      제출한 코드의 시간복잡도를 분석하고 있어요...
                     </p>
                   </div>
                 )}
 
-                {performanceComparison && (
-                  <div className="grid grid-cols-3 gap-2 mb-4">
-                    <div className="rounded-md border border-border p-2">
-                      <p className="font-ko text-[9px] text-muted-foreground mb-1">
-                        ORIGINAL
-                      </p>
+                {/* 항상 표시되는 3개 카드 */}
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  {/* ORIGINAL */}
+                  <div className="rounded-md border border-border p-2">
+                    <p className="font-ko text-[9px] text-muted-foreground mb-1">
+                      ORIGINAL
+                    </p>
 
-                      <p className="font-code text-[12px] font-bold">
-                        {
-                          performanceComparison
-                            .originalComplexity
-                        }
-                      </p>
-                    </div>
+                    <p className="font-code text-[12px] font-bold">
+                      {basePerformance?.originalComplexity ??
+                        (isAnalyzingBasePerformance ? "..." : "-")}
+                    </p>
+                  </div>
 
-                    <div className="rounded-md border border-border p-2">
-                      <p className="font-ko text-[9px] text-muted-foreground mb-1">
-                        AI
-                        OPTIMIZED
-                      </p>
+                  {/* AI OPTIMIZED */}
+                  <div className="rounded-md border border-border p-2">
+                    <p className="font-ko text-[9px] text-muted-foreground mb-1">
+                      AI OPTIMIZED
+                    </p>
 
-                      <p className="font-code text-[12px] font-bold">
-                        {
-                          performanceComparison
-                            .optimizedComplexity
-                        }
-                      </p>
-                    </div>
+                    <p className="font-code text-[12px] font-bold">
+                      {basePerformance?.optimizedComplexity ??
+                        (isAnalyzingBasePerformance ? "..." : "-")}
+                    </p>
+                  </div>
 
-                    <div
-                      className="rounded-md border p-2"
+                  {/* MY SUBMISSION */}
+                  <div
+                    className="rounded-md border p-2"
+                    style={{
+                      borderColor: `${BRAND}50`,
+                      background: `${BRAND}08`,
+                    }}
+                  >
+                    <p className="font-ko text-[9px] text-muted-foreground mb-1">
+                      MY SUBMISSION
+                    </p>
+
+                    <p
+                      className="font-code text-[12px] font-bold"
                       style={{
-                        borderColor:
-                          `${BRAND}50`,
-
-                        background:
-                          `${BRAND}08`,
+                        color: performanceComparison
+                          ? BRAND
+                          : "var(--muted-foreground)",
                       }}
                     >
-                      <p className="font-ko text-[9px] text-muted-foreground mb-1">
-                        MY
-                        SUBMISSION
-                      </p>
-
-                      <p
-                        className="font-code text-[12px] font-bold"
-                        style={{
-                          color:
-                            BRAND,
-                        }}
-                      >
-                        {
-                          performanceComparison
-                            .submittedComplexity
-                        }
-                      </p>
-                    </div>
+                      {performanceComparison?.submittedComplexity ?? "-"}
+                    </p>
                   </div>
-                )}
+                </div>
 
                 {performanceError && (
                   <p className="font-ko text-[10px] text-rose-400 mb-3">
-                    {
-                      performanceError
-                    }
+                    {performanceError}
                   </p>
                 )}
 
+                {/* 그래프 */}
                 <div className="h-48 mt-2">
                   <ResponsiveContainer
                     width="100%"
                     height="100%"
                   >
                     <ComposedChart
-                      data={
-                        complexityComparisonData
-                      }
+                      data={complexityComparisonData}
                       margin={{
                         top: 5,
-                        right:
-                          10,
+                        right: 10,
                         left: 10,
-                        bottom:
-                          5,
+                        bottom: 5,
                       }}
                     >
                       <defs>
@@ -2913,17 +3121,13 @@ export function DiffView({
                           <stop
                             offset="5%"
                             stopColor="#f43f5e"
-                            stopOpacity={
-                              0.15
-                            }
+                            stopOpacity={0.15}
                           />
 
                           <stop
                             offset="95%"
                             stopColor="#f43f5e"
-                            stopOpacity={
-                              0.02
-                            }
+                            stopOpacity={0.02}
                           />
                         </linearGradient>
 
@@ -2936,22 +3140,14 @@ export function DiffView({
                         >
                           <stop
                             offset="5%"
-                            stopColor={
-                              BRAND
-                            }
-                            stopOpacity={
-                              0.15
-                            }
+                            stopColor={BRAND}
+                            stopOpacity={0.15}
                           />
 
                           <stop
                             offset="95%"
-                            stopColor={
-                              BRAND
-                            }
-                            stopOpacity={
-                              0.02
-                            }
+                            stopColor={BRAND}
+                            stopOpacity={0.02}
                           />
                         </linearGradient>
                       </defs>
@@ -2959,137 +3155,84 @@ export function DiffView({
                       <CartesianGrid
                         strokeDasharray="3 3"
                         stroke="var(--border)"
-                        opacity={
-                          0.4
-                        }
-                        vertical={
-                          false
-                        }
+                        opacity={0.4}
+                        vertical={false}
                       />
 
                       <XAxis
                         dataKey="name"
                         stroke="var(--muted-foreground)"
                         tick={{
-                          fill:
-                            "var(--muted-foreground)",
-                          fontSize:
-                            10,
-                          fontFamily:
-                            "Space Mono",
+                          fill: "var(--muted-foreground)",
+                          fontSize: 10,
+                          fontFamily: "Space Mono",
                         }}
-                        tickLine={
-                          false
-                        }
-                        axisLine={
-                          false
-                        }
+                        tickLine={false}
+                        axisLine={false}
                       />
 
                       <YAxis
                         stroke="var(--muted-foreground)"
                         tick={{
-                          fill:
-                            "var(--muted-foreground)",
-                          fontSize:
-                            10,
-                          fontFamily:
-                            "Space Mono",
+                          fill: "var(--muted-foreground)",
+                          fontSize: 10,
+                          fontFamily: "Space Mono",
                         }}
-                        tickLine={
-                          false
-                        }
-                        axisLine={
-                          false
-                        }
-                        width={
-                          45
-                        }
+                        tickLine={false}
+                        axisLine={false}
+                        width={45}
                       />
 
                       <RechartsTooltip
                         contentStyle={{
-                          backgroundColor:
-                            "var(--card)",
-                          border:
-                            "1px solid var(--border)",
-                          borderRadius:
-                            "8px",
-                          fontSize:
-                            "11px",
+                          backgroundColor: "var(--card)",
+                          border: "1px solid var(--border)",
+                          borderRadius: "8px",
+                          fontSize: "11px",
                         }}
                         labelStyle={{
-                          color:
-                            "var(--muted-foreground)",
-                          fontFamily:
-                            "Space Mono",
-                          marginBottom:
-                            "4px",
+                          color: "var(--muted-foreground)",
+                          fontFamily: "Space Mono",
+                          marginBottom: "4px",
                         }}
                       />
 
                       <Legend
                         wrapperStyle={{
-                          fontSize:
-                            "11px",
-                          fontFamily:
-                            "Space Mono",
-                          paddingTop:
-                            "10px",
+                          fontSize: "11px",
+                          fontFamily: "Space Mono",
+                          paddingTop: "10px",
                         }}
                         iconType="circle"
-                        formatter={
-                          value => {
-                            const labels:
-                              Record<
-                                string,
-                                string
-                              > =
-                            {
-                              original:
-                                "Original",
-
-                              optimized:
-                                "AI Optimized",
-
-                              submitted:
-                                "My Submission",
-                            }
-
-                            return (
-                              <span
-                                style={{
-                                  color:
-                                    "var(--muted-foreground)",
-                                }}
-                              >
-                                {
-                                  labels[
-                                  value
-                                  ] ??
-                                  value
-                                }
-                              </span>
-                            )
+                        formatter={value => {
+                          const labels: Record<string, string> = {
+                            original: "Original",
+                            optimized: "AI Optimized",
+                            submitted: "My Submission",
                           }
-                        }
+
+                          return (
+                            <span
+                              style={{
+                                color: "var(--muted-foreground)",
+                              }}
+                            >
+                              {labels[value] ?? value}
+                            </span>
+                          )
+                        }}
                       />
 
                       <Area
                         type="monotone"
                         dataKey="original"
                         stroke="#f43f5e"
-                        strokeWidth={
-                          2
-                        }
+                        strokeWidth={2}
                         fill="url(#originalGrad)"
                         dot={{
-                          fill:
-                            "var(--card)",
-                          stroke:
-                            "#f43f5e",
-                          strokeWidth:
-                            2,
+                          fill: "var(--card)",
+                          stroke: "#f43f5e",
+                          strokeWidth: 2,
                           r: 3,
                         }}
                         name="original"
@@ -3098,41 +3241,32 @@ export function DiffView({
                       <Area
                         type="monotone"
                         dataKey="optimized"
-                        stroke={
-                          BRAND
-                        }
-                        strokeWidth={
-                          2.5
-                        }
+                        stroke={BRAND}
+                        strokeWidth={2.5}
                         fill="url(#optimizedGrad)"
                         dot={{
-                          fill:
-                            "var(--card)",
-                          stroke:
-                            BRAND,
-                          strokeWidth:
-                            2,
+                          fill: "var(--card)",
+                          stroke: BRAND,
+                          strokeWidth: 2,
                           r: 4,
                         }}
                         name="optimized"
                       />
 
-                      {performanceComparison && (
+                      {performanceComparison?.submittedComplexity && (
                         <Line
                           type="monotone"
                           dataKey="submitted"
                           stroke="#a78bfa"
-                          strokeWidth={
-                            2.5
-                          }
+                          strokeWidth={3}
                           dot={{
-                            fill:
-                              "var(--card)",
-                            stroke:
-                              "#a78bfa",
-                            strokeWidth:
-                              2,
+                            fill: "var(--card)",
+                            stroke: "#a78bfa",
+                            strokeWidth: 2,
                             r: 4,
+                          }}
+                          activeDot={{
+                            r: 5,
                           }}
                           name="submitted"
                         />
@@ -3834,10 +3968,12 @@ export function DiffView({
           </div>
         </div>
       </div>
-      {focusedBlank !== null &&
+      {
+        focusedBlank !== null &&
         renderHintBar(
           focusedBlank
-        )}
-    </div>
+        )
+      }
+    </div >
   )
 }

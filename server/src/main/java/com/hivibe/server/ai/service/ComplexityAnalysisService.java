@@ -1,413 +1,237 @@
 package com.hivibe.server.ai.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.hivibe.server.ai.dto.ComplexityAnalysisRequest;
 import com.hivibe.server.ai.dto.ComplexityAnalysisResponse;
-import org.springframework.beans.factory.annotation.Value;
+import com.hivibe.server.lrn.service.GeminiClient;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.Comparator;
 import java.util.List;
 
+@Slf4j
 @Service
+@RequiredArgsConstructor
 public class ComplexityAnalysisService {
 
-    private static final String GEMINI_URL =
-            "https://generativelanguage.googleapis.com/v1/interactions";
+        private static final List<String> ALLOWED_COMPLEXITIES = List.of(
+                        "O(1)",
+                        "O(log n)",
+                        "O(n)",
+                        "O(n log n)",
+                        "O(n^2)",
+                        "O(n^3)",
+                        "O(2^n)",
+                        "O(n!)");
 
-    private static final List<String> ALLOWED_COMPLEXITIES = List.of(
-            "O(1)",
-            "O(log n)",
-            "O(n)",
-            "O(n log n)",
-            "O(n^2)",
-            "O(n^3)",
-            "O(2^n)",
-            "O(n!)"
-    );
+        private final GeminiClient geminiClient;
+        private final ObjectMapper objectMapper;
 
-    private final ObjectMapper objectMapper;
-    private final HttpClient httpClient;
+        public ComplexityAnalysisResponse analyze(
+                        ComplexityAnalysisRequest request) {
+                try {
+                        String prompt = buildPrompt(request);
 
-    @Value("${gemini.api-key:${GEMINI_API_KEY:}}")
-    private String apiKey;
+                        /*
+                         * 기존 프로젝트에서 정상 동작 중인
+                         * GeminiClient를 그대로 재사용
+                         */
+                        String rawJson = geminiClient.generateJson(prompt);
 
-    @Value("${gemini.model:${GEMINI_MODEL:gemini-3.8-flash}}")
-    private String model;
+                        if (rawJson == null || rawJson.isBlank()) {
+                                throw new IllegalStateException(
+                                                "Gemini 응답이 비어 있습니다.");
+                        }
 
-    public ComplexityAnalysisService(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
+                        /*
+                         * 혹시 ```json ... ``` 형태로 오는 경우를 대비
+                         */
+                        String cleanedJson = cleanJson(rawJson);
 
-        this.httpClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(10))
-                .build();
-    }
+                        ComplexityResult result = objectMapper.readValue(
+                                        cleanedJson,
+                                        ComplexityResult.class);
 
-    public ComplexityAnalysisResponse analyze(
-            ComplexityAnalysisRequest request
-    ) {
+                        validateComplexity(
+                                        result.originalComplexity(),
+                                        "originalComplexity");
 
-        if (apiKey == null || apiKey.isBlank()) {
-            throw new IllegalStateException(
-                    "GEMINI_API_KEY가 설정되어 있지 않습니다."
-            );
+                        validateComplexity(
+                                        result.optimizedComplexity(),
+                                        "optimizedComplexity");
+
+                        validateComplexity(
+                                        result.submittedComplexity(),
+                                        "submittedComplexity");
+
+                        return new ComplexityAnalysisResponse(
+                                        result.originalComplexity(),
+                                        result.optimizedComplexity(),
+                                        result.submittedComplexity());
+
+                } catch (Exception e) {
+                        log.error(
+                                        "시간복잡도 분석 실패",
+                                        e);
+
+                        throw new IllegalStateException(
+                                        "시간복잡도 분석 중 오류가 발생했습니다: "
+                                                        + e.getMessage(),
+                                        e);
+                }
         }
 
-        try {
-            String prompt = buildPrompt(request);
+        private String buildPrompt(
+                        ComplexityAnalysisRequest request) {
 
-            ObjectNode body = objectMapper.createObjectNode();
+                String answers = request.answers() == null
+                                ? ""
+                                : request.answers()
+                                                .stream()
+                                                .sorted(
+                                                                Comparator.comparing(
+                                                                                ComplexityAnalysisRequest.SubmittedAnswer::blankOrd))
+                                                .map(answer -> "[빈칸 "
+                                                                + answer.blankOrd()
+                                                                + "]\n"
+                                                                + (answer.userAns() == null
+                                                                                ? ""
+                                                                                : answer.userAns()))
+                                                .reduce(
+                                                                "",
+                                                                (a, b) -> a + "\n" + b);
 
-            body.put("model", model);
-            body.put("input", prompt);
+                return """
+                                당신은 프로그래밍 학습 서비스에서
+                                알고리즘의 시간복잡도를 분석하는 코드 분석기입니다.
 
-            /*
-             * Structured Output
-             */
-            ObjectNode responseFormat =
-                    body.putObject("response_format");
+                                아래에 제공된 세 가지 정보를 분석하세요.
 
-            responseFormat.put("type", "text");
-            responseFormat.put(
-                    "mime_type",
-                    "application/json"
-            );
+                                1. 사용자가 처음 작성한 원본 코드
+                                2. AI가 제안한 최적화 코드
+                                3. 사용자가 최적화 코드의 빈칸에 직접 입력한 코드
 
-            ObjectNode schema =
-                    responseFormat.putObject("schema");
+                                각각의 지배적인 점근적 시간복잡도를 판단하세요.
 
-            schema.put("type", "object");
+                                시간복잡도는 반드시 아래 8개 중 하나만 사용하세요.
 
-            ObjectNode properties =
-                    schema.putObject("properties");
+                                O(1)
+                                O(log n)
+                                O(n)
+                                O(n log n)
+                                O(n^2)
+                                O(n^3)
+                                O(2^n)
+                                O(n!)
 
-            addComplexityProperty(
-                    properties,
-                    "originalComplexity"
-            );
+                                ========================
+                                분석 규칙
+                                ========================
 
-            addComplexityProperty(
-                    properties,
-                    "optimizedComplexity"
-            );
+                                1. 실제 실행 시간이 아니라 알고리즘 구조를 기준으로 판단합니다.
 
-            addComplexityProperty(
-                    properties,
-                    "submittedComplexity"
-            );
+                                2. 반복문, 중첩 반복문, 재귀 호출,
+                                   탐색 및 정렬 구조를 중심으로 분석합니다.
 
-            ArrayNode required =
-                    schema.putArray("required");
+                                3. O(n + m), O(V + E)처럼 위 8개 분류와
+                                   정확히 일치하지 않는 경우에는
+                                   시각화 목적에 가장 가까운 지배적 범주를 선택합니다.
 
-            required.add("originalComplexity");
-            required.add("optimizedComplexity");
-            required.add("submittedComplexity");
+                                4. 사용자가 빈칸에 작성한 코드가
+                                   정답인지 오답인지는 판단하지 마세요.
 
-            HttpRequest httpRequest =
-                    HttpRequest.newBuilder()
-                            .uri(URI.create(GEMINI_URL))
-                            .timeout(Duration.ofSeconds(30))
-                            .header(
-                                    "Content-Type",
-                                    "application/json"
-                            )
-                            .header(
-                                    "x-goog-api-key",
-                                    apiKey
-                            )
-                            .POST(
-                                    HttpRequest.BodyPublishers.ofString(
-                                            body.toString(),
-                                            StandardCharsets.UTF_8
-                                    )
-                            )
-                            .build();
+                                5. 오직 시간복잡도만 분석하세요.
 
-            HttpResponse<String> response =
-                    httpClient.send(
-                            httpRequest,
-                            HttpResponse.BodyHandlers.ofString()
-                    );
+                                6. 사용자의 빈칸 입력으로 인해
+                                   반복 구조나 알고리즘 구조가 달라졌다면
+                                   반드시 submittedComplexity에 반영하세요.
 
-            if (response.statusCode() < 200 ||
-                    response.statusCode() >= 300) {
+                                7. 설명, 마크다운, 코드블록을 출력하지 마세요.
 
-                throw new IllegalStateException(
-                        "Gemini complexity analysis failed: "
-                                + response.statusCode()
-                                + " / "
-                                + response.body()
-                );
-            }
+                                8. 반드시 아래 JSON 구조만 반환하세요.
 
-            JsonNode root =
-                    objectMapper.readTree(
-                            response.body()
-                    );
+                                {
+                                  "originalComplexity": "O(...)",
+                                  "optimizedComplexity": "O(...)",
+                                  "submittedComplexity": "O(...)"
+                                }
 
-            String outputText =
-                    extractOutputText(root);
+                                ========================
+                                프로그래밍 언어
+                                ========================
 
-            JsonNode result =
-                    objectMapper.readTree(
-                            outputText
-                    );
+                                %s
 
-            return new ComplexityAnalysisResponse(
-                    result.path(
-                            "originalComplexity"
-                    ).asText(),
+                                ========================
+                                원본 코드
+                                ========================
 
-                    result.path(
-                            "optimizedComplexity"
-                    ).asText(),
+                                %s
 
-                    result.path(
-                            "submittedComplexity"
-                    ).asText()
-            );
+                                ========================
+                                AI 최적화 코드
+                                ========================
 
-        } catch (Exception e) {
+                                %s
 
-            throw new IllegalStateException(
-                    "시간복잡도 분석 중 오류가 발생했습니다.",
-                    e
-            );
-        }
-    }
+                                ========================
+                                사용자가 입력한 빈칸
+                                ========================
 
-    private void addComplexityProperty(
-            ObjectNode properties,
-            String name
-    ) {
+                                %s
+                                """.formatted(
+                                request.language() == null
+                                                ? "알 수 없음"
+                                                : request.language(),
 
-        ObjectNode property =
-                properties.putObject(name);
+                                request.originalCode() == null
+                                                ? ""
+                                                : request.originalCode(),
 
-        property.put("type", "string");
+                                request.optimizedCode() == null
+                                                ? ""
+                                                : request.optimizedCode(),
 
-        ArrayNode allowed =
-                property.putArray("enum");
-
-        ALLOWED_COMPLEXITIES.forEach(
-                allowed::add
-        );
-    }
-
-    private String buildPrompt(
-        ComplexityAnalysisRequest request
-) {
-
-    String answers =
-            request.answers() == null
-                    ? ""
-                    : request.answers()
-                    .stream()
-                    .sorted(
-                            Comparator.comparing(
-                                    ComplexityAnalysisRequest
-                                            .SubmittedAnswer
-                                            ::blankOrd
-                            )
-                    )
-                    .map(
-                            answer ->
-                                    "[빈칸 "
-                                            + answer.blankOrd()
-                                            + "]\n"
-                                            + answer.userAns()
-                    )
-                    .reduce(
-                            "",
-                            (a, b) ->
-                                    a
-                                            + "\n"
-                                            + b
-                    );
-
-    return """
-            너는 프로그래밍 학습 서비스에서
-            알고리즘의 시간복잡도를 분석하는 역할을 한다.
-
-            아래의 원본 코드, AI 최적화 코드,
-            사용자가 입력한 빈칸 답안을 분석하여
-            각 코드의 지배적인 점근적 시간복잡도를 판단하라.
-
-            시간복잡도는 반드시 다음 8개 중 하나로만 분류한다.
-
-            O(1)
-            O(log n)
-            O(n)
-            O(n log n)
-            O(n^2)
-            O(n^3)
-            O(2^n)
-            O(n!)
-
-            [분석 규칙]
-
-            1. 실제 실행 시간이 아니라 알고리즘 구조를 기준으로
-               시간복잡도를 판단한다.
-
-            2. 반복문, 중첩 반복문, 재귀 호출,
-               탐색 및 정렬 구조를 중심으로 분석한다.
-
-            3. O(n + m), O(V + E)처럼
-               위 8개 분류에 정확히 대응되지 않는 경우에는
-               그래프 시각화에 가장 적합한
-               지배적인 복잡도 범주를 선택한다.
-
-            4. 사용자의 답안이 정답인지 오답인지는 판단하지 않는다.
-
-            5. 오직 시간복잡도만 분석한다.
-
-            6. USER SUBMITTED BLANKS는
-               AI 최적화 코드의 {{BLANK_n}} 위치에
-               사용자가 입력한 코드이며,
-               blankOrd 순서대로 대응된다.
-
-            7. 사용자가 입력한 코드로 인해
-               반복 구조나 알고리즘 구조가 달라졌다면
-               그 영향을 반드시 submittedComplexity에 반영한다.
-
-            8. 결과는 지정된 JSON 형식으로만 반환한다.
-               설명이나 추가 문장은 작성하지 않는다.
-
-            ========================
-            프로그래밍 언어
-            ========================
-
-            %s
-
-            ========================
-            원본 코드
-            ========================
-
-            %s
-
-            ========================
-            AI 최적화 코드
-            ========================
-
-            %s
-
-            ========================
-            사용자 입력 빈칸
-            ========================
-
-            %s
-            """.formatted(
-            request.language() == null
-                    ? "알 수 없음"
-                    : request.language(),
-
-            request.originalCode() == null
-                    ? ""
-                    : request.originalCode(),
-
-            request.optimizedCode() == null
-                    ? ""
-                    : request.optimizedCode(),
-
-            answers
-    );
-}
-    private String extractOutputText(
-            JsonNode root
-    ) {
-
-        /*
-         * API convenience field가 존재하는 경우
-         */
-        JsonNode outputText =
-                root.get("output_text");
-
-        if (outputText != null &&
-                outputText.isTextual()) {
-
-            return outputText.asText();
+                                answers);
         }
 
-        /*
-         * Interactions API steps 구조
-         */
-        JsonNode steps =
-                root.get("steps");
+        private String cleanJson(
+                        String rawJson) {
+                String cleaned = rawJson.trim();
 
-        if (steps != null &&
-                steps.isArray()) {
-
-            for (
-                    int i = steps.size() - 1;
-                    i >= 0;
-                    i--
-            ) {
-
-                JsonNode step =
-                        steps.get(i);
-
-                JsonNode content =
-                        step.get("content");
-
-                if (content == null ||
-                        !content.isArray()) {
-                    continue;
+                if (cleaned.startsWith("```json")) {
+                        cleaned = cleaned.substring(7);
+                } else if (cleaned.startsWith("```")) {
+                        cleaned = cleaned.substring(3);
                 }
 
-                for (
-                        JsonNode part :
-                        content
-                ) {
-
-                    JsonNode text =
-                            part.get("text");
-
-                    if (
-                            text != null &&
-                                    text.isTextual()
-                    ) {
-
-                        return text.asText();
-                    }
+                if (cleaned.endsWith("```")) {
+                        cleaned = cleaned.substring(
+                                        0,
+                                        cleaned.length() - 3);
                 }
-            }
+
+                return cleaned.trim();
         }
 
-        /*
-         * 일부 응답 구조 fallback
-         */
-        JsonNode outputs =
-                root.get("outputs");
-
-        if (outputs != null &&
-                outputs.isArray()) {
-
-            for (JsonNode output : outputs) {
-
-                JsonNode text =
-                        output.get("text");
-
-                if (
-                        text != null &&
-                                text.isTextual()
-                ) {
-
-                    return text.asText();
+        private void validateComplexity(
+                        String complexity,
+                        String fieldName) {
+                if (complexity == null ||
+                                !ALLOWED_COMPLEXITIES.contains(
+                                                complexity)) {
+                        throw new IllegalStateException(
+                                        fieldName
+                                                        + " 값이 올바르지 않습니다: "
+                                                        + complexity);
                 }
-            }
         }
 
-        throw new IllegalStateException(
-                "Gemini 응답에서 text를 찾을 수 없습니다."
-        );
-    }
+        private record ComplexityResult(
+                        String originalComplexity,
+                        String optimizedComplexity,
+                        String submittedComplexity) {
+        }
 }
