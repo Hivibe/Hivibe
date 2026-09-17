@@ -14,10 +14,10 @@ public interface LrnRepository extends JpaRepository<Lrn, Long> {
      * - User.id 필드를 참조: Lrn.user.id
      */
     @Query("SELECT l FROM Lrn l " +
-           "JOIN FETCH l.optCd o " +
-           "JOIN FETCH o.anls a " +
-           "WHERE l.user.id = :userId " +
-           "ORDER BY l.createdAt DESC")
+            "JOIN FETCH l.optCd o " +
+            "JOIN FETCH o.anls a " +
+            "WHERE l.user.id = :userId " +
+            "ORDER BY l.createdAt DESC")
     List<Lrn> findByUser_IdOrderByCreatedAtDesc(@Param("userId") Long userId);
 
     // 삭제 추가
@@ -25,4 +25,14 @@ public interface LrnRepository extends JpaRepository<Lrn, Long> {
 
     // 추가 7.20
     long countByUser_Id(Long userId);
+
+    // 추가 9.9
+    @Query("""
+            SELECT l.grade
+            FROM Lrn l
+            WHERE l.user.id = :userId
+              AND l.stat = 'DONE'
+              AND l.grade IS NOT NULL
+            """)
+    List<String> findCompletedGradesByUserId(@Param("userId") Long userId);
 }

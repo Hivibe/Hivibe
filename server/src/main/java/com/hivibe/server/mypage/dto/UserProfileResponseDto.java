@@ -18,12 +18,16 @@ public class UserProfileResponseDto {
     private long diagnosisCount;
     private String avgGrade;
     private int streakDays; // 추가
+    private int learningDiscountPercent;
+    private int nextTierRequiredCount;
 
     public UserProfileResponseDto(
             User user,
             long diagnosisCount,
             String avgGrade,
-            int streakDays) {
+            int streakDays,
+            int learningDiscountPercent,
+            int nextTierRequiredCount) {
         this.id = user.getId();
         this.lgnId = user.getLgnId();
         this.userNm = user.getUserNm();
@@ -37,5 +41,8 @@ public class UserProfileResponseDto {
         this.diagnosisCount = diagnosisCount;
         this.avgGrade = avgGrade;
         this.streakDays = streakDays;
+        this.learningDiscountPercent = learningDiscountPercent;
+        this.nextTierRequiredCount = nextTierRequiredCount;
+
     }
 }

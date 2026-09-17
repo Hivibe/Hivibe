@@ -9,12 +9,15 @@ import { Switch } from "@/components/ui/switch"
 import { apiFetch } from "@/lib/api"
 import {
   User, Settings, Star, Flame, FolderOpen, BookOpen,
-  Edit2, Check, X, Bell, Shield, Smartphone, Camera, Code,  // ← Code 추가
+  Edit2, Check, X, Bell, Shield, Smartphone, Camera, Code,
+  Share2,
 } from "lucide-react"
 import type { Note } from "@/types"
 import { useRouter } from "next/navigation"
 import { Sun, Moon } from "lucide-react"
 import { useTheme } from "next-themes"
+import { toPng } from "html-to-image"
+import { toast } from "sonner"
 
 
 const BRAND = "#63C1ED"
@@ -33,6 +36,8 @@ interface Profile {
   diagnosisCount: number
   avgGrade: string | null
   streakDays: number
+  learningDiscountPercent: number
+  nextTierRequiredCount: number
 }
 
 interface Badge {
@@ -62,7 +67,9 @@ export function MyPage({ onProfileUpdated, onNavigate }: {
   onNavigate?: (tab: string, noteId?: number) => void  // ← 추가
 }) {
   const [activeTab, setActiveTab] = useState<"profile" | "settings">("profile")
-  const { theme, setTheme } = useTheme()
+  const { theme, resolvedTheme, setTheme } = useTheme()
+
+  const isDark = (resolvedTheme ?? theme) === "dark"
   const [profile, setProfile] = useState<Profile | null>(null)
   const [badges, setBadges] = useState<Badge[]>([])
   const [notes, setNotes] = useState<Note[]>([])
@@ -73,6 +80,9 @@ export function MyPage({ onProfileUpdated, onNavigate }: {
 
   const imgRef = useRef<HTMLInputElement>(null)
   const [uploadingImg, setUploadingImg] = useState(false)
+  const shareCardRef = useRef<HTMLDivElement>(null)
+
+  const [shareOpen, setShareOpen] = useState(false)
 
   const [editingPhone, setEditingPhone] = useState(false)
   const [tempPhone, setTempPhone] = useState("")
@@ -269,7 +279,109 @@ export function MyPage({ onProfileUpdated, onNavigate }: {
   const currentTierIdx = TIERS.findIndex(t => t.key === profile.userGrd?.toUpperCase())
   const nextTier = currentTierIdx + 1 < TIERS.length ? TIERS[currentTierIdx + 1] : null
   const actCnt = profile.actCnt ?? 0
-  const remaining = nextTier ? Math.max(0, nextTier.min - actCnt) : 0
+  const nextRequiredCount = profile.nextTierRequiredCount ?? nextTier?.min ?? 0
+
+  const remaining = nextTier
+    ? Math.max(0, nextRequiredCount - actCnt)
+    : 0
+
+  const getAdjustedTierMin = (min: number) =>
+    Math.ceil(min * (100 - (profile.learningDiscountPercent ?? 0)) / 100)
+
+  const currentTier = TIERS.find(
+    t => t.key === profile.userGrd?.toUpperCase()
+  )
+
+  const currentTierColor = currentTier?.color ?? BRAND
+
+  // 공유 카드 전용 색상 — 현재 다크/라이트 테마에 맞춰 캡처
+  const shareTextColor = isDark ? "#ffffff" : "#18181b"
+  const shareMutedColor = isDark
+    ? "rgba(255,255,255,0.62)"
+    : "rgba(24,24,27,0.62)"
+  const shareSubtleColor = isDark
+    ? "rgba(255,255,255,0.45)"
+    : "rgba(24,24,27,0.45)"
+
+  const createAchievementImage = async () => {
+    if (!shareCardRef.current) {
+      throw new Error("공유 카드를 찾을 수 없어요.")
+    }
+
+    const dataUrl = await toPng(shareCardRef.current, {
+      cacheBust: true,
+      pixelRatio: 2,
+      backgroundColor: isDark ? "#0f172a" : "#ffffff",
+    })
+
+    const response = await fetch(dataUrl)
+    const blob = await response.blob()
+
+    return {
+      dataUrl,
+      blob,
+      file: new File(
+        [blob],
+        "hivibe-achievement.png",
+        { type: "image/png" }
+      ),
+    }
+  }
+
+  const handleShareAchievement = async () => {
+    try {
+      const { dataUrl, file } = await createAchievementImage()
+
+      if (
+        navigator.canShare &&
+        navigator.canShare({ files: [file] })
+      ) {
+        await navigator.share({
+          title: "HiVibe Achievement",
+          text: `🔥 HiVibe ${profile.streakDays ?? 0}일 연속! 🏆 ${profile.userGrd || "BASIC"} Tier`,
+          files: [file],
+        })
+      } else {
+        // 파일 공유를 지원하지 않는 PC 브라우저 → 다운로드
+        const link = document.createElement("a")
+        link.href = dataUrl
+        link.download = "hivibe-achievement.png"
+        link.click()
+      }
+    } catch (e: any) {
+      if (e?.name !== "AbortError") {
+        console.error("성과 카드 공유 실패:", e)
+      }
+    }
+  }
+
+  const handleCopyAchievement = async () => {
+    if (!navigator.clipboard || typeof ClipboardItem === "undefined") {
+      toast.error("이 브라우저에서는 이미지 복사를 지원하지 않아요.")
+      return
+    }
+
+    try {
+      // ClipboardItem에 Promise를 넘겨 사용자 클릭 권한이 유지되는 동안
+      // PNG 생성 → 클립보드 저장까지 처리
+      const pngBlobPromise = createAchievementImage().then(({ blob }) => blob)
+
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          "image/png": pngBlobPromise,
+        }),
+      ])
+
+      toast.success("성과 카드 이미지가 복사됐어요!", {
+        description: "Ctrl+V로 원하는 곳에 붙여넣을 수 있어요.",
+      })
+    } catch (e) {
+      console.error("성과 카드 복사 실패:", e)
+      toast.error("이미지 복사에 실패했어요.", {
+        description: "HTTPS 또는 브라우저 권한을 확인해 주세요.",
+      })
+    }
+  }
 
   return (
     <div className="h-full flex flex-col bg-background overflow-hidden">
@@ -292,104 +404,185 @@ export function MyPage({ onProfileUpdated, onNavigate }: {
       </div>
 
       <ScrollArea className="flex-1 min-h-0">
-        <div className="p-6 max-w-3xl mx-auto space-y-5">
+        <div className="p-6 max-w-4xl mx-auto space-y-5">
 
           {/* ── 프로필 탭 ── */}
           {activeTab === "profile" && (
             <>
-              {/* 프로필 카드 */}
-              <div className="bg-card border border-border rounded-2xl p-6 flex items-center gap-5">
-                <div className="relative w-16 h-16 shrink-0 group cursor-pointer"
-                  onClick={() => imgRef.current?.click()}>
-                  {profile.userPhoto ? (
-                    <img src={`https://hivibe.cloud${profile.userPhoto}`} alt="프로필"
-                      className="w-16 h-16 rounded-full object-cover border-2"
-                      style={{ borderColor: `${BRAND}44` }} />
-                  ) : (
-                    <div className="w-16 h-16 rounded-full flex items-center justify-center font-ko text-2xl font-bold"
-                      style={{ background: `${BRAND}20`, border: `2px solid ${BRAND}44`, color: BRAND }}>
-                      {profile.userNm?.[0] ?? "?"}
+              {/* 프로필 + 연속일수/Tier */}
+              <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_240px] gap-3">
+
+                {/* 왼쪽: 프로필 + 통계 */}
+                <div className="space-y-3">
+                  {/* 프로필 카드 */}
+                  <div className="bg-card border border-border rounded-2xl px-6 py-5 flex items-center gap-5">
+                    <div
+                      className="relative w-16 h-16 shrink-0 group cursor-pointer"
+                      onClick={() => imgRef.current?.click()}
+                    >
+                      {profile.userPhoto ? (
+                        <img
+                          src={`https://hivibe.cloud${profile.userPhoto}`}
+                          alt="프로필"
+                          className="w-16 h-16 rounded-full object-cover border-2"
+                          style={{ borderColor: `${BRAND}44` }}
+                        />
+                      ) : (
+                        <div
+                          className="w-16 h-16 rounded-full flex items-center justify-center font-ko text-2xl font-bold"
+                          style={{
+                            background: `${BRAND}20`,
+                            border: `2px solid ${BRAND}44`,
+                            color: BRAND,
+                          }}
+                        >
+                          {profile.userNm?.[0] ?? "?"}
+                        </div>
+                      )}
+
+                      <div className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        {uploadingImg ? (
+                          <span className="font-ko text-[9px] text-white">...</span>
+                        ) : (
+                          <Camera className="h-4 w-4 text-white" />
+                        )}
+                      </div>
+
+                      <input
+                        ref={imgRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleImgChange}
+                      />
                     </div>
-                  )}
-                  <div className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    {uploadingImg ? (
-                      <span className="font-ko text-[9px] text-white">...</span>
-                    ) : (
-                      <Camera className="h-4 w-4 text-white" />
-                    )}
+
+                    <div className="flex-1 min-w-0">
+                      {editingName ? (
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={tempName}
+                            onChange={e => setTempName(e.target.value)}
+                            className="h-9 bg-background border-border text-foreground text-base font-ko w-44"
+                          />
+
+                          <button
+                            onClick={saveName}
+                            className="h-8 w-8 flex items-center justify-center rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors"
+                          >
+                            <Check className="h-4 w-4" />
+                          </button>
+
+                          <button
+                            onClick={() => setEditingName(false)}
+                            className="h-8 w-8 flex items-center justify-center rounded bg-muted text-muted-foreground hover:bg-accent transition-colors"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span className="font-ko text-xl font-bold text-foreground">
+                            {profile.userNm}
+                          </span>
+
+                          <button
+                            onClick={() => {
+                              setTempName(profile.userNm)
+                              setEditingName(true)
+                            }}
+                            className="h-7 w-7 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                          >
+                            <Edit2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      )}
+
+                      <p className="font-ko text-sm text-muted-foreground mt-1">
+                        {profile.userEmail}
+                      </p>
+
+                      {usedLangs.length > 0 && (
+                        <div className="flex gap-1.5 mt-2.5">
+                          {usedLangs.map(l => (
+                            <span
+                              key={l}
+                              className="font-ko text-[10px] px-2.5 py-1 rounded-full border"
+                              style={{
+                                background: `${BRAND}10`,
+                                color: BRAND,
+                                borderColor: `${BRAND}30`,
+                              }}
+                            >
+                              {l}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <input ref={imgRef} type="file" accept="image/*" className="hidden" onChange={handleImgChange} />
+
+                  {/* 통계 */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="bg-card border border-border rounded-xl px-5 py-3.5">
+                      <div className="mb-2"><FolderOpen className="h-4 w-4" style={{ color: BRAND }} /></div>
+                      <p className="font-syne text-xl font-bold text-foreground">{profile.diagnosisCount}</p>
+                      <p className="font-ko text-xs text-muted-foreground mt-1">총 진단 수</p>
+                    </div>
+
+                    <div className="bg-card border border-border rounded-xl px-5 py-3.5">
+                      <div className="mb-2"><Star className="h-4 w-4 text-amber-400" /></div>
+                      <p className="font-syne text-xl font-bold text-foreground">{profile.avgGrade ?? "—"}</p>
+                      <p className="font-ko text-xs text-muted-foreground mt-1">평균 등급</p>
+                    </div>
+
+                    <div className="bg-card border border-border rounded-xl px-5 py-3.5">
+                      <div className="mb-2"><BookOpen className="h-4 w-4 text-violet-400" /></div>
+                      <p className="font-syne text-xl font-bold text-foreground">{notes.length}</p>
+                      <p className="font-ko text-xs text-muted-foreground mt-1">저장된 노트</p>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="flex-1 min-w-0">
-                  {editingName ? (
-                    <div className="flex items-center gap-2">
-                      <Input value={tempName} onChange={e => setTempName(e.target.value)}
-                        className="h-9 bg-background border-border text-foreground text-base font-ko w-44" />
-                      <button onClick={saveName}
-                        className="h-8 w-8 flex items-center justify-center rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors">
-                        <Check className="h-4 w-4" />
-                      </button>
-                      <button onClick={() => setEditingName(false)}
-                        className="h-8 w-8 flex items-center justify-center rounded bg-muted text-muted-foreground hover:bg-accent transition-colors">
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <span className="font-ko text-xl font-bold text-foreground">{profile.userNm}</span>
-                      <button onClick={() => { setTempName(profile.userNm); setEditingName(true) }}
-                        className="h-7 w-7 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                        <Edit2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  )}
-                  <p className="font-ko text-sm text-muted-foreground mt-1">{profile.userEmail}</p>
-                  {usedLangs.length > 0 && (
-                    <div className="flex gap-1.5 mt-2.5">
-                      {usedLangs.map(l => (
-                        <span key={l} className="font-ko text-[10px] px-2.5 py-1 rounded-full border"
-                          style={{ background: `${BRAND}10`, color: BRAND, borderColor: `${BRAND}30` }}>
-                          {l}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                {/* 오른쪽: Achievement 카드 */}
+                <div className="relative bg-card border border-border rounded-2xl p-5 flex flex-col justify-between h-full min-h-[250px]">
+                  <button
+                    onClick={() => setShareOpen(true)}
+                    className="absolute top-3 right-3 w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    title="성과 공유"
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </button>
 
-                <div className="flex flex-col items-end gap-1 shrink-0">
-                  <span className="font-ko text-[12px] text-muted-foreground tracking-widest uppercase">TIER</span>
-                  <span className="font-syne text-2xl font-bold" style={{ color: BRAND }}>
-                    {profile.userGrd || "BASIC"}
-                  </span>
-                </div>
-              </div>
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <Flame className="h-4 w-4 text-orange-400" />
+                      <span className="font-ko text-[10px] tracking-widest text-muted-foreground">
+                        STREAK
+                      </span>
+                    </div>
 
-              {/* 통계 */}
-              <div className="grid grid-cols-4 gap-2">
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <div className="mb-2.5"><FolderOpen className="h-4 w-4" style={{ color: BRAND }} /></div>
-                  <p className="font-syne text-2xl font-bold text-foreground">{profile.diagnosisCount}</p>
-                  <p className="font-ko text-xs text-muted-foreground mt-1">총 진단 수</p>
-                </div>
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <div className="mb-2.5"><Star className="h-4 w-4 text-amber-400" /></div>
-                  <p className="font-syne text-2xl font-bold text-foreground">{profile.avgGrade ?? "—"}</p>
-                  <p className="font-ko text-xs text-muted-foreground mt-1">평균 등급</p>
-                </div>
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <div className="mb-2.5"><Flame className="h-4 w-4 text-orange-400" /></div>
-                  <p className="font-syne text-2xl font-bold text-foreground">
-                    {profile.streakDays ?? 0}
-                  </p>
-                  <p className="font-ko text-xs text-muted-foreground mt-1">
-                    연속 일수
-                  </p>
-                </div>
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <div className="mb-2.5"><BookOpen className="h-4 w-4 text-violet-400" /></div>
-                  <p className="font-syne text-2xl font-bold text-foreground">{notes.length}</p>
-                  <p className="font-ko text-xs text-muted-foreground mt-1">저장된 노트</p>
+                    <div className="flex items-end gap-1">
+                      <span className="font-syne text-5xl font-bold text-foreground leading-none">
+                        {profile.streakDays ?? 0}
+                      </span>
+                      <span className="font-ko text-xs text-muted-foreground mb-1">
+                        DAYS
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="pt-5 border-t border-border">
+                    <p className="font-ko text-[10px] tracking-[0.18em] text-muted-foreground mb-1.5">
+                      TIER
+                    </p>
+                    <p
+                      className="font-syne text-3xl font-bold tracking-wide"
+                      style={{ color: currentTierColor }}
+                    >
+                      {profile.userGrd || "BASIC"}
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -418,7 +611,7 @@ export function MyPage({ onProfileUpdated, onNavigate }: {
                           style={{ color: current ? tier.color : done ? "var(--muted-foreground)" : "var(--muted-foreground)" }}>
                           {tier.name}
                         </span>
-                        <span className="font-ko text-[10px] text-muted-foreground">{tier.min}회</span>
+                        <span className="font-ko text-[10px] text-muted-foreground">{getAdjustedTierMin(tier.min)}회</span>
                       </div>
                     )
                   })}
@@ -432,18 +625,27 @@ export function MyPage({ onProfileUpdated, onNavigate }: {
                         다음 <span className="font-bold" style={{ color: nextTier.color }}>{nextTier.name}</span>까지
                       </span>
                       <span className="font-ko text-xs" style={{ color: BRAND }}>
-                        {actCnt} / {nextTier.min}
+                        {actCnt} / {nextRequiredCount}
                       </span>
                     </div>
 
                     <div className="h-1.5 rounded-full bg-muted overflow-hidden">
                       <div className="h-full rounded-full transition-all duration-500"
                         style={{
-                          width: `${Math.min(100, (actCnt / nextTier.min) * 100)}%`,
+                          width: `${Math.min(100, (actCnt / nextRequiredCount) * 100)}%`,
                           background: nextTier.color,
                         }} />
                     </div>
                   </div>
+                )}
+
+                {profile.learningDiscountPercent > 0 && (
+                  <p
+                    className="font-ko text-[11px] mt-3"
+                    style={{ color: BRAND }}
+                  >
+                    학습 성과 보너스 · 승급 기준 {profile.learningDiscountPercent}% 단축
+                  </p>
                 )}
 
                 <p className="font-ko text-xs text-muted-foreground mt-5">
@@ -735,7 +937,180 @@ export function MyPage({ onProfileUpdated, onNavigate }: {
             </div>
           )}
         </div>
-      </ScrollArea>
-    </div>
+      </ScrollArea >
+
+      {shareOpen && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6"
+          onClick={() => setShareOpen(false)}
+        >
+          <div
+            className="w-full max-w-[500px] bg-card border border-border rounded-2xl p-5 shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* 모달 헤더 */}
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="font-ko text-base font-bold text-foreground">
+                  성과 공유
+                </p>
+                <p className="font-ko text-xs text-muted-foreground mt-1">
+                  이 카드로 HiVibe 성과를 공유해 보세요
+                </p>
+              </div>
+
+              <button
+                onClick={() => setShareOpen(false)}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div
+              ref={shareCardRef}
+              className="w-full aspect-[7/4] rounded-2xl p-7 flex flex-col justify-between overflow-hidden"
+              style={{
+                background: isDark
+                  ? "linear-gradient(135deg, #0f172a 0%, #111827 50%, #172554 100%)"
+                  : "linear-gradient(135deg, #ffffff 0%, #f8fbff 55%, #eaf6fc 100%)",
+                color: isDark ? "#ffffff" : "#18181b",
+                border: isDark
+                  ? "1px solid rgba(255,255,255,0.08)"
+                  : "1px solid rgba(99,193,237,0.25)",
+              }}
+            >
+              {/* 상단 */}
+              <div className="flex items-center justify-between">
+                <span
+                  className="font-syne text-xl font-bold"
+                  style={{ color: BRAND }}
+                >
+                  HiVibe
+                </span>
+
+                <span
+                  className="font-ko text-xs"
+                  style={{ color: shareMutedColor }}
+                >
+                  ACHIEVEMENT
+                </span>
+              </div>
+
+              {/* Streak */}
+              <div>
+                <div className="flex items-end gap-2">
+                  <Flame
+                    className="h-7 w-7 mb-1"
+                    style={{ color: "#fb923c" }}
+                  />
+
+                  <span
+                    className="font-syne text-6xl font-bold leading-none"
+                    style={{ color: shareTextColor }}
+                  >
+                    {profile.streakDays ?? 0}
+                  </span>
+
+                  <span
+                    className="font-syne text-base mb-1"
+                    style={{ color: shareMutedColor }}
+                  >
+                    DAYS
+                  </span>
+                </div>
+
+                <p
+                  className="font-ko text-sm mt-2"
+                  style={{ color: shareMutedColor }}
+                >
+                  연속으로 HiVibe와 함께했어요
+                </p>
+              </div>
+
+              {/* Tier + 사용자 */}
+              <div className="flex items-end justify-between">
+                <div>
+                  <p
+                    className="font-syne text-[10px] tracking-[0.2em]"
+                    style={{ color: shareSubtleColor }}
+                  >
+                    CURRENT TIER
+                  </p>
+
+                  <p
+                    className="font-syne text-3xl font-bold mt-1"
+                    style={{ color: currentTierColor }}
+                  >
+                    {profile.userGrd || "BASIC"}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  {profile.userPhoto ? (
+                    <img
+                      src={`https://hivibe.cloud${profile.userPhoto}`}
+                      alt="프로필"
+                      className="w-10 h-10 rounded-full object-cover border"
+                      style={{
+                        borderColor: isDark
+                          ? "rgba(255,255,255,0.18)"
+                          : "rgba(99,193,237,0.35)",
+                      }}
+                    />
+                  ) : (
+                    <div
+                      className="w-10 h-10 rounded-full flex items-center justify-center font-ko text-sm font-bold"
+                      style={{
+                        background: `${BRAND}20`,
+                        border: `1px solid ${BRAND}44`,
+                        color: BRAND,
+                      }}
+                    >
+                      {profile.userNm?.[0] ?? "?"}
+                    </div>
+                  )}
+
+                  <div className="text-right">
+                    <p
+                      className="font-ko text-sm font-semibold"
+                      style={{ color: shareTextColor }}
+                    >
+                      {profile.userNm}
+                    </p>
+
+                    <p
+                      className="font-syne text-[10px] mt-1"
+                      style={{ color: shareSubtleColor }}
+                    >
+                      hivibe.cloud
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 버튼 */}
+            <div className="flex gap-2 mt-5">
+              <button
+                onClick={handleCopyAchievement}
+                className="flex-1 h-11 rounded-xl border border-border font-ko text-sm text-foreground hover:bg-muted transition-colors"
+              >
+                이미지 복사
+              </button>
+
+              <button
+                onClick={handleShareAchievement}
+                className="flex-1 h-11 rounded-xl font-ko text-sm font-semibold text-white flex items-center justify-center gap-2"
+                style={{ background: BRAND }}
+              >
+                <Share2 className="h-4 w-4" />
+                공유하기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div >
   )
 }

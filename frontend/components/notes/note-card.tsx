@@ -19,13 +19,27 @@ export function NoteCard({
   setSelNote,
   toggleNoteFav,
 }: NoteCardProps) {
+  const isLearning = n.noteType === "LEARNING";
+  const isSelected = selNote === n.noteId;
+
+  const cardClass = isLearning
+    ? "bg-emerald-500/[0.07] border-emerald-500/25"
+    : "bg-sky-500/[0.07] border-sky-500/25";
+
   return (
     <div
       onClick={() => setSelNote(n.noteId)}
-      className="p-4 rounded-xl border cursor-pointer transition-all mb-2.5"
+      className={`p-4 rounded-xl border cursor-pointer transition-all mb-2.5 ${cardClass}`}
       style={
-        selNote === n.noteId
-          ? { borderColor: `${BRAND}55`, background: `${BRAND}0d` }
+        isSelected
+          ? {
+            borderColor: isLearning
+              ? "#22c55e88"
+              : `${BRAND}88`,
+            boxShadow: isLearning
+              ? "0 0 0 1px #22c55e22"
+              : `0 0 0 1px ${BRAND}22`,
+          }
           : {}
       }
     >
@@ -33,24 +47,39 @@ export function NoteCard({
         <h3 className="font-ko text-sm font-bold text-foreground leading-snug flex-1">
           {n.noteName}
         </h3>
+
         <div className="flex items-center gap-2 shrink-0">
+          <span
+            className={`font-ko text-[9px] px-2 py-0.5 rounded-full border ${isLearning
+                ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/25"
+                : "bg-sky-500/10 text-sky-500 border-sky-500/25"
+              }`}
+          >
+            {isLearning ? "학습" : "개인"}
+          </span>
+
           <button
             onClick={(e) => {
               e.stopPropagation();
               toggleNoteFav(n.noteId);
             }}
             className="h-6 w-6 flex items-center justify-center rounded transition-colors hover:bg-accent"
-            style={{ color: n.bkmkYn === "Y" ? "#f59e0b" : "#71717a" }}
+            style={{
+              color: n.bkmkYn === "Y" ? "#f59e0b" : "#71717a",
+            }}
           >
             <Star
-              className={`h-3.5 w-3.5 ${n.bkmkYn === "Y" ? "fill-amber-400" : ""}`}
+              className={`h-3.5 w-3.5 ${n.bkmkYn === "Y" ? "fill-amber-400" : ""
+                }`}
             />
           </button>
         </div>
       </div>
+
       <p className="font-ko text-xs text-muted-foreground mb-2.5">
         {new Date(n.createdAt).toLocaleDateString("ko-KR")}
       </p>
+
       <div className="flex flex-wrap gap-1.5">
         {n.tag
           ?.split(" ")
