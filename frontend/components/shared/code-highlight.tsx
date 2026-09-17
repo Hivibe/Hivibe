@@ -28,10 +28,11 @@ const langMap: Record<string, string> = {
 interface CodeHighlightProps {
     code: string
     language?: string
-}
+} // TEST
 
 export function CodeHighlight({ code, language }: CodeHighlightProps) {
     const prismLang = langMap[language ?? ""] ?? "javascript"
+
 
     return (
         <Highlight

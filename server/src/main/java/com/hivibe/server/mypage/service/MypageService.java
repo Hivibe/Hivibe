@@ -11,14 +11,14 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.hivibe.server.user.service.UserGrdService;
+import com.hivibe.server.domain.entity.UserActivityLog;
+import com.hivibe.server.repository.UserActivityLogRepository;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
-
-import com.hivibe.server.domain.entity.Dgns;
-import com.hivibe.server.domain.entity.Lrn;
-import com.hivibe.server.repository.LrnRepository;
 
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -33,7 +33,9 @@ public class MypageService {
 
     private final UserRepository userRepository;
     private final DgnsRepository dgnsRepository;
-    private final LrnRepository lrnRepository;
+
+    private final UserActivityLogRepository userActivityLogRepository;
+    private final UserGrdService userGrdService;
 
     // 공통 조회 헬퍼 - 5번 반복되던 orElseThrow 패턴 통합
     private User getUserOrThrow(String lgnId) {
@@ -85,30 +87,25 @@ public class MypageService {
 
         Set<LocalDate> activityDates = new HashSet<>();
 
-        // 진단 날짜
-        List<Dgns> diagnoses = dgnsRepository.findByUser_IdOrderByDgnsDtAsc(user.getId());
+        List<UserActivityLog> activities = userActivityLogRepository.findByUser_IdOrderByCreatedAtAsc(user.getId());
 
-        for (Dgns dgns : diagnoses) {
-            if (dgns.getDgnsDt() != null) {
-                activityDates.add(dgns.getDgnsDt().toLocalDate());
+        for (UserActivityLog activity : activities) {
+            if (activity.getCreatedAt() != null) {
+                activityDates.add(activity.getCreatedAt().toLocalDate());
             }
         }
 
-        // 학습 날짜
-        List<Lrn> learnings = lrnRepository.findByUser_IdOrderByCreatedAtDesc(user.getId());
-
-        for (Lrn lrn : learnings) {
-            if (lrn.getCreatedAt() != null) {
-                activityDates.add(lrn.getCreatedAt().toLocalDate());
-            }
-        }
         int streakDays = calculateStreak(activityDates);
+
+        UserGrdService.TierProgress tierProgress = userGrdService.getTierProgress(user.getId());
 
         return new UserProfileResponseDto(
                 user,
                 diagnosisCount,
                 avgGrade,
-                streakDays);
+                streakDays,
+                tierProgress.discountPercent(),
+                tierProgress.nextRequiredCount());
     }
 
     // 마이페이지 조회
