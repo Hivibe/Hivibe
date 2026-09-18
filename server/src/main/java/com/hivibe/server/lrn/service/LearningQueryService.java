@@ -18,9 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * 학습 조회 서비스
@@ -36,28 +34,27 @@ public class LearningQueryService {
     private final ConceptRepository conceptRepository;
     private final LrnBlankRepository lrnBlankRepository;
     private final LrnSubmRepository lrnSubmRepository;
-    private final ObjectMapper objectMapper;   // ← 추가 (RequiredArgsConstructor가 자동 주입)
+    private final ObjectMapper objectMapper; // ← 추가 (RequiredArgsConstructor가 자동 주입)
 
     @Transactional(readOnly = true)
     public List<LearningListItemDto> findAll(User currentUser) {
         List<Lrn> lrns = lrnRepository.findByUser_IdOrderByCreatedAtDesc(currentUser.getId());
 
         return lrns.stream()
-            .map(lrn -> {
-                String grade = resolveGrade(lrn);
-                return new LearningListItemDto(
-                    lrn.getLrnId(),
-                    lrn.getLrnName(),
-                    lrn.getCreatedAt(),
-                    grade,
-                    lrn.getOptCd().getLang(),
-                    lrn.getTag(),
-                    "Y".equals(lrn.getBkmkYn()),
-                    lrn.getStat(),
-                    lrn.getProgRt()
-                );
-            })
-            .toList();
+                .map(lrn -> {
+                    String grade = resolveGrade(lrn);
+                    return new LearningListItemDto(
+                            lrn.getLrnId(),
+                            lrn.getLrnName(),
+                            lrn.getCreatedAt(),
+                            grade,
+                            lrn.getOptCd().getLang(),
+                            lrn.getTag(),
+                            "Y".equals(lrn.getBkmkYn()),
+                            lrn.getStat(),
+                            lrn.getProgRt());
+                })
+                .toList();
     }
 
     private String resolveGrade(Lrn lrn) {
@@ -82,7 +79,7 @@ public class LearningQueryService {
     @Transactional(readOnly = true)
     public LearningDetailResponseDto findDetail(Long lrnId, User currentUser) {
         Lrn lrn = lrnRepository.findById(lrnId)
-            .orElseThrow(() -> new IllegalArgumentException("학습 세션을 찾을 수 없습니다: " + lrnId));
+                .orElseThrow(() -> new IllegalArgumentException("학습 세션을 찾을 수 없습니다: " + lrnId));
 
         if (!lrn.getUser().getId().equals(currentUser.getId())) {
             throw new IllegalStateException("본인의 학습 세션이 아닙니다.");
@@ -91,51 +88,48 @@ public class LearningQueryService {
         OptCd optCd = lrn.getOptCd();
         OrnCd ornCd = lrn.getOrnCd();
 
-        String originalComplexity =
-            optCd.getAnls() != null
+        String originalComplexity = optCd.getAnls() != null
                 ? optCd.getAnls().getTimeComp()
                 : "O(?)";
 
         List<Concept> concepts = conceptRepository.findByLrn_LrnIdOrderBySortOrdAsc(lrnId);
 
         List<LearningDetailResponseDto.ConceptDto> conceptDtos = concepts.stream()
-            .map(c -> new LearningDetailResponseDto.ConceptDto(
-                c.getConcId(),
-                c.getCdType(),
-                c.getConcTitle(),
-                c.getConcDesc(),
-                c.getRefUrl(),
-                c.getSortOrd()
-            ))
-            .toList();
+                .map(c -> new LearningDetailResponseDto.ConceptDto(
+                        c.getConcId(),
+                        c.getCdType(),
+                        c.getConcTitle(),
+                        c.getConcDesc(),
+                        c.getRefUrl(),
+                        c.getSortOrd()))
+                .toList();
 
         // ▼▼▼ 여기 안으로 이동 (findDetail 메서드 안, return 전) ▼▼▼
         List<Long> unlockedConceptIds = parseUnlockedIds(lrn.getUnlockedConcIds());
         // ▲▲▲
 
         return new LearningDetailResponseDto(
-            lrn.getLrnId(),
-            lrn.getLrnName(),
-            lrn.getCreatedAt(),
-            lrn.getGrade(),
-            lrn.getStat(),
-            lrn.getProgRt(),
-            lrn.getLastAttemptNo(),
-            "Y".equals(lrn.getBkmkYn()),
-            lrn.getTag(),
-            lrn.getOverallComment(),
-            ornCd.getCdCn(),
-            originalComplexity,
-            optCd.getOptCdId(),
-            
-            new LearningDetailResponseDto.OptimizedCodeDto(
-            optCd.getLang(),
-            optCd.getCdCn(),
-            optCd.getBlank(),
-            optCd.getTimeComp()
-        ),
-            conceptDtos,
-            unlockedConceptIds   // ← 추가된 인자
+                lrn.getLrnId(),
+                lrn.getLrnName(),
+                lrn.getCreatedAt(),
+                lrn.getGrade(),
+                lrn.getStat(),
+                lrn.getProgRt(),
+                lrn.getLastAttemptNo(),
+                "Y".equals(lrn.getBkmkYn()),
+                lrn.getTag(),
+                lrn.getOverallComment(),
+                ornCd.getCdCn(),
+                originalComplexity,
+                optCd.getOptCdId(),
+
+                new LearningDetailResponseDto.OptimizedCodeDto(
+                        optCd.getLang(),
+                        optCd.getCdCn(),
+                        optCd.getBlank(),
+                        optCd.getTimeComp()),
+                conceptDtos,
+                unlockedConceptIds // ← 추가된 인자
         );
     }
 
@@ -156,7 +150,7 @@ public class LearningQueryService {
     @Transactional
     public boolean toggleBookmark(Long lrnId, User currentUser) {
         Lrn lrn = lrnRepository.findById(lrnId)
-            .orElseThrow(() -> new IllegalArgumentException("학습 세션을 찾을 수 없습니다: " + lrnId));
+                .orElseThrow(() -> new IllegalArgumentException("학습 세션을 찾을 수 없습니다: " + lrnId));
 
         if (!lrn.getUser().getId().equals(currentUser.getId())) {
             throw new IllegalStateException("본인의 학습 세션이 아닙니다.");
@@ -170,7 +164,7 @@ public class LearningQueryService {
     @Transactional
     public void delete(Long lrnId, User currentUser) {
         Lrn lrn = lrnRepository.findById(lrnId)
-            .orElseThrow(() -> new IllegalArgumentException("학습 세션을 찾을 수 없습니다: " + lrnId));
+                .orElseThrow(() -> new IllegalArgumentException("학습 세션을 찾을 수 없습니다: " + lrnId));
 
         if (!lrn.getUser().getId().equals(currentUser.getId())) {
             throw new IllegalStateException("본인의 학습 세션이 아닙니다.");
@@ -187,7 +181,7 @@ public class LearningQueryService {
     @Transactional
     public void rename(Long lrnId, String newName, User currentUser) {
         Lrn lrn = lrnRepository.findById(lrnId)
-            .orElseThrow(() -> new IllegalArgumentException("학습 세션을 찾을 수 없습니다: " + lrnId));
+                .orElseThrow(() -> new IllegalArgumentException("학습 세션을 찾을 수 없습니다: " + lrnId));
 
         if (!lrn.getUser().getId().equals(currentUser.getId())) {
             throw new IllegalStateException("본인의 학습 세션이 아닙니다.");

@@ -84,6 +84,9 @@ function getGradeFromScore(score: number): string {
 type LearningContent = {
   lrnId: number
   optCdId?: number
+
+  originalComplexity?: string
+
   optimizedCode: AiLearningResponse["optimizedCode"]
   concepts: (AiLearningResponse["concepts"][number] & { id?: number })[]
   previousSubmission?: SubmissionResponse | null
@@ -256,9 +259,24 @@ export function LeetCodeIDE() {
         fetchLatestSubmission(lrnId).catch(() => null),
       ]);
 
+      console.log("LEARNING DETAIL:", detail)
+
+      console.log(
+        "DB ORIGINAL COMPLEXITY:",
+        detail.originalComplexity
+      )
+
+      console.log(
+        "DB OPTIMIZED COMPLEXITY:",
+        detail.optimizedCode?.timeComplexity
+      )
+
       setLearnings(prev => new Map(prev).set(lrnId, {
         lrnId: detail.lrnId,
         optCdId: detail.optCdId,
+
+        originalComplexity: detail.originalComplexity,
+
         optimizedCode: detail.optimizedCode,
         concepts: detail.concepts.map(c => ({
           id: c.id,
@@ -270,6 +288,8 @@ export function LeetCodeIDE() {
         previousSubmission: latestSubm,
         unlockedConceptIds: detail.unlockedConceptIds ?? [],
       }));
+
+
       setAnalyzedCodeMap(prev => new Map(prev).set(lrnId, detail.originalCode));
     } catch (e: any) {
       console.error("학습 상세 조회 실패:", e);
@@ -492,19 +512,18 @@ export function LeetCodeIDE() {
 
       const lrnId = lrnRes.id;
 
-      setLearnings(prev => new Map(prev).set(lrnId, {
-        lrnId,
-        optimizedCode: aiLearn.optimizedCode,
-        concepts: aiLearn.concepts,
-        unlockedConceptIds: [],
-      }));
-      setAnalyzedCodeMap(prev => new Map(prev).set(lrnId, editorCode));
-
+      /*
+       * 새 학습도 DB에서 다시 상세 조회해서
+       * originalComplexity / optimizedCode.timeComplexity /
+       * concept.id 등을 정확하게 받는다.
+       */
       await loadSessions();
+      await loadLearningDetail(lrnId);
 
       setActiveNav("learning");
       setSelSession(lrnId);
       syncUrl("learning", lrnId);
+
     } catch (error: any) {
       if (error.name === "AbortError") {
         toast.info("학습 시작을 취소했어요")

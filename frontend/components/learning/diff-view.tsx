@@ -198,6 +198,8 @@ type PersistedHint = {
 type LearningContent = {
   lrnId: number
 
+  originalComplexity?: string
+
   optimizedCode:
   AiLearningResponse["optimizedCode"]
 
@@ -804,18 +806,28 @@ export function DiffView({
   ] = useState<string | null>(null)
 
   /*
-   * lrnId별 Original / Optimized 복잡도 최초 1회 분석 + 저장
-   * 기존 제출 결과도 같이 복원
+   * Original:
+   * 진단 단계에서 분석한 시간복잡도 사용
+   *
+   * AI Optimized:
+   * 학습 최초 1회 분석 후 localStorage에 저장
+   *
+   * My Submission:
+   * 기존 제출 결과 복원
    */
   useEffect(() => {
     const currentLrnId =
       learningContent?.lrnId
+
+    const originalComplexity =
+      learningContent?.originalComplexity
 
     const optimizedCode =
       learningContent?.optimizedCode?.content
 
     if (
       !currentLrnId ||
+      !originalComplexity ||
       !optimizedCode
     ) {
       return
@@ -827,21 +839,58 @@ export function DiffView({
     const submissionKey =
       `performance-${currentLrnId}`
 
-    let hasSavedBase = false
+    /*
+     * 다른 학습에서 보던 값이
+     * 잠깐 보이는 것 방지
+     */
+    setBasePerformance(null)
+    setPerformanceComparison(null)
+    setPerformanceError(null)
+
+    let savedOptimizedComplexity:
+      string | null = null
 
     try {
       /*
-       * 1. 고정 Original / Optimized 복원
+       * 1. 이전에 분석한 AI Optimized 복잡도 복원
+       *
+       * Original은 localStorage 값을 사용하지 않고
+       * 현재 진단 데이터로 항상 덮어쓴다.
        */
       const savedBase =
         localStorage.getItem(baseKey)
 
       if (savedBase) {
-        setBasePerformance(
-          JSON.parse(savedBase)
-        )
+        const parsed = JSON.parse(
+          savedBase
+        ) as {
+          originalComplexity?: string
+          optimizedComplexity?: string
+        }
 
-        hasSavedBase = true
+        if (
+          parsed.optimizedComplexity
+        ) {
+          savedOptimizedComplexity =
+            parsed.optimizedComplexity
+
+          const base = {
+            originalComplexity,
+            optimizedComplexity:
+              parsed.optimizedComplexity,
+          }
+
+          setBasePerformance(base)
+
+          /*
+           * 과거 캐시에 저장된 Original 값이 있더라도
+           * 현재 진단값으로 갱신
+           */
+          localStorage.setItem(
+            baseKey,
+            JSON.stringify(base)
+          )
+        }
       }
 
       /*
@@ -857,37 +906,16 @@ export function DiffView({
           PerformanceComparison =
           JSON.parse(savedSubmission)
 
-        setPerformanceComparison(
-          parsed
-        )
+        setPerformanceComparison({
+          originalComplexity,
 
-        /*
-         * 예전 저장 데이터는 있는데
-         * base 데이터가 아직 없는 경우
-         * 기존 값으로 최초 base 생성
-         */
-        if (!hasSavedBase) {
-          const migratedBase = {
-            originalComplexity:
-              parsed.originalComplexity,
+          optimizedComplexity:
+            savedOptimizedComplexity ??
+            parsed.optimizedComplexity,
 
-            optimizedComplexity:
-              parsed.optimizedComplexity,
-          }
-
-          setBasePerformance(
-            migratedBase
-          )
-
-          localStorage.setItem(
-            baseKey,
-            JSON.stringify(
-              migratedBase
-            )
-          )
-
-          hasSavedBase = true
-        }
+          submittedComplexity:
+            parsed.submittedComplexity,
+        })
       }
     } catch {
       localStorage.removeItem(
@@ -897,25 +925,40 @@ export function DiffView({
       localStorage.removeItem(
         submissionKey
       )
+
+      setBasePerformance(null)
+      setPerformanceComparison(null)
     }
 
     /*
-     * 이미 기준값이 있으면
-     * 다시 AI 분석하지 않음
+     * 이미 AI Optimized Complexity를
+     * 분석한 기록이 있으면 재분석하지 않음
      */
-    if (hasSavedBase) {
+    if (
+      savedOptimizedComplexity
+    ) {
+      setIsAnalyzingBasePerformance(
+        false
+      )
+
       return
     }
 
     /*
-     * 최초 1회만
-     * Original / Optimized 분석
+     * AI Optimized Complexity 최초 1회 분석
+     *
+     * 현재 analyzeComplexity API가
+     * originalCode + optimizedCode를 함께 받기 때문에
+     * 요청에는 Original도 전달하지만,
+     *
+     * result.originalComplexity는 사용하지 않는다.
+     *
+     * 화면의 Original은 무조건
+     * 진단에서 넘어온 originalComplexity 사용.
      */
     setIsAnalyzingBasePerformance(
       true
     )
-
-    setPerformanceError(null)
 
     void analyzeComplexity({
       originalCode:
@@ -932,34 +975,69 @@ export function DiffView({
     })
       .then(result => {
         const base = {
-          originalComplexity:
-            result.originalComplexity,
+          /*
+           * 중요:
+           * AI가 다시 분석한 Original이 아니라
+           * 진단에서 받은 값 사용
+           */
+          originalComplexity,
 
+          /*
+           * Optimized만 이번 분석 결과 사용
+           */
           optimizedComplexity:
             result.optimizedComplexity,
         }
 
-        setBasePerformance(
-          base
-        )
+        setBasePerformance(base)
 
         localStorage.setItem(
           baseKey,
           JSON.stringify(base)
         )
-      })
-      .catch((error: unknown) => {
-        console.error(
-          "Base performance analysis failed:",
-          error
-        )
 
-        setPerformanceError(
-          error instanceof Error
-            ? error.message
-            : "기준 시간복잡도 분석에 실패했습니다."
+        /*
+         * 이미 제출 기록을 복원한 상태라면
+         * Optimized 기준값도 새 값으로 맞춰준다.
+         */
+        setPerformanceComparison(
+          previous => {
+            if (!previous) {
+              return null
+            }
+
+            const next = {
+              ...previous,
+
+              originalComplexity,
+
+              optimizedComplexity:
+                result.optimizedComplexity,
+            }
+
+            localStorage.setItem(
+              submissionKey,
+              JSON.stringify(next)
+            )
+
+            return next
+          }
         )
       })
+      .catch(
+        (error: unknown) => {
+          console.error(
+            "Optimized performance analysis failed:",
+            error
+          )
+
+          setPerformanceError(
+            error instanceof Error
+              ? error.message
+              : "AI 최적화 코드의 시간복잡도 분석에 실패했습니다."
+          )
+        }
+      )
       .finally(() => {
         setIsAnalyzingBasePerformance(
           false
@@ -967,6 +1045,7 @@ export function DiffView({
       })
   }, [
     learningContent?.lrnId,
+    learningContent?.originalComplexity,
     learningContent?.optimizedCode?.content,
     learningContent?.optimizedCode?.lang,
     analyzedCode,
@@ -2092,41 +2171,68 @@ export function DiffView({
 
   useEffect(() => {
     if (
-      focusedBlank === null
+      focusedBlank === null ||
+      typeof window === "undefined"
     ) {
       return
     }
 
-    if (
-      typeof window ===
-      "undefined"
-    ) {
-      return
-    }
+    const frame =
+      requestAnimationFrame(() => {
+        const blankElement =
+          document.querySelector<HTMLTextAreaElement>(
+            `textarea[data-blank-input="${focusedBlank}"]`
+          )
 
-    /*
-     * 첫 실행 때만
-     * 화면 오른쪽 위에 배치
-     *
-     * 이후에는 사용자가 옮긴 위치 유지
-     */
-    setHintPosition(
-      previous => {
-        if (previous) {
-          return previous
+        if (!blankElement) {
+          return
         }
 
-        return {
-          x: Math.max(
-            16,
-            window.innerWidth -
-            440
+        const rect =
+          blankElement.getBoundingClientRect()
+
+        const hintWidth = 400
+        const gap = 10
+        const padding = 12
+
+        /*
+         * 빈칸 가운데 기준으로 힌트 박스 배치
+         */
+        const rawX =
+          rect.left +
+          rect.width / 2 -
+          hintWidth / 2
+
+        /*
+         * 좌우만 화면 안으로 보정
+         */
+        const x = Math.min(
+          Math.max(
+            padding,
+            rawX
           ),
+          window.innerWidth -
+          hintWidth -
+          padding
+        )
 
-          y: 100,
-        }
-      }
-    )
+        /*
+         * 무조건 빈칸 아래
+         */
+        const y =
+          rect.bottom + gap
+
+        setHintPosition({
+          x,
+          y,
+        })
+      })
+
+    return () => {
+      cancelAnimationFrame(
+        frame
+      )
+    }
   }, [focusedBlank])
 
 
@@ -2225,32 +2331,25 @@ export function DiffView({
             const currentLrnId =
               learningContent.lrnId
 
-            /*
-             * 이미 저장된 base를 우선 사용.
-             * 혹시 최초 분석이 끝나기 전에 제출한 경우만
-             * 이번 결과를 최초 base로 사용.
-             */
             const fixedBase =
               basePerformance ?? {
+                /*
+                 * Original은 반드시 진단값
+                 */
                 originalComplexity:
-                  result.originalComplexity,
+                  learningContent
+                    .originalComplexity ??
+                  "O(?)",
 
+                /*
+                 * Optimized는 분석 결과 사용
+                 *
+                 * 정상적인 경우에는 최초 진입 분석으로
+                 * basePerformance가 이미 존재함
+                 */
                 optimizedComplexity:
                   result.optimizedComplexity,
               }
-
-            if (!basePerformance) {
-              setBasePerformance(
-                fixedBase
-              )
-
-              localStorage.setItem(
-                `performance-base-${currentLrnId}`,
-                JSON.stringify(
-                  fixedBase
-                )
-              )
-            }
 
             /*
              * Original / Optimized는 고정.
@@ -3016,17 +3115,6 @@ export function DiffView({
                     </div>
                   )}
 
-                {/* 기준 복잡도 최초 분석 중 */}
-                {isAnalyzingBasePerformance && (
-                  <div className="mb-4 rounded-md border border-border bg-muted/30 px-3 py-2 flex items-center gap-2">
-                    <Loader2 className="h-3 w-3 animate-spin shrink-0" />
-
-                    <p className="font-ko text-[11px] text-muted-foreground">
-                      Original / Optimized 시간복잡도를 분석하고 있어요...
-                    </p>
-                  </div>
-                )}
-
                 {/* 제출 코드 분석 중 */}
                 {isAnalyzingPerformance && (
                   <div className="mb-4 rounded-md border border-border bg-muted/30 px-3 py-2 flex items-center gap-2">
@@ -3048,7 +3136,8 @@ export function DiffView({
 
                     <p className="font-code text-[12px] font-bold">
                       {basePerformance?.originalComplexity ??
-                        (isAnalyzingBasePerformance ? "..." : "-")}
+                        learningContent?.originalComplexity ??
+                        "-"}
                     </p>
                   </div>
 
