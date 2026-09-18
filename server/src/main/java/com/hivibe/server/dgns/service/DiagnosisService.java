@@ -63,28 +63,29 @@ public class DiagnosisService {
 
                 // 2. 분석 결과 저장
                 Anls anls = Anls.builder()
-                                .ornCd(savedOrnCd)
-                                .cdGrd(request.grade())
-                                .cdScr(request.score())
-                                .cdEfcn(String.valueOf(request.efficiency()))
-                                .cdRead(String.valueOf(request.readability()))
-                                .cdSytle(String.valueOf(request.style()))
-                                .timeComp(request.timeComplexity())
-                                .cdEfcnRsn(request.efficiencyReason())
-                                .cdAccRsn(request.accuracyReason())
-                                .cdReadRsn(request.readabilityReason())
-                                .cdStyleRsn(request.styleReason())
-                                .aiSummry(request.summary())
-                                .build();
+                        .ornCd(savedOrnCd)
+                        .cdGrd(request.grade())
+                        .cdScr(request.score())
+                        .cdEfcn(String.valueOf(request.efficiency()))
+                        .cdRead(String.valueOf(request.readability()))
+                        .cdSytle(String.valueOf(request.style()))
+                        .timeComp(request.timeComplexity())
+                        .cdEfcnRsn(request.efficiencyReason())
+                        .cdAccRsn(request.accuracyReason())
+                        .cdReadRsn(request.readabilityReason())
+                        .cdStyleRsn(request.styleReason())
+                        .aiSummry(request.summary())
+                        .build();
+                        
                 Anls savedAnls = anlsRepository.save(anls);
 
                 // 3. 최적화 코드 저장
                 OptCd optCd = OptCd.builder()
-                                .anls(savedAnls)
-                                .lang(request.lang())
-                                .cdCn(request.optimizedCode())
-                                .timeComp(request.timeComplexity())
-                                .build();
+                        .anls(savedAnls)
+                        .lang(request.lang())
+                        .cdCn(request.optimizedCode())
+                        .timeComp(request.optimizedTimeComplexity())
+                        .build();
                 OptCd savedOptCd = optCdRepository.save(optCd);
 
                 // 4. 진단 이력 저장
@@ -123,12 +124,7 @@ public class DiagnosisService {
                 User user = getUser(lgnId);
                 Dgns dgns = dgnsRepository.findByDgnsIdAndUser_Id(dgnsId, user.getId())
                                 .orElseThrow(() -> new RuntimeException("진단 기록을 찾을 수 없어요."));
-
-                // OptCd 따로 조회
-                String optimizedCode = optCdRepository
-                                .findByAnls_AnlsId(dgns.getAnls().getAnlsId())
-                                .map(opt -> opt.getCdCn())
-                                .orElse("");
+                
 
                 return new DiagnosisDetailDto(dgns);
         }

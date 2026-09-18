@@ -84,6 +84,9 @@ function getGradeFromScore(score: number): string {
 type LearningContent = {
   lrnId: number
   optCdId?: number
+
+  originalComplexity?: string
+
   optimizedCode: AiLearningResponse["optimizedCode"]
   concepts: (AiLearningResponse["concepts"][number] & { id?: number })[]
   previousSubmission?: SubmissionResponse | null
@@ -256,9 +259,24 @@ export function LeetCodeIDE() {
         fetchLatestSubmission(lrnId).catch(() => null),
       ]);
 
+      console.log("LEARNING DETAIL:", detail)
+
+      console.log(
+        "DB ORIGINAL COMPLEXITY:",
+        detail.originalComplexity
+      )
+
+      console.log(
+        "DB OPTIMIZED COMPLEXITY:",
+        detail.optimizedCode?.timeComplexity
+      )
+
       setLearnings(prev => new Map(prev).set(lrnId, {
         lrnId: detail.lrnId,
         optCdId: detail.optCdId,
+
+        originalComplexity: detail.originalComplexity,
+
         optimizedCode: detail.optimizedCode,
         concepts: detail.concepts.map(c => ({
           id: c.id,
@@ -268,8 +286,10 @@ export function LeetCodeIDE() {
           referenceUrl: c.referenceUrl,
         })),
         previousSubmission: latestSubm,
-        unlockedConceptIds: detail.unlockedConceptIds ?? [], 
+        unlockedConceptIds: detail.unlockedConceptIds ?? [],
       }));
+
+
       setAnalyzedCodeMap(prev => new Map(prev).set(lrnId, detail.originalCode));
     } catch (e: any) {
       console.error("학습 상세 조회 실패:", e);
@@ -353,7 +373,14 @@ export function LeetCodeIDE() {
         }),
         signal: controller.signal,   // ← 추가
       })
+
       const data = await response.json()
+
+      console.log("AI RESULT", data)
+      console.log("original complexity", data.complexity)
+      console.log("optimized complexity", data.optimizedComplexity)
+      console.log("optimized code", data.optimizedCode)
+
       setAiResult(data)
       setHasAnalyzed(true)
 
@@ -405,8 +432,11 @@ export function LeetCodeIDE() {
       readabilityReason: aiResult.readabilityReason ?? "",
       style: aiResult.style ?? 0,
       styleReason: aiResult.styleReason ?? "",
-      timeComplexity: aiResult.complexity ?? "",
-      optimizedCode: aiResult.optimizedCode ?? "",
+
+      timeComplexity: aiResult?.complexity ?? "O(?)",
+      optimizedTimeComplexity:
+        aiResult?.optimizedComplexity ?? "O(?)",
+      optimizedCode: aiResult?.optimizedCode ?? "",
     };
   };
 
@@ -482,19 +512,18 @@ export function LeetCodeIDE() {
 
       const lrnId = lrnRes.id;
 
-      setLearnings(prev => new Map(prev).set(lrnId, {
-        lrnId,
-        optimizedCode: aiLearn.optimizedCode,
-        concepts: aiLearn.concepts,
-        unlockedConceptIds: [],
-      }));
-      setAnalyzedCodeMap(prev => new Map(prev).set(lrnId, editorCode));
-
+      /*
+       * 새 학습도 DB에서 다시 상세 조회해서
+       * originalComplexity / optimizedCode.timeComplexity /
+       * concept.id 등을 정확하게 받는다.
+       */
       await loadSessions();
+      await loadLearningDetail(lrnId);
 
       setActiveNav("learning");
       setSelSession(lrnId);
       syncUrl("learning", lrnId);
+
     } catch (error: any) {
       if (error.name === "AbortError") {
         toast.info("학습 시작을 취소했어요")
@@ -710,18 +739,40 @@ export function LeetCodeIDE() {
   }, [selSession, analyzedCodeMap]);
 
   /* 채점 완료 → 아카이브 목록의 grade와 캐시된 previousSubmission 동시 갱신 */
-  const handleLearningGraded = useCallback((lrnId: number, res: SubmissionResponse) => {
-    setSessions(prev => prev.map(s =>
-      s.id === lrnId ? { ...s, grade: res.grade ?? s.grade } : s
-    ));
-    setLearnings(prev => {
-      const existing = prev.get(lrnId);
-      if (!existing) return prev;
-      const next = new Map(prev);
-      next.set(lrnId, { ...existing, previousSubmission: res });
-      return next;
-    });
-  }, []);
+  const handleLearningGraded = useCallback(
+    (lrnId: number, res: SubmissionResponse) => {
+      setSessions(prev =>
+        prev.map(s =>
+          s.id === lrnId
+            ? { ...s, grade: res.grade ?? s.grade }
+            : s
+        )
+      )
+
+      setLearnings(prev => {
+        const existing = prev.get(lrnId)
+        if (!existing) return prev
+
+        const next = new Map(prev)
+
+        const unlockedConceptIds = Array.from(
+          new Set([
+            ...(existing.unlockedConceptIds ?? []),
+            ...(res.newlyUnlockedConceptIds ?? []),
+          ])
+        )
+
+        next.set(lrnId, {
+          ...existing,
+          unlockedConceptIds,
+          previousSubmission: res,
+        })
+
+        return next
+      })
+    },
+    []
+  )
 
   const handleLearningRenamed = useCallback((lrnId: number, newName: string) => {
     // 아카이브 목록 갱신

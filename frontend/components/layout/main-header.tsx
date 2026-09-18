@@ -51,11 +51,15 @@ const headerIcon: Record<string, any> = {
   mypage: User,
 }
 
-const PACE_OPTIONS: { key: Pace; label: string; dot: number }[] = [
+const PACE_OPTIONS: {
+  key: Pace
+  label: string
+  dot: number
+}[] = [
   { key: "off", label: "Off", dot: 10 },
-  { key: "slow", label: "천천히", dot: 10 },
-  { key: "medium", label: "중간", dot: 10 },
-  { key: "fast", label: "빠르게", dot: 10 },
+  { key: "easy", label: "Easy", dot: 10 },
+  { key: "medium", label: "Medium", dot: 10 },
+  { key: "hard", label: "Hard", dot: 10 },
 ]
 
 function PaceRadio({ pace, setPace }: { pace: Pace; setPace: (p: Pace) => void }) {

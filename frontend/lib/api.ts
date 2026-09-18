@@ -39,7 +39,13 @@ export interface DiagnosisSaveRequest {
   readabilityReason: string
   style: number
   styleReason: string
+
+  // 원본 코드 시간복잡도
   timeComplexity: string
+
+  // AI 최적화 코드 시간복잡도
+  optimizedTimeComplexity: string
+
   optimizedCode: string
 }
 
@@ -173,6 +179,42 @@ export type BlankResult = {
   conceptDesc: string | null
 }
 
+export type PerformanceComparison = {
+  originalComplexity: string
+  optimizedComplexity: string
+  submittedComplexity: string
+}
+
+export type ComplexityAnalysisRequest = {
+  originalCode: string
+  optimizedCode: string
+  language?: string
+  answers: {
+    blankOrd: number
+    userAns: string
+  }[]
+}
+
+/* ───────── 시간복잡도 분석 ───────── */
+export async function analyzeComplexity(
+  body: ComplexityAnalysisRequest
+): Promise<PerformanceComparison> {
+  const res = await apiFetch("/api/v1/ai/complexity", {
+    method: "POST",
+    body: JSON.stringify(body),
+  })
+
+  if (!res.ok) {
+    const errorText = await res.text().catch(() => "")
+
+    throw new Error(
+      errorText || "성능 분석에 실패했어요."
+    )
+  }
+
+  return res.json()
+}
+
 export type SubmissionResponse = {
   lrnId: number
   attemptNo: number
@@ -185,6 +227,7 @@ export type SubmissionResponse = {
   nextReviewAt: string | null
   overallComment: string | null
   results: BlankResult[]
+  newlyUnlockedConceptIds: number[]
 }
 
 export async function submitLearning(
@@ -228,6 +271,7 @@ export type LearningDetail = {
   tag: string | null
   overallComment: string | null
   originalCode: string
+  originalComplexity: string
   optCdId: number
   optimizedCode: {
     lang: string
