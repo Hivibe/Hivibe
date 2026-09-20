@@ -43,7 +43,14 @@ export default function SignupPage() {
         body: JSON.stringify({ lgnId: email, lgnPwsd: password, userNm: name, userEmail: email, mktgAgreeYn: false }),
       });
 
-      if (!res.ok) { const msg = await res.text(); setError(msg); return; }
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => null)
+
+        setError(
+          errorData?.message || "회원가입에 실패했습니다."
+        )
+        return
+      }
 
       const loginRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'https://hivibe.cloud'}/api/users/login`, {
         method: 'POST',

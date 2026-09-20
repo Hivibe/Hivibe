@@ -124,7 +124,7 @@ export function NotesList({ selNote, setSelNote, refreshKey }: NotesListProps) {
       <div className="relative mb-3">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input value={search} onChange={e => setSearch(e.target.value)}
-          placeholder="Search by keywords or tags..."
+          placeholder="키워드 또는 태그로 검색"
           className="pl-9 bg-card border-border text-foreground text-sm h-9 font-ko" />
       </div>
 

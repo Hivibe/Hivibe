@@ -2510,21 +2510,23 @@ export function DiffView({
     element.style.height = "auto"
 
     /*
-     * 내용의 실제 렌더링 폭
+     * 빈칸이 코드 패널 전체를 밀지 않도록
+     * 최대 너비를 320px로 제한
      */
     const nextWidth = Math.min(
       Math.max(
         element.scrollWidth + 6,
         96
       ),
-      640
+      320
     )
 
     element.style.width =
       `${nextWidth}px`
 
     /*
-     * 여러 줄 입력일 경우 높이도 자동 확장
+     * 여러 줄 입력은 기존처럼
+     * 높이를 자동으로 확장
      */
     element.style.height =
       `${element.scrollHeight}px`
@@ -2562,7 +2564,7 @@ export function DiffView({
     idx0: number
   ) => {
     const base =
-      "bg-card rounded px-2 py-0.5 text-[12px] font-code focus:outline-none transition-colors resize-none overflow-hidden align-middle whitespace-pre"
+      "bg-card rounded px-2 py-0.5 text-[12px] font-code focus:outline-none transition-colors resize-none overflow-x-auto overflow-y-hidden align-middle whitespace-pre"
 
     if (!isGraded) {
       return `${base} border border-emerald-500/50 focus:border-emerald-400 text-emerald-300`
@@ -2975,11 +2977,11 @@ export function DiffView({
 
       <div
         className={`transition-all duration-300 ease-in-out overflow-hidden shrink-0 ${panelOpen
-          ? "w-[350px]"
+          ? "w-[clamp(280px,22vw,350px)]"
           : "w-0"
           }`}
       >
-        <div className="w-[350px] h-full overflow-auto bg-card">
+        <div className="w-[clamp(280px,22vw,350px)] h-full overflow-auto bg-card">
           <div className="p-5 space-y-6">
             {/* Back */}
             <button
@@ -3916,6 +3918,7 @@ export function DiffView({
                                     style={{
                                       width: "6em",
                                       minWidth: "6em",
+                                      maxWidth: "320px",
                                     }}
                                   />
 
