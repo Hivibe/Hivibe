@@ -45,7 +45,7 @@ public class UserService {
         userRepository.save(user);
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = IllegalArgumentException.class)
     public LoginResponseDto login(LoginRequestDto dto) {
         User user = userRepository.findByLgnId(dto.getLgnId())
             .orElseThrow(() -> new IllegalArgumentException("아이디 또는 비밀번호가 올바르지 않습니다."));
